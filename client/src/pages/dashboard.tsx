@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Briefcase, CheckCircle, Clock, DollarSign, Wrench, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import type { JobCard, DailyStatistics, BayStatus } from "@shared/schema";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { canViewRevenue } = useUserRole();
   
   const { data: stats, isLoading: statsLoading } = useQuery<DailyStatistics>({
@@ -30,18 +32,18 @@ export default function Dashboard() {
   };
 
   const occupiedBays = bayStatus?.filter(b => b.isOccupied).length || 0;
-  const totalBays = 5;
+  const totalBays = 6;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's today's overview.</p>
+        <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("dashboard.title")}</h1>
+        <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Today's Jobs"
+          title={t("dashboard.todaysJobs")}
           value={stats?.today || 0}
           icon={Briefcase}
           iconColor="text-primary"
@@ -49,7 +51,7 @@ export default function Dashboard() {
           testId="stat-today-jobs"
         />
         <StatCard
-          title="Completed"
+          title={t("dashboard.completed")}
           value={stats?.completed || 0}
           icon={CheckCircle}
           iconColor="text-green-600"
@@ -57,7 +59,7 @@ export default function Dashboard() {
           testId="stat-completed"
         />
         <StatCard
-          title="In Progress"
+          title={t("dashboard.inProgress")}
           value={stats?.inProgress || 0}
           icon={Clock}
           iconColor="text-blue-600"
@@ -66,7 +68,7 @@ export default function Dashboard() {
         />
         {canViewRevenue ? (
           <StatCard
-            title="Today's Revenue"
+            title={t("dashboard.todaysRevenue")}
             value={formatCurrency(stats?.revenue || 0)}
             icon={DollarSign}
             iconColor="text-green-600"
@@ -81,8 +83,8 @@ export default function Dashboard() {
                   <Lock className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Revenue</p>
-                  <p className="text-xs text-muted-foreground">Admin/Manager only</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.todaysRevenue")}</p>
+                  <p className="text-xs text-muted-foreground">{t("roles.admin")}/{t("roles.manager")}</p>
                 </div>
               </div>
             </CardContent>
@@ -93,9 +95,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border border-card-border">
           <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
-            <CardTitle className="text-lg font-semibold">Recent Job Cards</CardTitle>
+            <CardTitle className="text-lg font-semibold">{t("dashboard.recentJobCards")}</CardTitle>
             <Link href="/job-cards">
-              <Button variant="outline" size="sm" data-testid="link-view-all-jobs">View All</Button>
+              <Button variant="outline" size="sm" data-testid="link-view-all-jobs">{t("dashboard.viewAll")}</Button>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -143,14 +145,14 @@ export default function Dashboard() {
 
         <Card className="border border-card-border">
           <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
-            <CardTitle className="text-lg font-semibold">Service Bays</CardTitle>
+            <CardTitle className="text-lg font-semibold">{t("serviceBays.title")}</CardTitle>
             <Link href="/service-bays">
-              <Button variant="outline" size="sm" data-testid="link-view-all-bays">View All</Button>
+              <Button variant="outline" size="sm" data-testid="link-view-all-bays">{t("dashboard.viewAll")}</Button>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
             {baysLoading ? (
-              Array(5).fill(0).map((_, i) => (
+              Array(6).fill(0).map((_, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <Skeleton className="w-3 h-3 rounded-full" />
                   <Skeleton className="h-4 flex-1" />
@@ -173,14 +175,14 @@ export default function Dashboard() {
                     />
                     <span className="font-medium text-sm flex-1">{bay.bay}</span>
                     <span className={`text-xs ${bay.isOccupied ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                      {bay.isOccupied ? "Occupied" : "Available"}
+                      {bay.isOccupied ? t("serviceBays.occupied") : t("serviceBays.available")}
                     </span>
                   </div>
                 ))}
                 
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Utilization</span>
+                    <span className="text-muted-foreground">{t("dashboard.utilization")}</span>
                     <span className="font-semibold" data-testid="bay-utilization">
                       {Math.round((occupiedBays / totalBays) * 100)}%
                     </span>
@@ -192,8 +194,8 @@ export default function Dashboard() {
                     />
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                    <span>{occupiedBays} Active</span>
-                    <span>{totalBays - occupiedBays} Available</span>
+                    <span>{occupiedBays} {t("serviceBays.activeBays")}</span>
+                    <span>{totalBays - occupiedBays} {t("serviceBays.available")}</span>
                   </div>
                 </div>
               </>

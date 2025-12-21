@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { FileText, CheckCircle, DollarSign, TrendingUp, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ interface ReportData {
 }
 
 export default function Reports() {
+  const { t } = useTranslation();
   const { canViewRevenue } = useUserRole();
   
   const { data: jobCards = [], isLoading } = useQuery<JobCard[]>({
@@ -69,13 +71,13 @@ export default function Reports() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">Reports & Analytics</h1>
-        <p className="text-muted-foreground">Comprehensive overview of service center performance</p>
+        <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("reports.title")}</h1>
+        <p className="text-muted-foreground">{t("reports.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Jobs"
+          title={t("reports.totalJobs")}
           value={reportData.totalJobs}
           icon={FileText}
           iconColor="text-primary"
@@ -83,7 +85,7 @@ export default function Reports() {
           testId="stat-total-jobs"
         />
         <StatCard
-          title="Completed Jobs"
+          title={t("reports.completedJobs")}
           value={reportData.completedJobs}
           icon={CheckCircle}
           iconColor="text-green-600"
@@ -92,7 +94,7 @@ export default function Reports() {
         />
         {canViewRevenue ? (
           <StatCard
-            title="Total Revenue"
+            title={t("reports.totalRevenue")}
             value={formatCurrency(reportData.totalRevenue)}
             icon={DollarSign}
             iconColor="text-green-600"
@@ -107,8 +109,8 @@ export default function Reports() {
                   <Lock className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Revenue</p>
-                  <p className="text-xs text-muted-foreground">Admin/Manager only</p>
+                  <p className="text-sm text-muted-foreground">{t("reports.totalRevenue")}</p>
+                  <p className="text-xs text-muted-foreground">{t("roles.admin")}/{t("roles.manager")}</p>
                 </div>
               </div>
             </CardContent>
@@ -116,7 +118,7 @@ export default function Reports() {
         )}
         {canViewRevenue ? (
           <StatCard
-            title="Avg. Job Value"
+            title={t("reports.avgJobValue")}
             value={formatCurrency(reportData.averageJobValue)}
             icon={TrendingUp}
             iconColor="text-blue-600"
@@ -131,8 +133,8 @@ export default function Reports() {
                   <Lock className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Avg. Value</p>
-                  <p className="text-xs text-muted-foreground">Admin/Manager only</p>
+                  <p className="text-sm text-muted-foreground">{t("reports.avgJobValue")}</p>
+                  <p className="text-xs text-muted-foreground">{t("roles.admin")}/{t("roles.manager")}</p>
                 </div>
               </div>
             </CardContent>
@@ -143,7 +145,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border border-card-border">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Service Type Distribution</CardTitle>
+            <CardTitle className="text-lg font-semibold">{t("reports.serviceTypeDistribution")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {isLoading ? (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Clock, Calendar, Users, AlertCircle, Loader2, CheckCircle, XCircle, AlertTriangle, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ import type { Staff, Attendance } from "@shared/schema";
 import { ATTENDANCE_STATUSES } from "@shared/schema";
 
 export default function AttendancePage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { isAdmin, isManager } = useUserRole();
   const canManageToday = isAdmin || isManager;
@@ -82,10 +84,10 @@ export default function AttendancePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/attendance/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/attendance"] });
-      toast({ title: "Success", description: "Attendance marked" });
+      toast({ title: t("common.success"), description: t("messages.addedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to mark attendance", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -97,10 +99,10 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/attendance/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/attendance"] });
       setEditRecord(null);
-      toast({ title: "Success", description: "Attendance updated" });
+      toast({ title: t("common.success"), description: t("messages.updatedSuccess") });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message || "Failed to update", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -132,8 +134,8 @@ export default function AttendancePage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">Staff Attendance</h1>
-          <p className="text-muted-foreground">Track daily staff attendance</p>
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("attendance.title")}</h1>
+          <p className="text-muted-foreground">{t("attendance.subtitle")}</p>
         </div>
         <Card className="border border-card-border">
           <CardContent className="py-3 px-4">

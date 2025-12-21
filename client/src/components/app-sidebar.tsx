@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings, UserCog } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -14,19 +15,20 @@ import {
 import { useUserRole } from "@/contexts/UserRoleContext";
 
 const mainNavItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Job Cards", url: "/job-cards", icon: FileText },
-  { title: "Service Bays", url: "/service-bays", icon: Wrench },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
+  { titleKey: "sidebar.dashboard", url: "/", icon: Home },
+  { titleKey: "sidebar.jobCards", url: "/job-cards", icon: FileText },
+  { titleKey: "sidebar.serviceBays", url: "/service-bays", icon: Wrench },
+  { titleKey: "sidebar.reports", url: "/reports", icon: BarChart3 },
 ];
 
 const adminNavItems = [
-  { title: "Staff Management", url: "/staff", icon: Users },
-  { title: "Technicians", url: "/technicians", icon: UserCog },
-  { title: "Attendance", url: "/attendance", icon: Calendar },
+  { titleKey: "sidebar.staffManagement", url: "/staff", icon: Users },
+  { titleKey: "sidebar.technicians", url: "/technicians", icon: UserCog },
+  { titleKey: "sidebar.attendance", url: "/attendance", icon: Calendar },
 ];
 
 export function AppSidebar() {
+  const { t } = useTranslation();
   const [location] = useLocation();
   const { isAdmin, isManager } = useUserRole();
   const canAccessAdmin = isAdmin || isManager;
@@ -51,19 +53,19 @@ export function AppSidebar() {
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.main")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.titleKey}>
                   <SidebarMenuButton
                     asChild
                     isActive={isActive(item.url)}
                     className={isActive(item.url) ? "bg-primary text-primary-foreground" : ""}
                   >
-                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
+                    <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "dashboard"}`}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <span>{t(item.titleKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -76,20 +78,20 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center gap-2">
               <Settings className="w-3 h-3" />
-              Admin
+              {t("sidebar.admin")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive(item.url)}
                       className={isActive(item.url) ? "bg-primary text-primary-foreground" : ""}
                     >
-                      <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
+                      <Link href={item.url} data-testid={`nav-${item.url.replace("/", "")}`}>
                         <item.icon className="w-4 h-4" />
-                        <span>{item.title}</span>
+                        <span>{t(item.titleKey)}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

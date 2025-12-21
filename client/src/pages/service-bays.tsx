@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Wrench, Clock, User, Car } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Link } from "wouter";
 import type { BayStatus } from "@shared/schema";
 
 export default function ServiceBays() {
+  const { t } = useTranslation();
   const { data: bayStatus, isLoading } = useQuery<BayStatus[]>({
     queryKey: ["/api/bays/status"],
   });
@@ -20,8 +22,8 @@ export default function ServiceBays() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">Service Bays</h1>
-        <p className="text-muted-foreground">Monitor service bay status and assignments</p>
+        <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("serviceBays.title")}</h1>
+        <p className="text-muted-foreground">{t("serviceBays.subtitle")}</p>
       </div>
 
       <Card className="border border-card-border">
@@ -29,15 +31,15 @@ export default function ServiceBays() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="text-center">
               <p className="text-3xl font-bold text-primary" data-testid="stat-active-bays">{occupiedBays}</p>
-              <p className="text-sm text-muted-foreground">Active Bays</p>
+              <p className="text-sm text-muted-foreground">{t("serviceBays.activeBays")}</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold text-green-600 dark:text-green-400" data-testid="stat-available-bays">{availableBays}</p>
-              <p className="text-sm text-muted-foreground">Available Bays</p>
+              <p className="text-sm text-muted-foreground">{t("serviceBays.availableBays")}</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold" data-testid="stat-utilization">{utilization}%</p>
-              <p className="text-sm text-muted-foreground">Utilization</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.utilization")}</p>
             </div>
           </div>
           <div className="mt-6 h-3 bg-muted rounded-full overflow-hidden">
@@ -85,7 +87,7 @@ export default function ServiceBays() {
                         ? "text-red-600 dark:text-red-400" 
                         : "text-green-600 dark:text-green-400"
                     }`}>
-                      {bay.isOccupied ? "Occupied" : "Available"}
+                      {bay.isOccupied ? t("serviceBays.occupied") : t("serviceBays.available")}
                     </span>
                   </div>
                 </div>
@@ -128,7 +130,7 @@ export default function ServiceBays() {
 
                     <Link href="/job-cards">
                       <Button variant="outline" size="sm" className="w-full" data-testid={`button-view-details-${bay.bay.replace(" ", "-").toLowerCase()}`}>
-                        View Details
+                        {t("dashboard.viewAll")}
                       </Button>
                     </Link>
                   </div>
@@ -137,8 +139,8 @@ export default function ServiceBays() {
                     <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
                       <Wrench className="w-6 h-6 text-muted-foreground opacity-50" />
                     </div>
-                    <p className="text-muted-foreground text-sm">No active service</p>
-                    <p className="text-xs text-muted-foreground mt-1">Bay is ready for new jobs</p>
+                    <p className="text-muted-foreground text-sm">{t("serviceBays.noActiveService")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("serviceBays.bayReady")}</p>
                   </div>
                 )}
               </CardContent>

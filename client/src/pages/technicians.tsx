@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Plus, Pencil, Trash2, Loader2, AlertCircle, UserCheck, UserX } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ const initialFormData: TechnicianFormData = {
 };
 
 export default function Technicians() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -72,10 +74,10 @@ export default function Technicians() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
       setIsCreateOpen(false);
-      toast({ title: "Success", description: "Technician added successfully" });
+      toast({ title: t("common.success"), description: t("messages.addedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to add technician", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -87,10 +89,10 @@ export default function Technicians() {
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
       setIsEditOpen(false);
       setSelectedTechnician(null);
-      toast({ title: "Success", description: "Technician updated successfully" });
+      toast({ title: t("common.success"), description: t("messages.updatedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update technician", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -101,10 +103,10 @@ export default function Technicians() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
       setDeleteTechnicianId(null);
-      toast({ title: "Success", description: "Technician removed successfully" });
+      toast({ title: t("common.success"), description: t("messages.deletedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to remove technician", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -118,7 +120,7 @@ export default function Technicians() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="w-5 h-5" />
-              <p>Failed to load technicians. Please try again.</p>
+              <p>{t("messages.loadError")}</p>
             </div>
           </CardContent>
         </Card>
@@ -130,13 +132,13 @@ export default function Technicians() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Technicians</h1>
-          <p className="text-muted-foreground text-sm">Manage technicians who work on motorcycles</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("technicians.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("technicians.subtitle")}</p>
         </div>
         {isAdmin && (
           <Button onClick={() => setIsCreateOpen(true)} data-testid="button-add-technician">
             <Plus className="w-4 h-4 mr-2" />
-            Add Technician
+            {t("technicians.addTechnician")}
           </Button>
         )}
       </div>
@@ -150,7 +152,7 @@ export default function Technicians() {
               </div>
               <div>
                 <p className="text-2xl font-bold" data-testid="text-active-count">{activeCount}</p>
-                <p className="text-xs text-muted-foreground">Active</p>
+                <p className="text-xs text-muted-foreground">{t("common.active")}</p>
               </div>
             </div>
           </CardContent>
@@ -163,7 +165,7 @@ export default function Technicians() {
               </div>
               <div>
                 <p className="text-2xl font-bold" data-testid="text-inactive-count">{inactiveCount}</p>
-                <p className="text-xs text-muted-foreground">Inactive</p>
+                <p className="text-xs text-muted-foreground">{t("common.inactive")}</p>
               </div>
             </div>
           </CardContent>
@@ -176,7 +178,7 @@ export default function Technicians() {
               </div>
               <div>
                 <p className="text-2xl font-bold" data-testid="text-total-count">{technicianList.length}</p>
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">{t("common.total")}</p>
               </div>
             </div>
           </CardContent>
@@ -185,7 +187,7 @@ export default function Technicians() {
 
       <Card className="border border-card-border">
         <CardHeader>
-          <h2 className="text-lg font-semibold">Technician Directory</h2>
+          <h2 className="text-lg font-semibold">{t("technicians.technicianDirectory")}</h2>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -193,11 +195,11 @@ export default function Technicians() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Specialization</TableHead>
-                  <TableHead>Status</TableHead>
-                  {isAdmin && <TableHead>Actions</TableHead>}
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.phone")}</TableHead>
+                  <TableHead>{t("technicians.specialization")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  {isAdmin && <TableHead className="text-right">{t("common.actions")}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -216,11 +218,11 @@ export default function Technicians() {
                   <TableRow>
                     <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-12">
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
-                      <p className="text-muted-foreground">No technicians found</p>
+                      <p className="text-muted-foreground">{t("technicians.noTechnicians")}</p>
                       {isAdmin && (
                         <Button variant="outline" className="mt-4" onClick={() => setIsCreateOpen(true)}>
                           <Plus className="w-4 h-4 mr-2" />
-                          Add your first technician
+                          {t("technicians.addFirst")}
                         </Button>
                       )}
                     </TableCell>

@@ -93,7 +93,9 @@
     "washBay": "Wash Bay",
     "bayStatus": "Bay Status",
     "activeBays": "Active Bays",
-    "availableBays": "Available Bays"
+    "availableBays": "Available Bays",
+    "noActiveService": "No active service",
+    "bayReady": "Bay is ready for new jobs"
   },
   "reports": {
     "title": "Reports & Analytics",
@@ -161,6 +163,7 @@
     "updatedSuccess": "Updated successfully",
     "deletedSuccess": "Deleted successfully",
     "errorOccurred": "An error occurred",
-    "accessDenied": "Access denied"
+    "accessDenied": "Access denied or error loading data",
+    "loadError": "Failed to load data. Please try again."
   }
 }

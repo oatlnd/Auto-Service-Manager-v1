@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,7 @@ const initialFormData: FormData = {
 };
 
 export default function JobCards() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { canViewRevenue } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,10 +105,10 @@ export default function JobCards() {
       queryClient.invalidateQueries({ queryKey: ["/api/bays/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/job-cards/recent"] });
       setIsCreateOpen(false);
-      toast({ title: "Success", description: "Job card created successfully" });
+      toast({ title: t("common.success"), description: t("messages.addedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create job card", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -121,10 +123,10 @@ export default function JobCards() {
       queryClient.invalidateQueries({ queryKey: ["/api/job-cards/recent"] });
       setIsEditOpen(false);
       setSelectedJob(null);
-      toast({ title: "Success", description: "Job card updated successfully" });
+      toast({ title: t("common.success"), description: t("messages.updatedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update job card", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -138,10 +140,10 @@ export default function JobCards() {
       queryClient.invalidateQueries({ queryKey: ["/api/bays/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/job-cards/recent"] });
       setDeleteJobId(null);
-      toast({ title: "Success", description: "Job card deleted successfully" });
+      toast({ title: t("common.success"), description: t("messages.deletedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to delete job card", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -157,10 +159,10 @@ export default function JobCards() {
       if (selectedJob) {
         setSelectedJob({ ...selectedJob, status: variables.status });
       }
-      toast({ title: "Success", description: "Status updated successfully" });
+      toast({ title: t("common.success"), description: t("messages.updatedSuccess") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
     },
   });
 
@@ -181,12 +183,12 @@ export default function JobCards() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">Job Cards</h1>
-          <p className="text-muted-foreground">Manage service and repair job cards</p>
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("jobCards.title")}</h1>
+          <p className="text-muted-foreground">{t("jobCards.subtitle")}</p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)} data-testid="button-new-job-card">
           <Plus className="w-4 h-4 mr-2" />
-          New Job Card
+          {t("jobCards.addJobCard")}
         </Button>
       </div>
 
@@ -196,7 +198,7 @@ export default function JobCards() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search by customer, registration, or job ID..."
+                placeholder={t("jobCards.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
