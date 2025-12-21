@@ -55,7 +55,7 @@ export const HONDA_MODELS = [
   "Grazia",
 ] as const;
 
-export const USER_ROLES = ["Admin", "Manager", "Job Card"] as const;
+export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Service"] as const;
 export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as const;
 
 export const jobCardSchema = z.object({

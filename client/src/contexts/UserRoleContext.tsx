@@ -9,6 +9,9 @@ interface UserRoleContextType {
   canViewRevenue: boolean;
   isAdmin: boolean;
   isManager: boolean;
+  isTechnician: boolean;
+  isService: boolean;
+  isLimitedRole: boolean;
 }
 
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
@@ -20,9 +23,12 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
   const canViewRevenue = role === "Admin" || role === "Manager";
   const isAdmin = role === "Admin";
   const isManager = role === "Manager";
+  const isTechnician = role === "Technician";
+  const isService = role === "Service";
+  const isLimitedRole = isTechnician || isService;
 
   return (
-    <UserRoleContext.Provider value={{ role, canViewRevenue, isAdmin, isManager }}>
+    <UserRoleContext.Provider value={{ role, canViewRevenue, isAdmin, isManager, isTechnician, isService, isLimitedRole }}>
       {children}
     </UserRoleContext.Provider>
   );
