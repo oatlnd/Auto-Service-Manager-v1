@@ -82,7 +82,7 @@ const initialFormData: FormData = {
 export default function JobCards() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { canViewRevenue } = useUserRole();
+  const { canViewRevenue, isLimitedRole, isService } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -174,7 +174,12 @@ export default function JobCards() {
     
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const limitedRoleStatuses = ["Pending", "In Progress"];
+    const matchesLimitedRole = !isLimitedRole || limitedRoleStatuses.includes(job.status);
+    
+    const matchesServiceBay = !isService || job.bay === "Wash Bay";
+    
+    return matchesSearch && matchesStatus && matchesLimitedRole && matchesServiceBay;
   });
 
   const formatCurrency = (amount: number) => `LKR ${amount.toLocaleString()}`;
@@ -186,10 +191,12 @@ export default function JobCards() {
           <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("jobCards.title")}</h1>
           <p className="text-muted-foreground">{t("jobCards.subtitle")}</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} data-testid="button-new-job-card">
-          <Plus className="w-4 h-4 mr-2" />
-          {t("jobCards.addJobCard")}
-        </Button>
+        {!isLimitedRole && (
+          <Button onClick={() => setIsCreateOpen(true)} data-testid="button-new-job-card">
+            <Plus className="w-4 h-4 mr-2" />
+            {t("jobCards.addJobCard")}
+          </Button>
+        )}
       </div>
 
       <Card className="border border-card-border">
@@ -213,8 +220,12 @@ export default function JobCards() {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Quality Check">Quality Check</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
+                {!isLimitedRole && (
+                  <>
+                    <SelectItem value="Quality Check">Quality Check</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -300,25 +311,29 @@ export default function JobCards() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setIsEditOpen(true);
-                            }}
-                            data-testid={`button-edit-${job.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setDeleteJobId(job.id)}
-                            data-testid={`button-delete-${job.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
+                          {!isLimitedRole && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedJob(job);
+                                  setIsEditOpen(true);
+                                }}
+                                data-testid={`button-edit-${job.id}`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setDeleteJobId(job.id)}
+                                data-testid={`button-delete-${job.id}`}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -347,6 +362,8 @@ export default function JobCards() {
           }
         }}
         isUpdating={updateStatusMutation.isPending}
+        isLimitedRole={isLimitedRole}
+        canViewRevenue={canViewRevenue}
       />
 
       <EditJobCardDialog
@@ -689,12 +706,17 @@ interface ViewJobCardDialogProps {
   job: JobCard | null;
   onStatusChange: (status: typeof JOB_STATUSES[number]) => void;
   isUpdating: boolean;
+  isLimitedRole?: boolean;
+  canViewRevenue?: boolean;
 }
 
-function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating }: ViewJobCardDialogProps) {
+function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating, isLimitedRole = false, canViewRevenue = true }: ViewJobCardDialogProps) {
   if (!job) return null;
 
-  const statuses: (typeof JOB_STATUSES[number])[] = ["Pending", "In Progress", "Quality Check", "Completed"];
+  const allStatuses: (typeof JOB_STATUSES[number])[] = ["Pending", "In Progress", "Quality Check", "Completed"];
+  const statuses = isLimitedRole 
+    ? allStatuses.filter(s => s === "In Progress" || s === "Completed")
+    : allStatuses;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -750,32 +772,34 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating
             </div>
           </div>
 
-          <Card className="bg-muted/50 border border-card-border">
-            <CardContent className="pt-4">
-              <h4 className="font-medium mb-3">Payment Details</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Cost:</span>
-                  <span className="font-semibold">LKR {job.cost.toLocaleString()}</span>
+          {canViewRevenue && (
+            <Card className="bg-muted/50 border border-card-border">
+              <CardContent className="pt-4">
+                <h4 className="font-medium mb-3">Payment Details</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Cost:</span>
+                    <span className="font-semibold">LKR {job.cost.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Advance Paid:</span>
+                    <span className="text-green-600 dark:text-green-400">LKR {job.advancePayment.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Remaining:</span>
+                    <span className={job.remainingPayment > 0 ? "text-orange-600 dark:text-orange-400" : ""}>
+                      LKR {job.remainingPayment.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="pt-2">
+                    <Badge variant={job.paymentStatus === "Paid in Full" ? "default" : "secondary"}>
+                      {job.paymentStatus}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Advance Paid:</span>
-                  <span className="text-green-600 dark:text-green-400">LKR {job.advancePayment.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Remaining:</span>
-                  <span className={job.remainingPayment > 0 ? "text-orange-600 dark:text-orange-400" : ""}>
-                    LKR {job.remainingPayment.toLocaleString()}
-                  </span>
-                </div>
-                <div className="pt-2">
-                  <Badge variant={job.paymentStatus === "Paid in Full" ? "default" : "secondary"}>
-                    {job.paymentStatus}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {job.repairDetails && (
             <div>

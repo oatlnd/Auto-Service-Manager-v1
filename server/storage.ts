@@ -190,6 +190,8 @@ export class MemStorage implements IStorage {
       { username: "admin", password: "admin123", role: "Admin", name: "Arun Kumar", staffId: "STF001" },
       { username: "manager", password: "manager123", role: "Manager", name: "Priya Shankar", staffId: "STF002" },
       { username: "staff1", password: "staff123", role: "Job Card", name: "Ramesh Nair", staffId: "STF003" },
+      { username: "tech1", password: "tech123", role: "Technician", name: "Kannan Selvam" },
+      { username: "service1", password: "service123", role: "Service", name: "Vimal Kumar" },
     ];
 
     sampleUsers.forEach((u) => {

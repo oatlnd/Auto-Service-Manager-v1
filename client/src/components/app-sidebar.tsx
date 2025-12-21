@@ -15,10 +15,10 @@ import {
 import { useUserRole } from "@/contexts/UserRoleContext";
 
 const mainNavItems = [
-  { titleKey: "sidebar.dashboard", url: "/", icon: Home },
-  { titleKey: "sidebar.jobCards", url: "/job-cards", icon: FileText },
-  { titleKey: "sidebar.serviceBays", url: "/service-bays", icon: Wrench },
-  { titleKey: "sidebar.reports", url: "/reports", icon: BarChart3 },
+  { titleKey: "sidebar.dashboard", url: "/", icon: Home, limitedRoleVisible: false },
+  { titleKey: "sidebar.jobCards", url: "/job-cards", icon: FileText, limitedRoleVisible: true },
+  { titleKey: "sidebar.serviceBays", url: "/service-bays", icon: Wrench, limitedRoleVisible: true },
+  { titleKey: "sidebar.reports", url: "/reports", icon: BarChart3, limitedRoleVisible: false },
 ];
 
 const adminNavItems = [
@@ -30,8 +30,12 @@ const adminNavItems = [
 export function AppSidebar() {
   const { t } = useTranslation();
   const [location] = useLocation();
-  const { isAdmin, isManager } = useUserRole();
+  const { isAdmin, isManager, isLimitedRole } = useUserRole();
   const canAccessAdmin = isAdmin || isManager;
+  
+  const visibleNavItems = isLimitedRole 
+    ? mainNavItems.filter(item => item.limitedRoleVisible)
+    : mainNavItems;
 
   const isActive = (url: string) => {
     return location === url || (url !== "/" && location.startsWith(url));
@@ -56,7 +60,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>{t("sidebar.main")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <SidebarMenuItem key={item.titleKey}>
                   <SidebarMenuButton
                     asChild

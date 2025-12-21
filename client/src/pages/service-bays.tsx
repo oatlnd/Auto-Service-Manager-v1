@@ -7,17 +7,24 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { Link } from "wouter";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import type { BayStatus } from "@shared/schema";
 
 export default function ServiceBays() {
   const { t } = useTranslation();
+  const { isService } = useUserRole();
+  
   const { data: bayStatus, isLoading } = useQuery<BayStatus[]>({
     queryKey: ["/api/bays/status"],
   });
 
-  const occupiedBays = bayStatus?.filter(b => b.isOccupied).length || 0;
-  const availableBays = (bayStatus?.length || 5) - occupiedBays;
-  const utilization = bayStatus?.length ? Math.round((occupiedBays / bayStatus.length) * 100) : 0;
+  const filteredBays = isService 
+    ? bayStatus?.filter(b => b.bay === "Wash Bay") 
+    : bayStatus;
+  
+  const occupiedBays = filteredBays?.filter(b => b.isOccupied).length || 0;
+  const availableBays = (filteredBays?.length || (isService ? 1 : 5)) - occupiedBays;
+  const utilization = filteredBays?.length ? Math.round((occupiedBays / filteredBays.length) * 100) : 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -64,7 +71,7 @@ export default function ServiceBays() {
             </Card>
           ))
         ) : (
-          bayStatus?.map((bay) => (
+          filteredBays?.map((bay) => (
             <Card 
               key={bay.bay} 
               className="border border-card-border overflow-hidden"
