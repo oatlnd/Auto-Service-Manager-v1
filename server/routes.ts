@@ -271,6 +271,12 @@ export async function registerRoutes(
   app.patch("/api/attendance/:id", async (req, res) => {
     try {
       const role = getRoleFromRequest(req);
+      
+      // Only Admin and Manager can modify attendance
+      if (role !== "Admin" && role !== "Manager") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const record = await storage.getAttendanceRecord(req.params.id);
       
       if (!record) {
@@ -280,6 +286,7 @@ export async function registerRoutes(
       const today = new Date().toISOString().split("T")[0];
       const isHistorical = record.date !== today;
 
+      // Only Admin can modify historical (previous day) attendance
       if (isHistorical && role !== "Admin") {
         return res.status(403).json({ error: "Only Admin can modify previous day attendance" });
       }

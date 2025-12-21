@@ -40,7 +40,8 @@ import { ATTENDANCE_STATUSES } from "@shared/schema";
 
 export default function AttendancePage() {
   const { toast } = useToast();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isManager } = useUserRole();
+  const canManageToday = isAdmin || isManager;
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [editRecord, setEditRecord] = useState<Attendance | null>(null);

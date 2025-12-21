@@ -29,9 +29,9 @@ export default function Reports() {
   const reportData: ReportData = {
     totalJobs: jobCards.length,
     completedJobs: jobCards.filter(j => j.status === "Completed").length,
-    totalRevenue: jobCards.filter(j => j.status === "Completed").reduce((sum, j) => sum + j.cost, 0),
+    totalRevenue: jobCards.filter(j => j.status === "Completed").reduce((sum, j) => sum + (j.cost || 0), 0),
     averageJobValue: jobCards.length > 0 
-      ? Math.round(jobCards.reduce((sum, j) => sum + j.cost, 0) / jobCards.length) 
+      ? Math.round(jobCards.reduce((sum, j) => sum + (j.cost || 0), 0) / jobCards.length) 
       : 0,
     serviceTypeDistribution: SERVICE_TYPES.reduce((acc, type) => {
       acc[type] = jobCards.filter(j => j.serviceType === type).length;
