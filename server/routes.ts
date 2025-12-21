@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, insertTechnicianSchema, USER_ROLES } from "@shared/schema";
 import { z } from "zod";
 
 function getRoleFromRequest(req: Request): string {
@@ -306,6 +306,69 @@ export async function registerRoutes(
 
   app.get("/api/roles", (req, res) => {
     res.json(USER_ROLES);
+  });
+
+  app.get("/api/technicians", async (req, res) => {
+    try {
+      const technicians = await storage.getTechnicians();
+      res.json(technicians);
+    } catch (error) {
+      console.error("Error fetching technicians:", error);
+      res.status(500).json({ error: "Failed to fetch technicians" });
+    }
+  });
+
+  app.get("/api/technicians/:id", async (req, res) => {
+    try {
+      const technician = await storage.getTechnician(req.params.id);
+      if (!technician) {
+        return res.status(404).json({ error: "Technician not found" });
+      }
+      res.json(technician);
+    } catch (error) {
+      console.error("Error fetching technician:", error);
+      res.status(500).json({ error: "Failed to fetch technician" });
+    }
+  });
+
+  app.post("/api/technicians", requireRole("Admin"), async (req, res) => {
+    try {
+      const parsed = insertTechnicianSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const technician = await storage.createTechnician(parsed.data);
+      res.status(201).json(technician);
+    } catch (error) {
+      console.error("Error creating technician:", error);
+      res.status(500).json({ error: "Failed to create technician" });
+    }
+  });
+
+  app.patch("/api/technicians/:id", requireRole("Admin"), async (req, res) => {
+    try {
+      const technician = await storage.updateTechnician(req.params.id, req.body);
+      if (!technician) {
+        return res.status(404).json({ error: "Technician not found" });
+      }
+      res.json(technician);
+    } catch (error) {
+      console.error("Error updating technician:", error);
+      res.status(500).json({ error: "Failed to update technician" });
+    }
+  });
+
+  app.delete("/api/technicians/:id", requireRole("Admin"), async (req, res) => {
+    try {
+      const deleted = await storage.deleteTechnician(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Technician not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting technician:", error);
+      res.status(500).json({ error: "Failed to delete technician" });
+    }
   });
 
   return httpServer;

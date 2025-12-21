@@ -19,7 +19,7 @@ export type User = typeof users.$inferSelect;
 
 export const SERVICE_TYPES = ["Regular Service", "Repair", "Premium Service"] as const;
 export const JOB_STATUSES = ["Pending", "In Progress", "Quality Check", "Completed"] as const;
-export const BAYS = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5"] as const;
+export const BAYS = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5", "Wash Bay"] as const;
 export const TECHNICIANS = ["Technician 1", "Technician 2", "Technician 3", "Technician 4", "Senior Technician"] as const;
 
 export const HONDA_MODELS = [
@@ -132,3 +132,17 @@ export const updateAttendanceSchema = z.object({
 export type Attendance = z.infer<typeof attendanceSchema>;
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type UpdateAttendance = z.infer<typeof updateAttendanceSchema>;
+
+export const technicianSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(10, "Valid phone number required"),
+  specialization: z.string().optional(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+});
+
+export const insertTechnicianSchema = technicianSchema.omit({ id: true, createdAt: true });
+
+export type Technician = z.infer<typeof technicianSchema>;
+export type InsertTechnician = z.infer<typeof insertTechnicianSchema>;

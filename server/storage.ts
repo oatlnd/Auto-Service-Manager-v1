@@ -1,6 +1,7 @@
 import type { 
   JobCard, InsertJobCard, DailyStatistics, BayStatus, 
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
+  Technician, InsertTechnician,
   BAYS, JOB_STATUSES 
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -28,23 +29,33 @@ export interface IStorage {
   createAttendance(data: InsertAttendance): Promise<Attendance>;
   updateAttendance(id: string, data: UpdateAttendance): Promise<Attendance | undefined>;
   getTodayAttendance(): Promise<Attendance[]>;
+  
+  getTechnicians(): Promise<Technician[]>;
+  getTechnician(id: string): Promise<Technician | undefined>;
+  createTechnician(data: InsertTechnician): Promise<Technician>;
+  updateTechnician(id: string, data: Partial<InsertTechnician>): Promise<Technician | undefined>;
+  deleteTechnician(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private jobCards: Map<string, JobCard>;
   private staff: Map<string, Staff>;
   private attendance: Map<string, Attendance>;
+  private technicians: Map<string, Technician>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
+  private technicianIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
     this.staff = new Map();
     this.attendance = new Map();
+    this.technicians = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
+    this.technicianIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -141,6 +152,19 @@ export class MemStorage implements IStorage {
         notes: index === 3 ? "Traffic delay" : undefined,
         createdAt: new Date().toISOString(),
       });
+    });
+
+    const sampleTechnicians: Omit<Technician, "id" | "createdAt">[] = [
+      { name: "Kannan Selvam", phone: "0771111111", specialization: "Engine Repair", isActive: true },
+      { name: "Vimal Kumar", phone: "0772222222", specialization: "Electrical Systems", isActive: true },
+      { name: "Ravi Chandran", phone: "0773333333", specialization: "Brake & Suspension", isActive: true },
+      { name: "Senthil Murugan", phone: "0774444444", specialization: "General Service", isActive: true },
+      { name: "Mani Kandan", phone: "0775555555", specialization: "Senior Technician", isActive: true },
+    ];
+
+    sampleTechnicians.forEach((t) => {
+      const id = `TECH${String(this.technicianIdCounter++).padStart(3, "0")}`;
+      this.technicians.set(id, { ...t, id, createdAt: new Date().toISOString() });
     });
   }
 
@@ -256,7 +280,7 @@ export class MemStorage implements IStorage {
   }
 
   async getBayStatus(): Promise<BayStatus[]> {
-    const bays: (typeof BAYS[number])[] = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5"];
+    const bays: (typeof BAYS[number])[] = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5", "Wash Bay"];
     const jobs = Array.from(this.jobCards.values());
 
     return bays.map((bay) => {
@@ -357,6 +381,43 @@ export class MemStorage implements IStorage {
   async getTodayAttendance(): Promise<Attendance[]> {
     const today = new Date().toISOString().split("T")[0];
     return this.getAttendance(today);
+  }
+
+  async getTechnicians(): Promise<Technician[]> {
+    return Array.from(this.technicians.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getTechnician(id: string): Promise<Technician | undefined> {
+    return this.technicians.get(id);
+  }
+
+  async createTechnician(data: InsertTechnician): Promise<Technician> {
+    const id = `TECH${String(this.technicianIdCounter++).padStart(3, "0")}`;
+    const technician: Technician = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.technicians.set(id, technician);
+    return technician;
+  }
+
+  async updateTechnician(id: string, data: Partial<InsertTechnician>): Promise<Technician | undefined> {
+    const existing = this.technicians.get(id);
+    if (!existing) return undefined;
+
+    const updated: Technician = {
+      ...existing,
+      ...data,
+    };
+    this.technicians.set(id, updated);
+    return updated;
+  }
+
+  async deleteTechnician(id: string): Promise<boolean> {
+    return this.technicians.delete(id);
   }
 }
 

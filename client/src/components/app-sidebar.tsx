@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings } from "lucide-react";
+import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings, UserCog } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ const mainNavItems = [
 
 const adminNavItems = [
   { title: "Staff Management", url: "/staff", icon: Users },
+  { title: "Technicians", url: "/technicians", icon: UserCog },
   { title: "Attendance", url: "/attendance", icon: Calendar },
 ];
 
