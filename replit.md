@@ -78,17 +78,28 @@ shared/
 - **Admin**: Full access to all features including staff management, attendance modification for any day, and revenue/cost visibility
 - **Manager**: Access to staff viewing, attendance management for current day, and revenue/cost visibility
 - **Job Card**: Basic access to job cards and service bays only (no revenue/cost visibility, no admin section)
+- **Technician**: Limited access to job cards (Pending/In Progress only) and all service bays. Can change job status and mark as complete.
+- **Service**: Limited access to job cards (Pending/In Progress, Wash Bay only) and Wash Bay only. Can change job status and mark as complete.
 
 ### Access Matrix
-| Feature | Admin | Manager | Job Card |
-|---------|-------|---------|----------|
-| Dashboard | Full | Full | No revenue |
-| Job Cards | Full + costs | Full + costs | No costs |
-| Service Bays | Full | Full | Full |
-| Reports | Full | Full | No revenue/avg |
-| Staff Management | CRUD | View only | Hidden |
-| Technicians | CRUD | View only | Hidden |
-| Attendance | Full + history edit | Today only | Hidden |
+| Feature | Admin | Manager | Job Card | Technician | Service |
+|---------|-------|---------|----------|------------|---------|
+| Dashboard | Full | Full | No revenue | Hidden | Hidden |
+| Job Cards | Full + costs | Full + costs | No costs | Pending/In Progress only | Wash Bay jobs only |
+| Service Bays | Full | Full | Full | Full | Wash Bay only |
+| Reports | Full | Full | No revenue/avg | Hidden | Hidden |
+| Staff Management | CRUD | View only | Hidden | Hidden | Hidden |
+| Technicians | CRUD | View only | Hidden | Hidden | Hidden |
+| Attendance | Full + history edit | Today only | Hidden | Hidden | Hidden |
+
+### Demo Accounts
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin123 | Admin |
+| manager | manager123 | Manager |
+| staff1 | staff123 | Job Card |
+| tech1 | tech123 | Technician |
+| service1 | service123 | Service |
 
 ## External Dependencies
 

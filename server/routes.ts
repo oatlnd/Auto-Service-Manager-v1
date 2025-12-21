@@ -163,7 +163,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/job-cards", requireAuth, async (req, res) => {
+  app.post("/api/job-cards", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
       const parsed = insertJobCardSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -177,7 +177,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/job-cards/:id", requireAuth, async (req, res) => {
+  app.patch("/api/job-cards/:id", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
       const jobCard = await storage.updateJobCard(req.params.id, req.body);
       if (!jobCard) {
@@ -210,7 +210,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/job-cards/:id", requireAuth, async (req, res) => {
+  app.delete("/api/job-cards/:id", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
       const deleted = await storage.deleteJobCard(req.params.id);
       if (!deleted) {
