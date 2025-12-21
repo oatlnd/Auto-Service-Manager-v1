@@ -1,0 +1,288 @@
+Create a complete Honda Service Center Management System with the following specifications:
+
+## OVERVIEW
+Build a full-stack web application for managing a Honda motorcycle service center in Jaffna, Sri Lanka. The system should handle 45 bikes per day (36 regular services + 9 repairs) with a team of 12 staff members.
+
+## TECHNICAL REQUIREMENTS
+
+### Technology Stack
+- React with hooks (useState, useEffect)
+- Lucide React icons
+- Tailwind CSS for styling
+- Window.storage API for persistent data storage (NO localStorage/sessionStorage)
+- Fully responsive design
+
+### Branding & Design
+- Primary color: Honda Red (#CC0000)
+- Secondary color: Black (#000000)
+- Accent color: Bright Red (#E60000)
+- Professional automotive service center aesthetic
+- Collapsible sidebar navigation
+- Modal-based forms
+- Color-coded status badges
+- Smooth transitions and animations
+
+## CORE FEATURES
+
+### 1. Dashboard
+- Real-time statistics cards:
+  * Today's jobs count
+  * Completed jobs count
+  * In-progress jobs count
+  * Today's revenue (LKR)
+- Recent job cards list (last 5)
+- Live service bay status (5 bays)
+- Visual indicators (green = available, red = occupied with pulse animation)
+
+### 2. Job Cards Management
+**Create Job Card:**
+- Customer details: name, phone
+- Bike information: model (dropdown with Honda models), registration, odometer reading
+- Service type: Regular Service, Repair, Premium Service
+- Bay assignment (Bay 1-5)
+- Technician assignment (dropdown)
+- Estimated cost (LKR)
+- Estimated time
+- Repair details/notes (textarea)
+- Payment policy integration:
+  * Regular/Premium Service = 100% full payment upfront
+  * Repair = 50% advance, 50% at delivery
+- Auto-calculate and display required payment amount
+- Auto-generate Job ID (format: JC001, JC002, etc.)
+
+**View Job Card:**
+- Modal showing all job details
+- Payment status badge (Paid in Full / Advance Paid)
+- Remaining payment amount (if applicable)
+- Quick status update buttons (Pending, In Progress, Quality Check, Completed)
+- Status changes update immediately across all views
+
+**Edit Job Card:**
+- Pre-filled form with existing data
+- Update any field
+- Save changes with confirmation
+
+**Delete Job Card:**
+- Confirmation dialog
+- Remove from database
+
+**Search & Filter:**
+- Search by customer name, registration number, or job ID
+- Filter by status dropdown (All, Pending, In Progress, Quality Check, Completed)
+- Real-time filtering
+
+**Table View:**
+- Columns: Job ID, Customer, Bike Details, Service Type, Status, Bay, Cost, Actions
+- Action buttons: View (eye icon), Edit (pencil icon), Delete (trash icon)
+- Hover effects on rows
+- Responsive design with horizontal scroll on mobile
+
+### 3. Service Bays Monitor
+- 5 bay cards in grid layout
+- Each bay shows:
+  * Bay name (Bay 1-5)
+  * Status indicator (green/red header)
+  * Occupancy status (Available/Occupied)
+  * If occupied:
+    - Job ID
+    - Customer name
+    - Bike model
+    - Registration
+    - Assigned technician
+    - Current status badge
+    - Estimated time remaining
+    - "View Details" button
+  * If available:
+    - Empty state icon
+    - "No active service" message
+- Utilization statistics panel:
+  * Active bays count
+  * Available bays count
+  * Utilization percentage
+
+### 4. Reports & Analytics
+**Overview Metrics:**
+- Total jobs (all time)
+- Completed jobs count
+- Total revenue (LKR)
+- Average job value (LKR)
+
+**Service Type Distribution:**
+- Progress bars showing percentage of Regular Service, Repair, Premium Service
+- Count of jobs per type
+- Visual chart using Tailwind width percentages
+
+**Status Overview:**
+- Progress bars for Pending, In Progress, Quality Check, Completed
+- Color-coded bars (yellow, blue, purple, green)
+- Job counts per status
+
+**Top Bike Models:**
+- List of Honda models with job counts
+- Sortable by popularity
+
+**Technician Performance:**
+- List of all technicians (Technician 1-4, Senior Technician)
+- Jobs assigned to each
+- Performance tracking
+
+### 5. Navigation & Layout
+**Sidebar:**
+- Collapsible (toggle button)
+- Honda logo and branding
+- Navigation items with icons:
+  * Dashboard (Home icon)
+  * Job Cards (FileText icon)
+  * Service Bays (Wrench icon)
+  * Reports (BarChart3 icon)
+- Active state highlighting (red background)
+- Logout button at bottom
+
+**Main Content Area:**
+- Full height scrollable
+- Consistent padding
+- Page headers with title and description
+- Action buttons (e.g., New Job Card) in header
+
+## DATA STRUCTURE
+
+### Job Card Object
+```javascript
+{
+  id: string,              // "JC001", "JC002", etc.
+  customerName: string,
+  phone: string,
+  bikeModel: string,       // Honda CB350, Shine, Unicorn, etc.
+  registration: string,    // "NP-1234"
+  serviceType: string,     // "Regular Service", "Repair", "Premium Service"
+  status: string,          // "Pending", "In Progress", "Quality Check", "Completed"
+  assignedTo: string,      // "Technician 1", "Senior Technician", etc.
+  bay: string,            // "Bay 1" to "Bay 5"
+  estimatedTime: string,  // "45 mins", "2 hours"
+  cost: number,           // Amount in LKR
+  createdAt: string,      // ISO timestamp
+  odometer: number,
+  repairDetails: string,  // Optional notes
+  advancePayment: number, // Auto-calculated based on service type
+  remainingPayment: number, // Auto-calculated
+  paymentStatus: string   // "Paid in Full" or "Advance Paid"
+}
+```
+
+### Daily Statistics Object
+```javascript
+{
+  today: number,       // Total jobs today
+  completed: number,   // Completed count
+  inProgress: number,  // In progress count
+  pending: number,     // Pending count
+  revenue: number      // Total revenue from completed jobs
+}
+```
+
+## STORAGE IMPLEMENTATION
+
+**Using window.storage API:**
+- Store job cards: `await window.storage.set('job_cards_list', JSON.stringify(jobCards))`
+- Retrieve: `const result = await window.storage.get('job_cards_list')`
+- Parse: `const jobs = JSON.parse(result.value)`
+- Handle errors with try-catch
+- Initialize with sample data if storage is empty
+
+**Sample Initial Data:**
+Include 3 sample job cards:
+1. Regular service in progress (Bay 1)
+2. Repair in quality check (Bay 4)
+3. Completed regular service (Bay 2)
+
+## BUSINESS LOGIC
+
+### Payment Policy
+- **Regular Service or Premium Service:**
+  * Calculate: advancePayment = cost (100%)
+  * Calculate: remainingPayment = 0
+  * Set: paymentStatus = "Paid in Full"
+- **Repair:**
+  * Calculate: advancePayment = cost * 0.5
+  * Calculate: remainingPayment = cost * 0.5
+  * Set: paymentStatus = "Advance Paid"
+
+### Statistics Calculation
+- Auto-update daily stats whenever job cards change
+- Revenue = sum of cost for all completed jobs
+- Status counts = filter jobs by status
+
+### Bay Assignment
+- Track which bay has which job
+- Show as occupied if status is not "Completed"
+- Calculate utilization percentage
+
+## USER INTERACTIONS
+
+### Modal Behavior
+- Click outside or X button to close
+- Form validation on submit
+- Clear form after successful creation
+- Show loading states during save
+
+### Status Updates
+- Click status button in view modal
+- Update immediately in database
+- Refresh all views automatically
+- Visual feedback (button highlight)
+
+### Search & Filter
+- Real-time updates as user types
+- Combine search and filter (AND logic)
+- Case-insensitive search
+- No results message if empty
+
+## RESPONSIVE DESIGN
+- Mobile: Single column layouts, stacked cards
+- Tablet: 2-column grids
+- Desktop: 3-4 column grids
+- Collapsible sidebar on mobile
+- Touch-friendly button sizes
+- Horizontal scroll on tables for mobile
+
+## ERROR HANDLING
+- Try-catch blocks for all storage operations
+- Console.error for debugging
+- User-friendly error messages
+- Fallback to empty state if data load fails
+- Confirmation dialogs for destructive actions
+
+## PERFORMANCE
+- Use React.memo for expensive components
+- Efficient filtering with proper array methods
+- Minimal re-renders
+- Smooth animations (transition-all duration-200)
+
+## ACCESSIBILITY
+- Semantic HTML
+- Proper button labels
+- Color contrast ratios meet WCAG standards
+- Keyboard navigation support
+- Screen reader friendly
+
+## STAFF STRUCTURE (FOR CONTEXT)
+The system tracks these staff roles:
+- 1 Service Manager
+- 2 Service Advisors (shift-based)
+- 1 Senior Technician (also handles QC)
+- 4 Technicians (3 for regular service, 1 for repairs)
+- 1 Cashier
+- 2 Wash Team members
+- 1 Parts Assistant
+
+## ADDITIONAL REQUIREMENTS
+- No external API calls
+- All data persists across sessions
+- Clean, maintainable code
+- Component-based architecture
+- Reusable UI components (StatusBadge, StatCard, Modal)
+- Professional color scheme throughout
+- Loading states where appropriate
+- Empty states with helpful messages
+
+Generate a complete, production-ready React application that can be used immediately for managing a Honda service center operations.
