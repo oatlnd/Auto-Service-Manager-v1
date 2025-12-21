@@ -7,8 +7,12 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-function getUserRole(): string {
-  return localStorage.getItem("userRole") || "Admin";
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
 }
 
 export async function apiRequest(
@@ -20,7 +24,7 @@ export async function apiRequest(
     method,
     headers: {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      "X-User-Role": getUserRole(),
+      ...getAuthHeaders(),
     },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
@@ -39,7 +43,7 @@ export const getQueryFn: <T>(options: {
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
       headers: {
-        "X-User-Role": getUserRole(),
+        ...getAuthHeaders(),
       },
     });
 

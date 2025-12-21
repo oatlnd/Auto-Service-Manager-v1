@@ -1,11 +1,37 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, insertTechnicianSchema, USER_ROLES } from "@shared/schema";
+import { storage, type Session } from "./storage";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, insertTechnicianSchema, USER_ROLES, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
+declare global {
+  namespace Express {
+    interface Request {
+      session?: Session;
+    }
+  }
+}
+
+async function getSessionFromRequest(req: Request): Promise<Session | undefined> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return undefined;
+  
+  const sessionId = authHeader.slice(7);
+  return storage.getSession(sessionId);
+}
+
 function getRoleFromRequest(req: Request): string {
+  if (req.session) {
+    return req.session.user.role;
+  }
   return (req.headers["x-user-role"] as string) || "Job Card";
+}
+
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.session) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  next();
 }
 
 function requireRole(...allowedRoles: string[]) {
@@ -28,6 +54,57 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  app.use(async (req, res, next) => {
+    req.session = await getSessionFromRequest(req);
+    next();
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const parsed = loginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid credentials format" });
+      }
+
+      const { username, password } = parsed.data;
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+
+      const session = await storage.createSession(user.id);
+      res.json({ 
+        token: session.id,
+        user: session.user
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith("Bearer ")) {
+        const sessionId = authHeader.slice(7);
+        await storage.deleteSession(sessionId);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ error: "Logout failed" });
+    }
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    if (!req.session) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    res.json(req.session.user);
+  });
+
   app.get("/api/job-cards", async (req, res) => {
     try {
       const role = getRoleFromRequest(req);

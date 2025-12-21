@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { USER_ROLES } from "@shared/schema";
+import { useAuth } from "./AuthContext";
 
 type UserRole = typeof USER_ROLES[number];
 
 interface UserRoleContextType {
   role: UserRole;
-  setRole: (role: UserRole) => void;
   canViewRevenue: boolean;
   isAdmin: boolean;
   isManager: boolean;
@@ -14,29 +14,15 @@ interface UserRoleContextType {
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
 
 export function UserRoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRoleState] = useState<UserRole>(() => {
-    const stored = localStorage.getItem("userRole");
-    if (stored && USER_ROLES.includes(stored as UserRole)) {
-      return stored as UserRole;
-    }
-    return "Admin";
-  });
-
-  const setRole = (newRole: UserRole) => {
-    setRoleState(newRole);
-    localStorage.setItem("userRole", newRole);
-  };
-
-  useEffect(() => {
-    localStorage.setItem("userRole", role);
-  }, [role]);
-
+  const { user } = useAuth();
+  
+  const role = (user?.role as UserRole) || "Job Card";
   const canViewRevenue = role === "Admin" || role === "Manager";
   const isAdmin = role === "Admin";
   const isManager = role === "Manager";
 
   return (
-    <UserRoleContext.Provider value={{ role, setRole, canViewRevenue, isAdmin, isManager }}>
+    <UserRoleContext.Provider value={{ role, canViewRevenue, isAdmin, isManager }}>
       {children}
     </UserRoleContext.Provider>
   );

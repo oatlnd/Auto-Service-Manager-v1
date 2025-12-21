@@ -1,12 +1,25 @@
 import type { 
   JobCard, InsertJobCard, DailyStatistics, BayStatus, 
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
-  Technician, InsertTechnician,
+  Technician, InsertTechnician, User,
   BAYS, JOB_STATUSES 
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
+export interface Session {
+  id: string;
+  userId: string;
+  user: Omit<User, "password">;
+  expiresAt: Date;
+}
+
 export interface IStorage {
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
+  createSession(userId: string): Promise<Session>;
+  getSession(sessionId: string): Promise<Session | undefined>;
+  deleteSession(sessionId: string): Promise<boolean>;
+  
   getJobCards(): Promise<JobCard[]>;
   getJobCard(id: string): Promise<JobCard | undefined>;
   getRecentJobCards(limit: number): Promise<JobCard[]>;
@@ -42,20 +55,26 @@ export class MemStorage implements IStorage {
   private staff: Map<string, Staff>;
   private attendance: Map<string, Attendance>;
   private technicians: Map<string, Technician>;
+  private users: Map<string, User>;
+  private sessions: Map<string, Session>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
   private technicianIdCounter: number;
+  private userIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
     this.staff = new Map();
     this.attendance = new Map();
     this.technicians = new Map();
+    this.users = new Map();
+    this.sessions = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
     this.technicianIdCounter = 1;
+    this.userIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -165,6 +184,17 @@ export class MemStorage implements IStorage {
     sampleTechnicians.forEach((t) => {
       const id = `TECH${String(this.technicianIdCounter++).padStart(3, "0")}`;
       this.technicians.set(id, { ...t, id, createdAt: new Date().toISOString() });
+    });
+
+    const sampleUsers: { username: string; password: string; role: string; name: string; staffId?: string }[] = [
+      { username: "admin", password: "admin123", role: "Admin", name: "Arun Kumar", staffId: "STF001" },
+      { username: "manager", password: "manager123", role: "Manager", name: "Priya Shankar", staffId: "STF002" },
+      { username: "staff1", password: "staff123", role: "Job Card", name: "Ramesh Nair", staffId: "STF003" },
+    ];
+
+    sampleUsers.forEach((u) => {
+      const id = `USR${String(this.userIdCounter++).padStart(3, "0")}`;
+      this.users.set(id, { ...u, id, staffId: u.staffId || null });
     });
   }
 
@@ -418,6 +448,48 @@ export class MemStorage implements IStorage {
 
   async deleteTechnician(id: string): Promise<boolean> {
     return this.technicians.delete(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.username === username);
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async createSession(userId: string): Promise<Session> {
+    const user = await this.getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const sessionId = randomUUID();
+    const { password, ...userWithoutPassword } = user;
+    
+    const session: Session = {
+      id: sessionId,
+      userId,
+      user: userWithoutPassword,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    };
+    
+    this.sessions.set(sessionId, session);
+    return session;
+  }
+
+  async getSession(sessionId: string): Promise<Session | undefined> {
+    const session = this.sessions.get(sessionId);
+    if (!session) return undefined;
+    
+    if (new Date() > session.expiresAt) {
+      this.sessions.delete(sessionId);
+      return undefined;
+    }
+    
+    return session;
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    return this.sessions.delete(sessionId);
   }
 }
 

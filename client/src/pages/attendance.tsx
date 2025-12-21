@@ -66,8 +66,9 @@ export default function AttendancePage() {
   const { data: historicalAttendance = [], isLoading: loadingHistory } = useQuery<Attendance[]>({
     queryKey: ["/api/attendance", selectedDate],
     queryFn: async () => {
+      const token = localStorage.getItem("authToken");
       const res = await fetch(`/api/attendance?date=${selectedDate}`, {
-        headers: { "X-User-Role": localStorage.getItem("userRole") || "Admin" },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
@@ -283,26 +284,58 @@ export default function AttendancePage() {
                                 </Button>
                               ) : (
                                 <div className="flex flex-wrap gap-1">
-                                  {ATTENDANCE_STATUSES.map((status) => (
-                                    <Button
-                                      key={status}
-                                      size="sm"
-                                      variant={status === "Present" ? "default" : "outline"}
-                                      onClick={() => markAttendanceMutation.mutate({
-                                        staffId: staff.id,
-                                        status,
-                                        checkInTime: format(new Date(), "HH:mm"),
-                                      })}
-                                      disabled={markAttendanceMutation.isPending}
-                                      data-testid={`button-mark-${status.toLowerCase()}-${staff.id}`}
-                                    >
-                                      {markAttendanceMutation.isPending ? (
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                      ) : (
-                                        status
-                                      )}
-                                    </Button>
-                                  ))}
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => markAttendanceMutation.mutate({
+                                      staffId: staff.id,
+                                      status: "Present",
+                                      checkInTime: format(new Date(), "HH:mm"),
+                                    })}
+                                    disabled={markAttendanceMutation.isPending}
+                                    data-testid={`button-mark-present-${staff.id}`}
+                                  >
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    {t("attendance.present")}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => markAttendanceMutation.mutate({
+                                      staffId: staff.id,
+                                      status: "Late",
+                                      checkInTime: format(new Date(), "HH:mm"),
+                                    })}
+                                    disabled={markAttendanceMutation.isPending}
+                                    data-testid={`button-mark-late-${staff.id}`}
+                                  >
+                                    {t("attendance.late")}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => markAttendanceMutation.mutate({
+                                      staffId: staff.id,
+                                      status: "Leave",
+                                    })}
+                                    disabled={markAttendanceMutation.isPending}
+                                    data-testid={`button-mark-leave-${staff.id}`}
+                                  >
+                                    {t("attendance.leave")}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => markAttendanceMutation.mutate({
+                                      staffId: staff.id,
+                                      status: "Absent",
+                                    })}
+                                    disabled={markAttendanceMutation.isPending}
+                                    data-testid={`button-mark-absent-${staff.id}`}
+                                  >
+                                    {t("attendance.absent")}
+                                  </Button>
                                 </div>
                               )}
                             </TableCell>

@@ -165,5 +165,19 @@
     "errorOccurred": "An error occurred",
     "accessDenied": "Access denied or error loading data",
     "loadError": "Failed to load data. Please try again."
+  },
+  "auth": {
+    "title": "Honda Service Center",
+    "subtitle": "Sign in to manage service operations",
+    "username": "Username",
+    "password": "Password",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password",
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "loginSuccess": "Login successful",
+    "invalidCredentials": "Invalid username or password",
+    "enterCredentials": "Please enter username and password",
+    "demoAccounts": "Demo Accounts:"
   }
 }
