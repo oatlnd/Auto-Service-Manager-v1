@@ -90,7 +90,7 @@ export default function JobCards() {
   const { toast } = useToast();
   const { canViewRevenue, isLimitedRole, isService } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("non-completed");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -172,21 +172,26 @@ export default function JobCards() {
     },
   });
 
-  const filteredJobs = jobCards.filter((job) => {
-    const matchesSearch = 
-      job.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.registration.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    
-    const limitedRoleStatuses = ["Pending", "In Progress"];
-    const matchesLimitedRole = !isLimitedRole || limitedRoleStatuses.includes(job.status);
-    
-    const matchesServiceBay = !isService || job.bay === "Wash Bay 1" || job.bay === "Wash Bay 2";
-    
-    return matchesSearch && matchesStatus && matchesLimitedRole && matchesServiceBay;
-  });
+  const filteredJobs = jobCards
+    .filter((job) => {
+      const matchesSearch = 
+        job.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.registration.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.id.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = 
+        statusFilter === "all" ? true : 
+        statusFilter === "non-completed" ? job.status !== "Completed" :
+        job.status === statusFilter;
+      
+      const limitedRoleStatuses = ["Pending", "In Progress"];
+      const matchesLimitedRole = !isLimitedRole || limitedRoleStatuses.includes(job.status);
+      
+      const matchesServiceBay = !isService || job.bay === "Wash Bay 1" || job.bay === "Wash Bay 2";
+      
+      return matchesSearch && matchesStatus && matchesLimitedRole && matchesServiceBay;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const formatCurrency = (amount: number) => `LKR ${amount.toLocaleString()}`;
 
@@ -223,7 +228,8 @@ export default function JobCards() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="non-completed">{t("jobCards.nonCompleted")}</SelectItem>
+                <SelectItem value="all">{t("jobCards.allStatus")}</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 {!isLimitedRole && (

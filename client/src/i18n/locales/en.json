@@ -81,6 +81,8 @@
     "completed": "Completed",
     "searchPlaceholder": "Search by name, vehicle or job ID...",
     "allStatuses": "All Statuses",
+    "allStatus": "All Status",
+    "nonCompleted": "Non-Completed",
     "noJobCards": "No job cards found",
     "createFirst": "Create your first job card"
   },
