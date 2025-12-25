@@ -910,122 +910,172 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending }: Edi
             <Badge variant="outline">{job.id}</Badge>
           </div>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-bikeModel">Bike Model *</Label>
+                <Select
+                  value={formData.bikeModel}
+                  onValueChange={(value) => updateField("bikeModel", value as typeof HONDA_MODELS[number])}
+                >
+                  <SelectTrigger data-testid="select-edit-bike-model">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HONDA_MODELS.map((model) => (
+                      <SelectItem key={model} value={model}>{model}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-registration">Registration Number *</Label>
+                <Input
+                  id="edit-registration"
+                  value={formData.registration ?? ""}
+                  onChange={(e) => updateField("registration", e.target.value.toUpperCase())}
+                  placeholder="e.g., NP-1234"
+                  data-testid="input-edit-registration"
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-customerName">Customer Name</Label>
+              <Label htmlFor="edit-odometer">Odometer Reading (km)</Label>
               <Input
-                id="edit-customerName"
-                value={formData.customerName ?? ""}
-                onChange={(e) => updateField("customerName", e.target.value)}
-                data-testid="input-edit-customer-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-phone">Phone Number</Label>
-              <Input
-                id="edit-phone"
-                value={formData.phone ?? ""}
-                onChange={(e) => updateField("phone", e.target.value)}
-                data-testid="input-edit-phone"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-bikeModel">Bike Model</Label>
-              <Select
-                value={formData.bikeModel}
-                onValueChange={(value) => updateField("bikeModel", value as typeof HONDA_MODELS[number])}
-              >
-                <SelectTrigger data-testid="select-edit-bike-model">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {HONDA_MODELS.map((model) => (
-                    <SelectItem key={model} value={model}>{model}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-registration">Registration Number</Label>
-              <Input
-                id="edit-registration"
-                value={formData.registration ?? ""}
-                onChange={(e) => updateField("registration", e.target.value.toUpperCase())}
-                data-testid="input-edit-registration"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-bay">Assign Bay</Label>
-              <Select
-                value={formData.bay}
-                onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
-              >
-                <SelectTrigger data-testid="select-edit-bay">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {BAYS.map((bay) => (
-                    <SelectItem key={bay} value={bay}>{bay}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-technician">Assign Technician</Label>
-              <Select
-                value={formData.assignedTo}
-                onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
-              >
-                <SelectTrigger data-testid="select-edit-technician">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TECHNICIANS.map((tech) => (
-                    <SelectItem key={tech} value={tech}>{tech}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-cost">Estimated Cost (LKR)</Label>
-              <Input
-                id="edit-cost"
+                id="edit-odometer"
                 type="number"
-                value={formData.cost ?? ""}
-                onChange={(e) => updateField("cost", parseInt(e.target.value) || 0)}
-                data-testid="input-edit-cost"
+                value={formData.odometer ?? ""}
+                onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
+                placeholder="Enter odometer reading"
+                data-testid="input-edit-odometer"
               />
             </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-customerName">Customer Name *</Label>
+                <Input
+                  id="edit-customerName"
+                  value={formData.customerName ?? ""}
+                  onChange={(e) => updateField("customerName", e.target.value)}
+                  placeholder="Enter customer name"
+                  data-testid="input-edit-customer-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone Number *</Label>
+                <Input
+                  id="edit-phone"
+                  value={formData.phone ?? ""}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  placeholder="Enter phone number"
+                  data-testid="input-edit-phone"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Requests</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-serviceType">Service Type</Label>
+                <Select
+                  value={formData.serviceType}
+                  onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
+                >
+                  <SelectTrigger data-testid="select-edit-service-type">
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_CATEGORIES.map((category) => (
+                      <SelectGroup key={category}>
+                        <SelectLabel className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</SelectLabel>
+                        {getServiceTypesByCategory(category).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-cost">Estimated Cost (LKR)</Label>
+                <Input
+                  id="edit-cost"
+                  type="number"
+                  value={formData.cost ?? ""}
+                  onChange={(e) => updateField("cost", parseInt(e.target.value) || 0)}
+                  placeholder="Enter estimated cost"
+                  data-testid="input-edit-cost"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-bay">Assign Bay</Label>
+                <Select
+                  value={formData.bay}
+                  onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
+                >
+                  <SelectTrigger data-testid="select-edit-bay">
+                    <SelectValue placeholder="Select bay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BAYS.map((bay) => (
+                      <SelectItem key={bay} value={bay}>{bay}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-technician">Assign Technician</Label>
+                <Select
+                  value={formData.assignedTo}
+                  onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
+                >
+                  <SelectTrigger data-testid="select-edit-technician">
+                    <SelectValue placeholder="Select technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TECHNICIANS.map((tech) => (
+                      <SelectItem key={tech} value={tech}>{tech}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-estimatedTime">Estimated Time</Label>
               <Input
                 id="edit-estimatedTime"
                 value={formData.estimatedTime ?? ""}
                 onChange={(e) => updateField("estimatedTime", e.target.value)}
+                placeholder="e.g., 2 hours"
                 data-testid="input-edit-estimated-time"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="edit-repairDetails">Notes / Repair Details</Label>
-            <Textarea
-              id="edit-repairDetails"
-              value={formData.repairDetails ?? ""}
-              onChange={(e) => updateField("repairDetails", e.target.value)}
-              className="min-h-24"
-              data-testid="textarea-edit-repair-details"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="edit-repairDetails">Notes / Repair Details</Label>
+              <Textarea
+                id="edit-repairDetails"
+                value={formData.repairDetails ?? ""}
+                onChange={(e) => updateField("repairDetails", e.target.value)}
+                placeholder="Enter any additional notes or repair details..."
+                className="min-h-24"
+                data-testid="textarea-edit-repair-details"
+              />
+            </div>
           </div>
 
           <DialogFooter>
