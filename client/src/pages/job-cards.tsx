@@ -461,17 +461,11 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
     if (!formData.phone.trim() || formData.phone.length < 10) {
       newErrors.phone = "Valid phone number is required";
     }
+    if (!formData.bikeModel) {
+      newErrors.bikeModel = "Bike model is required";
+    }
     if (!formData.registration.trim()) {
       newErrors.registration = "Registration number is required";
-    }
-    if (formData.odometer < 0) {
-      newErrors.odometer = "Odometer must be positive";
-    }
-    if (formData.cost <= 0) {
-      newErrors.cost = "Cost must be greater than 0";
-    }
-    if (!formData.estimatedTime.trim()) {
-      newErrors.estimatedTime = "Estimated time is required";
     }
 
     setErrors(newErrors);
@@ -509,177 +503,179 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
           <DialogTitle>Create New Job Card</DialogTitle>
           <DialogDescription>Fill in the details to create a new service job card.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="customerName">Customer Name *</Label>
-              <Input
-                id="customerName"
-                value={formData.customerName}
-                onChange={(e) => updateField("customerName", e.target.value)}
-                placeholder="Enter customer name"
-                className={errors.customerName ? "border-destructive" : ""}
-                data-testid="input-customer-name"
-              />
-              {errors.customerName && <p className="text-xs text-destructive">{errors.customerName}</p>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bikeModel">Bike Model *</Label>
+                <Select
+                  value={formData.bikeModel}
+                  onValueChange={(value) => updateField("bikeModel", value as typeof HONDA_MODELS[number])}
+                >
+                  <SelectTrigger data-testid="select-bike-model" className={errors.bikeModel ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HONDA_MODELS.map((model) => (
+                      <SelectItem key={model} value={model}>{model}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.bikeModel && <p className="text-xs text-destructive">{errors.bikeModel}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="registration">Registration Number *</Label>
+                <Input
+                  id="registration"
+                  value={formData.registration}
+                  onChange={(e) => updateField("registration", e.target.value.toUpperCase())}
+                  placeholder="e.g., NP-1234"
+                  className={errors.registration ? "border-destructive" : ""}
+                  data-testid="input-registration"
+                />
+                {errors.registration && <p className="text-xs text-destructive">{errors.registration}</p>}
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number *</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                placeholder="Enter phone number"
-                className={errors.phone ? "border-destructive" : ""}
-                data-testid="input-phone"
-              />
-              {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bikeModel">Bike Model *</Label>
-              <Select
-                value={formData.bikeModel}
-                onValueChange={(value) => updateField("bikeModel", value as typeof HONDA_MODELS[number])}
-              >
-                <SelectTrigger data-testid="select-bike-model">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HONDA_MODELS.map((model) => (
-                    <SelectItem key={model} value={model}>{model}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="registration">Registration Number *</Label>
-              <Input
-                id="registration"
-                value={formData.registration}
-                onChange={(e) => updateField("registration", e.target.value.toUpperCase())}
-                placeholder="e.g., NP-1234"
-                className={errors.registration ? "border-destructive" : ""}
-                data-testid="input-registration"
-              />
-              {errors.registration && <p className="text-xs text-destructive">{errors.registration}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="odometer">Odometer Reading (km) *</Label>
+              <Label htmlFor="odometer">Odometer Reading (km)</Label>
               <Input
                 id="odometer"
                 type="number"
                 value={formData.odometer || ""}
                 onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
                 placeholder="Enter odometer reading"
-                className={errors.odometer ? "border-destructive" : ""}
                 data-testid="input-odometer"
               />
-              {errors.odometer && <p className="text-xs text-destructive">{errors.odometer}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="serviceType">Service Type *</Label>
-              <Select
-                value={formData.serviceType}
-                onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
-              >
-                <SelectTrigger data-testid="select-service-type">
-                  <SelectValue placeholder="Select service type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICE_CATEGORIES.map((category) => (
-                    <SelectGroup key={category}>
-                      <SelectLabel className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</SelectLabel>
-                      {getServiceTypesByCategory(category).map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bay">Assign Bay *</Label>
-              <Select
-                value={formData.bay}
-                onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
-              >
-                <SelectTrigger data-testid="select-bay">
-                  <SelectValue placeholder="Select bay" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BAYS.map((bay) => (
-                    <SelectItem key={bay} value={bay}>{bay}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="technician">Assign Technician *</Label>
-              <Select
-                value={formData.assignedTo}
-                onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
-              >
-                <SelectTrigger data-testid="select-technician">
-                  <SelectValue placeholder="Select technician" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TECHNICIANS.map((tech) => (
-                    <SelectItem key={tech} value={tech}>{tech}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Customer Name *</Label>
+                <Input
+                  id="customerName"
+                  value={formData.customerName}
+                  onChange={(e) => updateField("customerName", e.target.value)}
+                  placeholder="Enter customer name"
+                  className={errors.customerName ? "border-destructive" : ""}
+                  data-testid="input-customer-name"
+                />
+                {errors.customerName && <p className="text-xs text-destructive">{errors.customerName}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  placeholder="Enter phone number"
+                  className={errors.phone ? "border-destructive" : ""}
+                  data-testid="input-phone"
+                />
+                {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cost">Estimated Cost (LKR) *</Label>
-              <Input
-                id="cost"
-                type="number"
-                value={formData.cost || ""}
-                onChange={(e) => updateField("cost", parseInt(e.target.value) || 0)}
-                placeholder="Enter estimated cost"
-                className={errors.cost ? "border-destructive" : ""}
-                data-testid="input-cost"
-              />
-              {errors.cost && <p className="text-xs text-destructive">{errors.cost}</p>}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Requests</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="serviceType">Service Type</Label>
+                <Select
+                  value={formData.serviceType}
+                  onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
+                >
+                  <SelectTrigger data-testid="select-service-type">
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_CATEGORIES.map((category) => (
+                      <SelectGroup key={category}>
+                        <SelectLabel className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</SelectLabel>
+                        {getServiceTypesByCategory(category).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cost">Estimated Cost (LKR)</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  value={formData.cost || ""}
+                  onChange={(e) => updateField("cost", parseInt(e.target.value) || 0)}
+                  placeholder="Enter estimated cost"
+                  data-testid="input-cost"
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bay">Assign Bay</Label>
+                <Select
+                  value={formData.bay}
+                  onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
+                >
+                  <SelectTrigger data-testid="select-bay">
+                    <SelectValue placeholder="Select bay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BAYS.map((bay) => (
+                      <SelectItem key={bay} value={bay}>{bay}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="technician">Assign Technician</Label>
+                <Select
+                  value={formData.assignedTo}
+                  onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
+                >
+                  <SelectTrigger data-testid="select-technician">
+                    <SelectValue placeholder="Select technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TECHNICIANS.map((tech) => (
+                      <SelectItem key={tech} value={tech}>{tech}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="estimatedTime">Estimated Time *</Label>
+              <Label htmlFor="estimatedTime">Estimated Time</Label>
               <Input
                 id="estimatedTime"
                 value={formData.estimatedTime}
                 onChange={(e) => updateField("estimatedTime", e.target.value)}
                 placeholder="e.g., 2 hours"
-                className={errors.estimatedTime ? "border-destructive" : ""}
                 data-testid="input-estimated-time"
               />
-              {errors.estimatedTime && <p className="text-xs text-destructive">{errors.estimatedTime}</p>}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="repairDetails">Notes / Repair Details</Label>
-            <Textarea
-              id="repairDetails"
-              value={formData.repairDetails}
-              onChange={(e) => updateField("repairDetails", e.target.value)}
-              placeholder="Enter any additional notes or repair details..."
-              className="min-h-24"
-              data-testid="textarea-repair-details"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="repairDetails">Notes / Repair Details</Label>
+              <Textarea
+                id="repairDetails"
+                value={formData.repairDetails}
+                onChange={(e) => updateField("repairDetails", e.target.value)}
+                placeholder="Enter any additional notes or repair details..."
+                className="min-h-24"
+                data-testid="textarea-repair-details"
+              />
+            </div>
           </div>
 
           {formData.cost > 0 && (
