@@ -62,6 +62,7 @@
     "addJobCard": "Add Job Card",
     "editJobCard": "Edit Job Card",
     "jobId": "Job ID",
+    "tagNo": "Tag No",
     "customerName": "Customer Name",
     "vehicleNumber": "Vehicle Number",
     "bikeModel": "Bike Model",

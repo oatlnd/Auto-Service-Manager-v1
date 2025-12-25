@@ -52,6 +52,7 @@ import type { JobCard, JOB_STATUSES, Staff } from "@shared/schema";
 import { HONDA_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
 
 interface FormData {
+  tagNo: string;
   customerName: string;
   phone: string;
   bikeModel: typeof HONDA_MODELS[number];
@@ -67,6 +68,7 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
+  tagNo: "",
   customerName: "",
   phone: "",
   bikeModel: "Shine",
@@ -252,6 +254,7 @@ export default function JobCards() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Job ID</TableHead>
+                  <TableHead className="hidden sm:table-cell">Tag No</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead className="hidden md:table-cell">Bike Details</TableHead>
                   <TableHead className="hidden sm:table-cell">Service Type</TableHead>
@@ -266,6 +269,7 @@ export default function JobCards() {
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-12" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                       <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
                       <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
@@ -277,7 +281,7 @@ export default function JobCards() {
                   ))
                 ) : filteredJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canViewRevenue ? 8 : 7} className="text-center py-12">
+                    <TableCell colSpan={canViewRevenue ? 9 : 8} className="text-center py-12">
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
                       <p className="text-muted-foreground">
                         {searchQuery || statusFilter !== "all" 
@@ -290,6 +294,7 @@ export default function JobCards() {
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover-elevate" data-testid={`row-job-${job.id}`}>
                       <TableCell className="font-medium">{job.id}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{job.tagNo || "-"}</TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{job.customerName}</p>
@@ -548,16 +553,28 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                 {errors.registration && <p className="text-xs text-destructive">{errors.registration}</p>}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="odometer">Odometer Reading (km)</Label>
-              <Input
-                id="odometer"
-                type="number"
-                value={formData.odometer || ""}
-                onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
-                placeholder="Enter odometer reading"
-                data-testid="input-odometer"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tagNo">Tag No</Label>
+                <Input
+                  id="tagNo"
+                  value={formData.tagNo}
+                  onChange={(e) => updateField("tagNo", e.target.value)}
+                  placeholder="e.g., T001"
+                  data-testid="input-tag-no"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="odometer">Odometer Reading (km)</Label>
+                <Input
+                  id="odometer"
+                  type="number"
+                  value={formData.odometer || ""}
+                  onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
+                  placeholder="Enter odometer reading"
+                  data-testid="input-odometer"
+                />
+              </div>
             </div>
           </div>
 
@@ -753,7 +770,11 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <h4 className="text-sm text-muted-foreground mb-1">Tag No</h4>
+              <p className="font-medium">{job.tagNo || "-"}</p>
+            </div>
             <div>
               <h4 className="text-sm text-muted-foreground mb-1">Odometer</h4>
               <p className="font-medium">{job.odometer.toLocaleString()} km</p>
@@ -950,16 +971,28 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-odometer">Odometer Reading (km)</Label>
-              <Input
-                id="edit-odometer"
-                type="number"
-                value={formData.odometer ?? ""}
-                onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
-                placeholder="Enter odometer reading"
-                data-testid="input-edit-odometer"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-tagNo">Tag No</Label>
+                <Input
+                  id="edit-tagNo"
+                  value={formData.tagNo ?? ""}
+                  onChange={(e) => updateField("tagNo", e.target.value)}
+                  placeholder="e.g., T001"
+                  data-testid="input-edit-tag-no"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-odometer">Odometer Reading (km)</Label>
+                <Input
+                  id="edit-odometer"
+                  type="number"
+                  value={formData.odometer ?? ""}
+                  onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
+                  placeholder="Enter odometer reading"
+                  data-testid="input-edit-odometer"
+                />
+              </div>
             </div>
           </div>
 

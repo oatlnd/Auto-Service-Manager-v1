@@ -93,6 +93,7 @@ export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as con
 
 export const jobCardSchema = z.object({
   id: z.string(),
+  tagNo: z.string().optional(),
   customerName: z.string().min(1, "Customer name is required"),
   phone: z.string().min(10, "Valid phone number required"),
   bikeModel: z.enum(HONDA_MODELS),
