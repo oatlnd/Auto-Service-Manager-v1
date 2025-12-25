@@ -625,41 +625,6 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bay">Assign Bay</Label>
-                <Select
-                  value={formData.bay}
-                  onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
-                >
-                  <SelectTrigger data-testid="select-bay">
-                    <SelectValue placeholder="Select bay" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BAYS.map((bay) => (
-                      <SelectItem key={bay} value={bay}>{bay}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="technician">Assign Technician</Label>
-                <Select
-                  value={formData.assignedTo}
-                  onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
-                >
-                  <SelectTrigger data-testid="select-technician">
-                    <SelectValue placeholder="Select technician" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TECHNICIANS.map((tech) => (
-                      <SelectItem key={tech} value={tech}>{tech}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="estimatedTime">Estimated Time</Label>
               <Input
@@ -912,6 +877,44 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending }: Edi
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Assignment</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-bay">Assign Bay</Label>
+                <Select
+                  value={formData.bay}
+                  onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
+                >
+                  <SelectTrigger data-testid="select-edit-bay">
+                    <SelectValue placeholder="Select bay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BAYS.map((bay) => (
+                      <SelectItem key={bay} value={bay}>{bay}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-technician">Assign Technician</Label>
+                <Select
+                  value={formData.assignedTo}
+                  onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
+                >
+                  <SelectTrigger data-testid="select-edit-technician">
+                    <SelectValue placeholder="Select technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TECHNICIANS.map((tech) => (
+                      <SelectItem key={tech} value={tech}>{tech}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1016,41 +1019,6 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending }: Edi
                   placeholder="Enter estimated cost"
                   data-testid="input-edit-cost"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-bay">Assign Bay</Label>
-                <Select
-                  value={formData.bay}
-                  onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
-                >
-                  <SelectTrigger data-testid="select-edit-bay">
-                    <SelectValue placeholder="Select bay" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BAYS.map((bay) => (
-                      <SelectItem key={bay} value={bay}>{bay}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-technician">Assign Technician</Label>
-                <Select
-                  value={formData.assignedTo}
-                  onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
-                >
-                  <SelectTrigger data-testid="select-edit-technician">
-                    <SelectValue placeholder="Select technician" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TECHNICIANS.map((tech) => (
-                      <SelectItem key={tech} value={tech}>{tech}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
