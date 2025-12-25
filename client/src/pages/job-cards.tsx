@@ -74,7 +74,7 @@ const initialFormData: FormData = {
   odometer: 0,
   serviceType: "Service with Oil Spray (Oil Change)",
   status: "Pending",
-  bay: "Bay 1",
+  bay: "Sudershan",
   assignedTo: "Technician 1",
   cost: 1000,
   estimatedTime: "",
@@ -183,7 +183,7 @@ export default function JobCards() {
     const limitedRoleStatuses = ["Pending", "In Progress"];
     const matchesLimitedRole = !isLimitedRole || limitedRoleStatuses.includes(job.status);
     
-    const matchesServiceBay = !isService || job.bay === "Wash Bay";
+    const matchesServiceBay = !isService || job.bay === "Wash Bay 1" || job.bay === "Wash Bay 2";
     
     return matchesSearch && matchesStatus && matchesLimitedRole && matchesServiceBay;
   });

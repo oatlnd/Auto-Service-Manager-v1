@@ -61,7 +61,9 @@ export const SERVICE_TYPE_DETAILS: Record<typeof SERVICE_TYPES[number], { catego
   "1st Free Service": { category: "Company Free Service", price: 550 },
 };
 export const JOB_STATUSES = ["Pending", "In Progress", "Quality Check", "Completed"] as const;
-export const BAYS = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5", "Wash Bay"] as const;
+export const BAYS = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
+export const WASH_BAYS = ["Wash Bay 1", "Wash Bay 2"] as const;
+export const TECHNICIAN_BAYS = ["Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
 export const TECHNICIANS = ["Technician 1", "Technician 2", "Technician 3", "Technician 4", "Senior Technician"] as const;
 
 export const HONDA_MODELS = [

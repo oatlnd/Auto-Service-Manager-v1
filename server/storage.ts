@@ -92,6 +92,9 @@ export class MemStorage implements IStorage {
       this.staff.set(id, { ...s, id, createdAt: new Date().toISOString() });
     });
 
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    
     const sampleJobs: Omit<JobCard, "id">[] = [
       {
         customerName: "Rajesh Kumar",
@@ -102,7 +105,7 @@ export class MemStorage implements IStorage {
         serviceType: "Service with Oil Spray (Oil Change)",
         status: "In Progress",
         assignedTo: "Technician 1",
-        bay: "Bay 1",
+        bay: "Sudershan",
         estimatedTime: "45 mins",
         cost: 1000,
         repairDetails: "Oil change, filter replacement, chain adjustment",
@@ -118,16 +121,16 @@ export class MemStorage implements IStorage {
         registration: "NP-5678",
         odometer: 8750,
         serviceType: "Repair",
-        status: "Quality Check",
+        status: "In Progress",
         assignedTo: "Senior Technician",
-        bay: "Bay 4",
+        bay: "Vijandran",
         estimatedTime: "2 hours",
         cost: 5000,
         repairDetails: "Front brake pad replacement, disc inspection",
         advancePayment: 2500,
         remainingPayment: 2500,
         paymentStatus: "Advance Paid",
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        createdAt: twoDaysAgo,
       },
       {
         customerName: "Anand Murthy",
@@ -138,7 +141,7 @@ export class MemStorage implements IStorage {
         serviceType: "1st Free Service",
         status: "Completed",
         assignedTo: "Technician 2",
-        bay: "Bay 2",
+        bay: "Jayakandan",
         estimatedTime: "1 hour",
         cost: 550,
         repairDetails: "",
@@ -146,6 +149,24 @@ export class MemStorage implements IStorage {
         remainingPayment: 0,
         paymentStatus: "Paid in Full",
         createdAt: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        customerName: "Suresh Pillai",
+        phone: "0778765432",
+        bikeModel: "Activa 6G",
+        registration: "NP-3456",
+        odometer: 5200,
+        serviceType: "Water Wash",
+        status: "In Progress",
+        assignedTo: "Technician 3",
+        bay: "Wash Bay 1",
+        estimatedTime: "30 mins",
+        cost: 400,
+        repairDetails: "",
+        advancePayment: 400,
+        remainingPayment: 0,
+        paymentStatus: "Paid in Full",
+        createdAt: threeDaysAgo,
       },
     ];
 
@@ -312,7 +333,7 @@ export class MemStorage implements IStorage {
   }
 
   async getBayStatus(): Promise<BayStatus[]> {
-    const bays: (typeof BAYS[number])[] = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5", "Wash Bay"];
+    const bays: (typeof BAYS[number])[] = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"];
     const jobs = Array.from(this.jobCards.values());
 
     return bays.map((bay) => {

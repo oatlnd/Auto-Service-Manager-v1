@@ -91,11 +91,17 @@
     "available": "Available",
     "occupied": "Occupied",
     "washBay": "Wash Bay",
+    "washBays": "Wash Bays",
+    "technicianBays": "Technician Bays",
     "bayStatus": "Bay Status",
     "activeBays": "Active Bays",
     "availableBays": "Available Bays",
     "noActiveService": "No active service",
-    "bayReady": "Bay is ready for new jobs"
+    "bayReady": "Bay is ready for new jobs",
+    "started": "Started",
+    "today": "Today",
+    "day": "day",
+    "days": "days"
   },
   "reports": {
     "title": "Reports & Analytics",
