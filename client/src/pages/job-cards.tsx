@@ -48,8 +48,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { JobCard, JOB_STATUSES } from "@shared/schema";
-import { HONDA_MODELS, BAYS, TECHNICIANS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
+import type { JobCard, JOB_STATUSES, Staff } from "@shared/schema";
+import { HONDA_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
 
 interface FormData {
   customerName: string;
@@ -60,7 +60,7 @@ interface FormData {
   serviceType: typeof SERVICE_TYPES[number];
   status: typeof JOB_STATUSES[number];
   bay: typeof BAYS[number];
-  assignedTo: typeof TECHNICIANS[number];
+  assignedTo: string;
   cost: number;
   estimatedTime: string;
   repairDetails: string;
@@ -99,6 +99,10 @@ export default function JobCards() {
 
   const { data: jobCards = [], isLoading } = useQuery<JobCard[]>({
     queryKey: ["/api/job-cards"],
+  });
+
+  const { data: mechanics = [] } = useQuery<Staff[]>({
+    queryKey: ["/api/staff/by-skill", "Mechanic"],
   });
 
   const createMutation = useMutation({
@@ -391,6 +395,7 @@ export default function JobCards() {
           }
         }}
         isPending={updateMutation.isPending}
+        mechanics={mechanics}
       />
 
       <AlertDialog open={!!deleteJobId} onOpenChange={() => setDeleteJobId(null)}>
@@ -825,9 +830,10 @@ interface EditJobCardDialogProps {
   job: JobCard | null;
   onSubmit: (data: Partial<FormData>) => void;
   isPending: boolean;
+  mechanics: Staff[];
 }
 
-function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending }: EditJobCardDialogProps) {
+function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mechanics }: EditJobCardDialogProps) {
   const [formData, setFormData] = useState<Partial<FormData>>({});
 
   useEffect(() => {
@@ -899,14 +905,14 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending }: Edi
                 <Label htmlFor="edit-technician">Assign Technician</Label>
                 <Select
                   value={formData.assignedTo}
-                  onValueChange={(value) => updateField("assignedTo", value as typeof TECHNICIANS[number])}
+                  onValueChange={(value) => updateField("assignedTo", value)}
                 >
                   <SelectTrigger data-testid="select-edit-technician">
                     <SelectValue placeholder="Select technician" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TECHNICIANS.map((tech) => (
-                      <SelectItem key={tech} value={tech}>{tech}</SelectItem>
+                    {mechanics.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.name}>{staff.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
