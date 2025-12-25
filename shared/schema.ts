@@ -64,7 +64,6 @@ export const JOB_STATUSES = ["Pending", "In Progress", "Quality Check", "Complet
 export const BAYS = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
 export const WASH_BAYS = ["Wash Bay 1", "Wash Bay 2"] as const;
 export const TECHNICIAN_BAYS = ["Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
-export const TECHNICIANS = ["Technician 1", "Technician 2", "Technician 3", "Technician 4", "Senior Technician"] as const;
 
 export const HONDA_MODELS = [
   "CB350",
@@ -89,6 +88,7 @@ export const HONDA_MODELS = [
 
 export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Service", "Cashier"] as const;
 export const WORK_SKILLS = ["Mechanic", "Service"] as const;
+export type WorkSkill = typeof WORK_SKILLS[number];
 export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as const;
 
 export const jobCardSchema = z.object({
@@ -100,7 +100,7 @@ export const jobCardSchema = z.object({
   odometer: z.number().min(0, "Odometer reading must be positive"),
   serviceType: z.enum(SERVICE_TYPES),
   status: z.enum(JOB_STATUSES),
-  assignedTo: z.enum(TECHNICIANS),
+  assignedTo: z.string(),
   bay: z.enum(BAYS),
   estimatedTime: z.string(),
   cost: z.number().min(0, "Cost must be positive"),

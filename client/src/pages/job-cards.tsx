@@ -75,7 +75,7 @@ const initialFormData: FormData = {
   serviceType: "Service with Oil Spray (Oil Change)",
   status: "Pending",
   bay: "Sudershan",
-  assignedTo: "Technician 1",
+  assignedTo: "",
   cost: 1000,
   estimatedTime: "",
   repairDetails: "",
@@ -102,7 +102,7 @@ export default function JobCards() {
   });
 
   const { data: mechanics = [] } = useQuery<Staff[]>({
-    queryKey: ["/api/staff/by-skill", "Mechanic"],
+    queryKey: ["/api/staff/by-skill/Mechanic"],
   });
 
   const createMutation = useMutation({

@@ -55,8 +55,7 @@ client/src/
 │   ├── job-cards.tsx        # Job card CRUD
 │   ├── service-bays.tsx     # Bay status monitoring
 │   ├── reports.tsx          # Analytics and reports
-│   ├── staff-management.tsx # Staff CRUD (Admin only)
-│   ├── technicians.tsx      # Technician CRUD (Admin only)
+│   ├── staff-management.tsx # Staff CRUD with work skills (Admin only)
 │   └── attendance.tsx       # Attendance tracking
 ├── hooks/           # Custom React hooks
 ├── lib/             # Utilities and API client
@@ -69,7 +68,7 @@ server/
 
 shared/
 ├── schema.ts       # Database schema + Zod validation + TypeScript types
-                    # Includes Staff, Attendance, Technician, USER_ROLES, ATTENDANCE_STATUSES, BAYS
+                    # Includes Staff with work skills, Attendance, USER_ROLES, WORK_SKILLS, ATTENDANCE_STATUSES, BAYS
 ```
 
 ## Role-Based Access Control
@@ -89,7 +88,6 @@ shared/
 | Service Bays | Full | Full | Full | Full | Wash Bay only |
 | Reports | Full | Full | No revenue/avg | Hidden | Hidden |
 | Staff Management | CRUD | View only | Hidden | Hidden | Hidden |
-| Technicians | CRUD | View only | Hidden | Hidden | Hidden |
 | Attendance | Full + history edit | Today only | Hidden | Hidden | Hidden |
 
 ### Demo Accounts
@@ -128,21 +126,28 @@ shared/
 
 ## Recent Changes
 
+### December 25, 2025
+- Consolidated Staff and Technicians into unified Staff Management system
+- Added work skills (Mechanic, Service) to Staff for flexible assignment
+- Added "Cashier" role to USER_ROLES
+- Removed separate Technicians page and integrated into Staff Management
+- Job card technician assignment now uses staff members with "Mechanic" work skill
+- Updated sidebar to remove Technicians page
+- API: Added /api/staff/by-skill/:skill endpoint, removed /api/technicians endpoints
+- Sample data includes 10 staff members: 5 administrative + 5 technical with work skills
+
 ### December 21, 2025
 - Added Staff Management page with full CRUD operations (Admin only)
 - Implemented Attendance tracking with today's marking and historical view
 - Created role-based access control using UserRoleContext and X-User-Role header
 - Added role selector dropdown in header for switching between Admin/Manager/Job Card roles
-- Updated sidebar with Admin section containing Staff Management, Technicians, and Attendance pages
+- Updated sidebar with Admin section containing Staff Management and Attendance pages
 - Applied role-based visibility restrictions:
   - Revenue/cost hidden from Job Card role on Dashboard, Reports, and Job Cards pages
   - Admin section hidden from Job Card role
   - Historical attendance modification restricted to Admin only
-- Sample data includes 5 staff members with today's attendance records
-- Added Technicians management page with CRUD operations (Admin only for create/edit/delete)
-- Technicians are bike mechanics separate from Staff (who have system access roles)
+- Sample data includes staff members with today's attendance records
 - Added "Wash Bay" as the 6th service bay to the system (BAYS enum updated)
-- Sample data includes 5 technicians with various specializations
 
 ### December 2025 (Initial)
 - Implemented complete Honda Service Center Management System MVP

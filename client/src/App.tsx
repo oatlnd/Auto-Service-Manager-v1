@@ -16,7 +16,6 @@ import JobCards from "@/pages/job-cards";
 import ServiceBays from "@/pages/service-bays";
 import Reports from "@/pages/reports";
 import StaffManagement from "@/pages/staff-management";
-import Technicians from "@/pages/technicians";
 import Attendance from "@/pages/attendance";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -32,7 +31,6 @@ function Router() {
       <Route path="/service-bays" component={ServiceBays} />
       <Route path="/reports" component={Reports} />
       {canAccessAdmin && <Route path="/staff" component={StaffManagement} />}
-      {canAccessAdmin && <Route path="/technicians" component={Technicians} />}
       {canAccessAdmin && <Route path="/attendance" component={Attendance} />}
       <Route component={NotFound} />
     </Switch>

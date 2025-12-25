@@ -1,7 +1,7 @@
 import type { 
   JobCard, InsertJobCard, DailyStatistics, BayStatus, 
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
-  User, BAYS, JOB_STATUSES 
+  User, BAYS, JOB_STATUSES, WorkSkill 
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -42,7 +42,7 @@ export interface IStorage {
   updateAttendance(id: string, data: UpdateAttendance): Promise<Attendance | undefined>;
   getTodayAttendance(): Promise<Attendance[]>;
   
-  getStaffByWorkSkill(skill: "Mechanic" | "Service"): Promise<Staff[]>;
+  getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -100,7 +100,7 @@ export class MemStorage implements IStorage {
         odometer: 15420,
         serviceType: "Service with Oil Spray (Oil Change)",
         status: "In Progress",
-        assignedTo: "Technician 1",
+        assignedTo: "Kannan Selvam",
         bay: "Sudershan",
         estimatedTime: "45 mins",
         cost: 1000,
@@ -118,7 +118,7 @@ export class MemStorage implements IStorage {
         odometer: 8750,
         serviceType: "Repair",
         status: "In Progress",
-        assignedTo: "Senior Technician",
+        assignedTo: "Vimal Kumar",
         bay: "Vijandran",
         estimatedTime: "2 hours",
         cost: 5000,
@@ -136,7 +136,7 @@ export class MemStorage implements IStorage {
         odometer: 22100,
         serviceType: "1st Free Service",
         status: "Completed",
-        assignedTo: "Technician 2",
+        assignedTo: "Ravi Chandran",
         bay: "Jayakandan",
         estimatedTime: "1 hour",
         cost: 550,
@@ -154,7 +154,7 @@ export class MemStorage implements IStorage {
         odometer: 5200,
         serviceType: "Water Wash",
         status: "In Progress",
-        assignedTo: "Technician 3",
+        assignedTo: "Ragavan",
         bay: "Wash Bay 1",
         estimatedTime: "30 mins",
         cost: 400,
@@ -436,7 +436,7 @@ export class MemStorage implements IStorage {
     return this.getAttendance(today);
   }
 
-  async getStaffByWorkSkill(skill: "Mechanic" | "Service"): Promise<Staff[]> {
+  async getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]> {
     return Array.from(this.staff.values())
       .filter((s) => s.isActive && s.workSkills.includes(skill))
       .sort((a, b) => a.name.localeCompare(b.name));
