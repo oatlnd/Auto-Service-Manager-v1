@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, insertTechnicianSchema, USER_ROLES, loginSchema } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
 declare global {
@@ -382,66 +382,21 @@ export async function registerRoutes(
     res.json(USER_ROLES);
   });
 
-  app.get("/api/technicians", requireAuth, async (req, res) => {
-    try {
-      const technicians = await storage.getTechnicians();
-      res.json(technicians);
-    } catch (error) {
-      console.error("Error fetching technicians:", error);
-      res.status(500).json({ error: "Failed to fetch technicians" });
-    }
+  app.get("/api/work-skills", requireAuth, (req, res) => {
+    res.json(WORK_SKILLS);
   });
 
-  app.get("/api/technicians/:id", requireAuth, async (req, res) => {
+  app.get("/api/staff/by-skill/:skill", requireAuth, async (req, res) => {
     try {
-      const technician = await storage.getTechnician(req.params.id);
-      if (!technician) {
-        return res.status(404).json({ error: "Technician not found" });
+      const skill = req.params.skill as "Mechanic" | "Service";
+      if (!WORK_SKILLS.includes(skill)) {
+        return res.status(400).json({ error: "Invalid work skill" });
       }
-      res.json(technician);
+      const staff = await storage.getStaffByWorkSkill(skill);
+      res.json(staff);
     } catch (error) {
-      console.error("Error fetching technician:", error);
-      res.status(500).json({ error: "Failed to fetch technician" });
-    }
-  });
-
-  app.post("/api/technicians", requireRole("Admin"), async (req, res) => {
-    try {
-      const parsed = insertTechnicianSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.message });
-      }
-      const technician = await storage.createTechnician(parsed.data);
-      res.status(201).json(technician);
-    } catch (error) {
-      console.error("Error creating technician:", error);
-      res.status(500).json({ error: "Failed to create technician" });
-    }
-  });
-
-  app.patch("/api/technicians/:id", requireRole("Admin"), async (req, res) => {
-    try {
-      const technician = await storage.updateTechnician(req.params.id, req.body);
-      if (!technician) {
-        return res.status(404).json({ error: "Technician not found" });
-      }
-      res.json(technician);
-    } catch (error) {
-      console.error("Error updating technician:", error);
-      res.status(500).json({ error: "Failed to update technician" });
-    }
-  });
-
-  app.delete("/api/technicians/:id", requireRole("Admin"), async (req, res) => {
-    try {
-      const deleted = await storage.deleteTechnician(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Technician not found" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting technician:", error);
-      res.status(500).json({ error: "Failed to delete technician" });
+      console.error("Error fetching staff by skill:", error);
+      res.status(500).json({ error: "Failed to fetch staff by skill" });
     }
   });
 
