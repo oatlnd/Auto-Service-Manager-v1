@@ -87,7 +87,8 @@ export const HONDA_MODELS = [
   "Grazia",
 ] as const;
 
-export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Service"] as const;
+export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Service", "Cashier"] as const;
+export const WORK_SKILLS = ["Mechanic", "Service"] as const;
 export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as const;
 
 export const jobCardSchema = z.object({
@@ -136,6 +137,7 @@ export const staffSchema = z.object({
   phone: z.string().min(10, "Valid phone number required"),
   email: z.string().email().optional().or(z.literal("")),
   role: z.enum(USER_ROLES),
+  workSkills: z.array(z.enum(WORK_SKILLS)).default([]),
   isActive: z.boolean(),
   createdAt: z.string(),
 });

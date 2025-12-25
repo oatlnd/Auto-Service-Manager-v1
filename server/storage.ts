@@ -1,8 +1,7 @@
 import type { 
   JobCard, InsertJobCard, DailyStatistics, BayStatus, 
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
-  Technician, InsertTechnician, User,
-  BAYS, JOB_STATUSES 
+  User, BAYS, JOB_STATUSES 
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -43,48 +42,45 @@ export interface IStorage {
   updateAttendance(id: string, data: UpdateAttendance): Promise<Attendance | undefined>;
   getTodayAttendance(): Promise<Attendance[]>;
   
-  getTechnicians(): Promise<Technician[]>;
-  getTechnician(id: string): Promise<Technician | undefined>;
-  createTechnician(data: InsertTechnician): Promise<Technician>;
-  updateTechnician(id: string, data: Partial<InsertTechnician>): Promise<Technician | undefined>;
-  deleteTechnician(id: string): Promise<boolean>;
+  getStaffByWorkSkill(skill: "Mechanic" | "Service"): Promise<Staff[]>;
 }
 
 export class MemStorage implements IStorage {
   private jobCards: Map<string, JobCard>;
   private staff: Map<string, Staff>;
   private attendance: Map<string, Attendance>;
-  private technicians: Map<string, Technician>;
   private users: Map<string, User>;
   private sessions: Map<string, Session>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
-  private technicianIdCounter: number;
   private userIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
     this.staff = new Map();
     this.attendance = new Map();
-    this.technicians = new Map();
     this.users = new Map();
     this.sessions = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
-    this.technicianIdCounter = 1;
     this.userIdCounter = 1;
     this.initializeSampleData();
   }
 
   private initializeSampleData() {
     const sampleStaff: Omit<Staff, "id" | "createdAt">[] = [
-      { name: "Arun Kumar", phone: "0771234567", email: "arun@hondajaffna.lk", role: "Admin", isActive: true },
-      { name: "Priya Shankar", phone: "0779876543", email: "priya@hondajaffna.lk", role: "Manager", isActive: true },
-      { name: "Ramesh Nair", phone: "0765432109", email: "ramesh@hondajaffna.lk", role: "Job Card", isActive: true },
-      { name: "Suresh Pillai", phone: "0778765432", email: "suresh@hondajaffna.lk", role: "Job Card", isActive: true },
-      { name: "Karthik Rajan", phone: "0761234567", email: "karthik@hondajaffna.lk", role: "Job Card", isActive: true },
+      { name: "Arun Kumar", phone: "0771234567", email: "arun@hondajaffna.lk", role: "Admin", workSkills: [], isActive: true },
+      { name: "Priya Shankar", phone: "0779876543", email: "priya@hondajaffna.lk", role: "Manager", workSkills: [], isActive: true },
+      { name: "Ramesh Nair", phone: "0765432109", email: "ramesh@hondajaffna.lk", role: "Job Card", workSkills: [], isActive: true },
+      { name: "Suresh Pillai", phone: "0778765432", email: "suresh@hondajaffna.lk", role: "Cashier", workSkills: [], isActive: true },
+      { name: "Karthik Rajan", phone: "0761234567", email: "karthik@hondajaffna.lk", role: "Job Card", workSkills: [], isActive: true },
+      { name: "Kannan Selvam", phone: "0771111111", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
+      { name: "Vimal Kumar", phone: "0772222222", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
+      { name: "Ravi Chandran", phone: "0773333333", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
+      { name: "Senthil Murugan", phone: "0774444444", email: "", role: "Service", workSkills: ["Service"], isActive: true },
+      { name: "Mani Kandan", phone: "0775555555", email: "", role: "Service", workSkills: ["Service"], isActive: true },
     ];
 
     sampleStaff.forEach((s) => {
@@ -194,25 +190,12 @@ export class MemStorage implements IStorage {
       });
     });
 
-    const sampleTechnicians: Omit<Technician, "id" | "createdAt">[] = [
-      { name: "Kannan Selvam", phone: "0771111111", specialization: "Engine Repair", isActive: true },
-      { name: "Vimal Kumar", phone: "0772222222", specialization: "Electrical Systems", isActive: true },
-      { name: "Ravi Chandran", phone: "0773333333", specialization: "Brake & Suspension", isActive: true },
-      { name: "Senthil Murugan", phone: "0774444444", specialization: "General Service", isActive: true },
-      { name: "Mani Kandan", phone: "0775555555", specialization: "Senior Technician", isActive: true },
-    ];
-
-    sampleTechnicians.forEach((t) => {
-      const id = `TECH${String(this.technicianIdCounter++).padStart(3, "0")}`;
-      this.technicians.set(id, { ...t, id, createdAt: new Date().toISOString() });
-    });
-
     const sampleUsers: { username: string; password: string; role: string; name: string; staffId?: string }[] = [
       { username: "admin", password: "admin123", role: "Admin", name: "Arun Kumar", staffId: "STF001" },
       { username: "manager", password: "manager123", role: "Manager", name: "Priya Shankar", staffId: "STF002" },
       { username: "staff1", password: "staff123", role: "Job Card", name: "Ramesh Nair", staffId: "STF003" },
-      { username: "tech1", password: "tech123", role: "Technician", name: "Kannan Selvam" },
-      { username: "service1", password: "service123", role: "Service", name: "Vimal Kumar" },
+      { username: "tech1", password: "tech123", role: "Technician", name: "Kannan Selvam", staffId: "STF006" },
+      { username: "service1", password: "service123", role: "Service", name: "Senthil Murugan", staffId: "STF009" },
     ];
 
     sampleUsers.forEach((u) => {
@@ -453,41 +436,10 @@ export class MemStorage implements IStorage {
     return this.getAttendance(today);
   }
 
-  async getTechnicians(): Promise<Technician[]> {
-    return Array.from(this.technicians.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }
-
-  async getTechnician(id: string): Promise<Technician | undefined> {
-    return this.technicians.get(id);
-  }
-
-  async createTechnician(data: InsertTechnician): Promise<Technician> {
-    const id = `TECH${String(this.technicianIdCounter++).padStart(3, "0")}`;
-    const technician: Technician = {
-      ...data,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-    this.technicians.set(id, technician);
-    return technician;
-  }
-
-  async updateTechnician(id: string, data: Partial<InsertTechnician>): Promise<Technician | undefined> {
-    const existing = this.technicians.get(id);
-    if (!existing) return undefined;
-
-    const updated: Technician = {
-      ...existing,
-      ...data,
-    };
-    this.technicians.set(id, updated);
-    return updated;
-  }
-
-  async deleteTechnician(id: string): Promise<boolean> {
-    return this.technicians.delete(id);
+  async getStaffByWorkSkill(skill: "Mechanic" | "Service"): Promise<Staff[]> {
+    return Array.from(this.staff.values())
+      .filter((s) => s.isActive && s.workSkills.includes(skill))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
