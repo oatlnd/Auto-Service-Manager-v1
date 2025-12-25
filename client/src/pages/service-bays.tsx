@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Wrench, Calendar, Car, Hash, Clock } from "lucide-react";
+import { Wrench, Calendar, Car, Hash, Clock, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,75 @@ interface BayCardProps {
   t: (key: string) => string;
 }
 
-function BayCard({ bay, t }: BayCardProps) {
+function WashBayCard({ bay, t }: BayCardProps) {
+  return (
+    <Card 
+      className="border border-card-border overflow-hidden"
+      data-testid={`bay-card-${bay.bay.replace(/\s+/g, "-").toLowerCase()}`}
+    >
+      <div className={`h-2 ${bay.isOccupied ? "bg-red-500" : "bg-green-500"}`} />
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle className="text-lg">{bay.bay}</CardTitle>
+          <div className="flex items-center gap-2">
+            <div 
+              className={`w-3 h-3 rounded-full ${
+                bay.isOccupied 
+                  ? "bg-red-500 animate-pulse-dot" 
+                  : "bg-green-500"
+              }`}
+            />
+            <span className={`text-sm font-medium ${
+              bay.isOccupied 
+                ? "text-red-600 dark:text-red-400" 
+                : "text-green-600 dark:text-green-400"
+            }`}>
+              {bay.isOccupied ? t("serviceBays.occupied") : t("serviceBays.available")}
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {bay.isOccupied && bay.jobCard ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="font-medium">{bay.jobCard.id}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>{formatDate(bay.jobCard.createdAt)}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Car className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="font-medium">{bay.jobCard.registration}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>{bay.jobCard.assignedTo}</span>
+              </div>
+            </div>
+            <Link href="/job-cards" className="block">
+              <Button variant="outline" size="sm" className="w-full" data-testid={`button-view-details-${bay.bay.replace(/\s+/g, "-").toLowerCase()}`}>
+                {t("dashboard.viewAll")}
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-2">
+              <Wrench className="w-5 h-5 text-muted-foreground opacity-50" />
+            </div>
+            <p className="text-muted-foreground text-sm">{t("serviceBays.noActiveService")}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TechnicianBayCard({ bay, t }: BayCardProps) {
   const daysDiff = bay.jobCard ? calculateDaysDiff(bay.jobCard.createdAt) : 0;
   
   return (
@@ -194,7 +262,7 @@ export default function ServiceBays() {
               <h2 className="text-lg font-semibold mb-4" data-testid="text-wash-bays-section">{t("serviceBays.washBays")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredWashBays.map((bay) => (
-                  <BayCard key={bay.bay} bay={bay} t={t} />
+                  <WashBayCard key={bay.bay} bay={bay} t={t} />
                 ))}
               </div>
             </div>
@@ -205,7 +273,7 @@ export default function ServiceBays() {
               <h2 className="text-lg font-semibold mb-4" data-testid="text-technician-bays-section">{t("serviceBays.technicianBays")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTechBays.map((bay) => (
-                  <BayCard key={bay.bay} bay={bay} t={t} />
+                  <TechnicianBayCard key={bay.bay} bay={bay} t={t} />
                 ))}
               </div>
             </div>
