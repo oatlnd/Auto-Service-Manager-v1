@@ -29,7 +29,37 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
-export const SERVICE_TYPES = ["Regular Service", "Repair", "Premium Service"] as const;
+export const SERVICE_CATEGORIES = ["Paid Service", "Repair", "Company Free Service"] as const;
+
+export const SERVICE_TYPES = [
+  "Service with Oil Spray (Oil Change)",
+  "Oil Spray",
+  "Service with Oil Spray",
+  "Water Wash",
+  "Service Only",
+  "Oil Change Charge",
+  "Engine Work",
+  "Waste Oil",
+  "Mechanic Service",
+  "Repair",
+  "2nd Free Service",
+  "1st Free Service",
+] as const;
+
+export const SERVICE_TYPE_DETAILS: Record<typeof SERVICE_TYPES[number], { category: typeof SERVICE_CATEGORIES[number]; price: number }> = {
+  "Service with Oil Spray (Oil Change)": { category: "Paid Service", price: 1000 },
+  "Oil Spray": { category: "Paid Service", price: 200 },
+  "Service with Oil Spray": { category: "Paid Service", price: 900 },
+  "Water Wash": { category: "Paid Service", price: 400 },
+  "Service Only": { category: "Paid Service", price: 700 },
+  "Oil Change Charge": { category: "Repair", price: 0 },
+  "Engine Work": { category: "Repair", price: 0 },
+  "Waste Oil": { category: "Repair", price: 0 },
+  "Mechanic Service": { category: "Repair", price: 0 },
+  "Repair": { category: "Repair", price: 0 },
+  "2nd Free Service": { category: "Company Free Service", price: 550 },
+  "1st Free Service": { category: "Company Free Service", price: 550 },
+};
 export const JOB_STATUSES = ["Pending", "In Progress", "Quality Check", "Completed"] as const;
 export const BAYS = ["Bay 1", "Bay 2", "Bay 3", "Bay 4", "Bay 5", "Wash Bay"] as const;
 export const TECHNICIANS = ["Technician 1", "Technician 2", "Technician 3", "Technician 4", "Senior Technician"] as const;

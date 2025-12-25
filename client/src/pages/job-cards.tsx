@@ -12,7 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -47,7 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { JobCard, JOB_STATUSES } from "@shared/schema";
-import { HONDA_MODELS, BAYS, TECHNICIANS, SERVICE_TYPES } from "@shared/schema";
+import { HONDA_MODELS, BAYS, TECHNICIANS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
 
 interface FormData {
   customerName: string;
@@ -70,13 +72,17 @@ const initialFormData: FormData = {
   bikeModel: "Shine",
   registration: "",
   odometer: 0,
-  serviceType: "Regular Service",
+  serviceType: "Service with Oil Spray (Oil Change)",
   status: "Pending",
   bay: "Bay 1",
   assignedTo: "Technician 1",
-  cost: 0,
+  cost: 1000,
   estimatedTime: "",
   repairDetails: "",
+};
+
+const getServiceTypesByCategory = (category: typeof SERVICE_CATEGORIES[number]) => {
+  return SERVICE_TYPES.filter(st => SERVICE_TYPE_DETAILS[st].category === category);
 };
 
 export default function JobCards() {
@@ -429,7 +435,8 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
 
   const calculatePayment = () => {
     const cost = formData.cost || 0;
-    if (formData.serviceType === "Repair") {
+    const category = SERVICE_TYPE_DETAILS[formData.serviceType]?.category;
+    if (category === "Repair") {
       return {
         advance: cost * 0.5,
         remaining: cost * 0.5,
@@ -479,7 +486,13 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
   };
 
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "serviceType") {
+      const serviceType = value as typeof SERVICE_TYPES[number];
+      const price = SERVICE_TYPE_DETAILS[serviceType].price;
+      setFormData((prev) => ({ ...prev, [field]: value, cost: price }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -579,8 +592,15 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SERVICE_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  {SERVICE_CATEGORIES.map((category) => (
+                    <SelectGroup key={category}>
+                      <SelectLabel className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</SelectLabel>
+                      {getServiceTypesByCategory(category).map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
                 </SelectContent>
               </Select>
@@ -870,7 +890,13 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending }: Edi
   };
 
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "serviceType") {
+      const serviceType = value as typeof SERVICE_TYPES[number];
+      const price = SERVICE_TYPE_DETAILS[serviceType].price;
+      setFormData((prev) => ({ ...prev, [field]: value, cost: price }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   return (
