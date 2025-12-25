@@ -127,6 +127,7 @@ export interface BayStatus {
   bay: typeof BAYS[number];
   isOccupied: boolean;
   jobCard?: JobCard;
+  jobCards?: JobCard[];
 }
 
 export const staffSchema = z.object({

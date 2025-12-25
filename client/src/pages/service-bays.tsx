@@ -29,6 +29,8 @@ interface BayCardProps {
 }
 
 function WashBayCard({ bay, t }: BayCardProps) {
+  const jobs = bay.jobCards || (bay.jobCard ? [bay.jobCard] : []);
+  
   return (
     <Card 
       className="border border-card-border overflow-hidden"
@@ -51,31 +53,38 @@ function WashBayCard({ bay, t }: BayCardProps) {
                 ? "text-red-600 dark:text-red-400" 
                 : "text-green-600 dark:text-green-400"
             }`}>
-              {bay.isOccupied ? t("serviceBays.occupied") : t("serviceBays.available")}
+              {jobs.length > 0 ? `${jobs.length} ${t("serviceBays.jobs")}` : t("serviceBays.available")}
             </span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {bay.isOccupied && bay.jobCard ? (
+        {jobs.length > 0 ? (
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-              <div className="flex items-center gap-1.5">
-                <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="font-medium">{bay.jobCard.id}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>{formatDate(bay.jobCard.createdAt)}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Car className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="font-medium">{bay.jobCard.registration}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>{bay.jobCard.assignedTo}</span>
-              </div>
+            <div className="space-y-2">
+              {jobs.map((job) => (
+                <div 
+                  key={job.id} 
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm py-1.5 border-b border-border last:border-b-0"
+                >
+                  <div className="flex items-center gap-1.5 min-w-[70px]">
+                    <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="font-medium">{job.id}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 min-w-[90px]">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{formatDate(job.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 min-w-[80px]">
+                    <Car className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="font-medium">{job.registration}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{job.assignedTo}</span>
+                  </div>
+                </div>
+              ))}
             </div>
             <Link href="/job-cards" className="block">
               <Button variant="outline" size="sm" className="w-full" data-testid={`button-view-details-${bay.bay.replace(/\s+/g, "-").toLowerCase()}`}>

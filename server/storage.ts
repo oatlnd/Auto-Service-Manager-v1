@@ -334,18 +334,35 @@ export class MemStorage implements IStorage {
 
   async getBayStatus(): Promise<BayStatus[]> {
     const bays: (typeof BAYS[number])[] = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"];
+    const washBays: (typeof BAYS[number])[] = ["Wash Bay 1", "Wash Bay 2"];
     const jobs = Array.from(this.jobCards.values());
 
     return bays.map((bay) => {
-      const activeJob = jobs.find(
-        (job) => job.bay === bay && job.status !== "Completed"
-      );
+      const isWashBay = washBays.includes(bay);
       
-      return {
-        bay,
-        isOccupied: !!activeJob,
-        jobCard: activeJob,
-      };
+      if (isWashBay) {
+        const activeJobs = jobs
+          .filter((job) => job.bay === bay && job.status !== "Completed")
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5);
+        
+        return {
+          bay,
+          isOccupied: activeJobs.length > 0,
+          jobCard: activeJobs[0],
+          jobCards: activeJobs,
+        };
+      } else {
+        const activeJob = jobs.find(
+          (job) => job.bay === bay && job.status !== "Completed"
+        );
+        
+        return {
+          bay,
+          isOccupied: !!activeJob,
+          jobCard: activeJob,
+        };
+      }
     });
   }
 
