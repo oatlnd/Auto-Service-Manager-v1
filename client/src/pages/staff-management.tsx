@@ -45,14 +45,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Staff } from "@shared/schema";
-import { USER_ROLES } from "@shared/schema";
+import type { Staff, WorkSkill } from "@shared/schema";
+import { USER_ROLES, WORK_SKILLS } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface StaffFormData {
   name: string;
   phone: string;
   email: string;
   role: typeof USER_ROLES[number];
+  workSkills: WorkSkill[];
   isActive: boolean;
 }
 
@@ -61,6 +63,7 @@ const initialFormData: StaffFormData = {
   phone: "",
   email: "",
   role: "Job Card",
+  workSkills: [],
   isActive: true,
 };
 
@@ -217,6 +220,7 @@ export default function StaffManagement() {
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("staff.email")}</TableHead>
                   <TableHead>{t("staff.role")}</TableHead>
+                  <TableHead>Work Skills</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   {isAdmin && <TableHead className="text-right">{t("common.actions")}</TableHead>}
                 </TableRow>
@@ -229,13 +233,14 @@ export default function StaffManagement() {
                       <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                       {isAdmin && <TableCell><Skeleton className="h-8 w-20" /></TableCell>}
                     </TableRow>
                   ))
                 ) : staffList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-12">
+                    <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-12">
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
                       <p className="text-muted-foreground">No staff members yet</p>
                     </TableCell>
@@ -255,6 +260,19 @@ export default function StaffManagement() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={getRoleBadgeVariant(staff.role)}>{staff.role}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {staff.workSkills && staff.workSkills.length > 0 ? (
+                            staff.workSkills.map((skill) => (
+                              <Badge key={skill} variant="outline" className="text-xs">
+                                {skill}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={staff.isActive ? "default" : "secondary"}>
@@ -444,6 +462,33 @@ function CreateStaffDialog({ open, onOpenChange, onSubmit, isPending }: CreateSt
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Work Skills</Label>
+            <div className="flex flex-wrap gap-4">
+              {WORK_SKILLS.map((skill) => (
+                <div key={skill} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`skill-${skill}`}
+                    checked={formData.workSkills.includes(skill)}
+                    onCheckedChange={(checked) => {
+                      const newSkills = checked
+                        ? [...formData.workSkills, skill]
+                        : formData.workSkills.filter((s) => s !== skill);
+                      updateField("workSkills", newSkills);
+                    }}
+                    data-testid={`checkbox-skill-${skill.toLowerCase()}`}
+                  />
+                  <Label htmlFor={`skill-${skill}`} className="text-sm font-normal cursor-pointer">
+                    {skill}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Select skills this staff member can perform (for job assignments)
+            </p>
+          </div>
+
           <div className="flex items-center gap-3">
             <Switch
               id="isActive"
@@ -487,6 +532,7 @@ function EditStaffDialog({ open, onOpenChange, staff, onSubmit, isPending }: Edi
         phone: staff.phone,
         email: staff.email || "",
         role: staff.role,
+        workSkills: staff.workSkills || [],
         isActive: staff.isActive,
       });
     }
@@ -559,6 +605,34 @@ function EditStaffDialog({ open, onOpenChange, staff, onSubmit, isPending }: Edi
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Work Skills</Label>
+            <div className="flex flex-wrap gap-4">
+              {WORK_SKILLS.map((skill) => (
+                <div key={skill} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`edit-skill-${skill}`}
+                    checked={(formData.workSkills || []).includes(skill)}
+                    onCheckedChange={(checked) => {
+                      const currentSkills = formData.workSkills || [];
+                      const newSkills = checked
+                        ? [...currentSkills, skill]
+                        : currentSkills.filter((s) => s !== skill);
+                      updateField("workSkills", newSkills);
+                    }}
+                    data-testid={`checkbox-edit-skill-${skill.toLowerCase()}`}
+                  />
+                  <Label htmlFor={`edit-skill-${skill}`} className="text-sm font-normal cursor-pointer">
+                    {skill}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Select skills this staff member can perform (for job assignments)
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
