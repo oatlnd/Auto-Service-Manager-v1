@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import type { JobCard } from "@shared/schema";
-import { SERVICE_TYPES, JOB_STATUSES, TECHNICIANS, HONDA_MODELS } from "@shared/schema";
+import { SERVICE_TYPES, JOB_STATUSES, HONDA_MODELS } from "@shared/schema";
 
 interface ReportData {
   totalJobs: number;
@@ -48,10 +48,15 @@ export default function Reports() {
       .filter(m => m.count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 5),
-    technicianPerformance: TECHNICIANS.map(tech => ({
-      technician: tech,
-      count: jobCards.filter(j => j.assignedTo === tech).length,
-    })).sort((a, b) => b.count - a.count),
+    technicianPerformance: Array.from(
+      jobCards.reduce((acc, j) => {
+        if (j.assignedTo) {
+          acc.set(j.assignedTo, (acc.get(j.assignedTo) || 0) + 1);
+        }
+        return acc;
+      }, new Map<string, number>())
+    ).map(([technician, count]) => ({ technician, count }))
+      .sort((a, b) => b.count - a.count),
   };
 
   const formatCurrency = (amount: number) => `LKR ${amount.toLocaleString()}`;
