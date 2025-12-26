@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,7 +51,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { JobCard, JOB_STATUSES, Staff } from "@shared/schema";
-import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
+import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS } from "@shared/schema";
 
 interface FormData {
   tagNo: string;
@@ -60,6 +61,7 @@ interface FormData {
   registration: string;
   odometer: number;
   serviceType: typeof SERVICE_TYPES[number];
+  customerRequests: string[];
   status: typeof JOB_STATUSES[number];
   bay: typeof BAYS[number];
   assignedTo: string;
@@ -76,6 +78,7 @@ const initialFormData: FormData = {
   registration: "",
   odometer: 0,
   serviceType: "Service with Oil Spray (Oil Change)",
+  customerRequests: [],
   status: "Pending",
   bay: "Sudershan",
   assignedTo: "",
@@ -696,6 +699,31 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
             </div>
 
             <div className="space-y-2">
+              <Label>Customer Requests (select all that apply)</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                {CUSTOMER_REQUESTS.map((request) => (
+                  <div key={request} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`request-${request}`}
+                      checked={formData.customerRequests.includes(request)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          updateField("customerRequests", [...formData.customerRequests, request]);
+                        } else {
+                          updateField("customerRequests", formData.customerRequests.filter(r => r !== request));
+                        }
+                      }}
+                      data-testid={`checkbox-request-${request.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+                    />
+                    <Label htmlFor={`request-${request}`} className="text-sm font-normal cursor-pointer">
+                      {request}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="repairDetails">Notes / Repair Details</Label>
               <Textarea
                 id="repairDetails"
@@ -904,6 +932,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
         registration: job.registration,
         odometer: job.odometer,
         serviceType: job.serviceType,
+        customerRequests: job.customerRequests || [],
         status: job.status,
         bay: job.bay,
         assignedTo: job.assignedTo,
@@ -1141,6 +1170,32 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 placeholder="e.g., 2 hours"
                 data-testid="input-edit-estimated-time"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Customer Requests (select all that apply)</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                {CUSTOMER_REQUESTS.map((request) => (
+                  <div key={request} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`edit-request-${request}`}
+                      checked={(formData.customerRequests || []).includes(request)}
+                      onCheckedChange={(checked) => {
+                        const currentRequests = formData.customerRequests || [];
+                        if (checked) {
+                          updateField("customerRequests", [...currentRequests, request]);
+                        } else {
+                          updateField("customerRequests", currentRequests.filter(r => r !== request));
+                        }
+                      }}
+                      data-testid={`checkbox-edit-request-${request.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+                    />
+                    <Label htmlFor={`edit-request-${request}`} className="text-sm font-normal cursor-pointer">
+                      {request}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">

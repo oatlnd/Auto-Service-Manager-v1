@@ -94,6 +94,33 @@ export const BIKE_MODELS = [
 
 export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Service", "Cashier"] as const;
 export const WORK_SKILLS = ["Mechanic", "Service"] as const;
+
+export const CUSTOMER_REQUESTS = [
+  "Battery draining fast",
+  "Bike stalls in traffic",
+  "Brakes making noise",
+  "Brakes not effective",
+  "Chain clean & lube",
+  "Check everything & give estimate",
+  "Clutch slipping / Hard clutch",
+  "Engine overheating",
+  "Full check-up before a trip",
+  "Gear shifting not smooth",
+  "General service & wash",
+  "Handle wobbling / Vibrating",
+  "Hard to start / Cold start issue",
+  "Headlight is dim",
+  "Horn / Indicators not working",
+  "Lag during acceleration (Scooter)",
+  "Loss of power / Pick-up issue",
+  "Mileage has dropped",
+  "Oil leak spotted",
+  "Other issue",
+  "Self-starter not working",
+  "Suspension issue / Noise",
+  "Tighten all bolts",
+  "Unusual engine noise",
+] as const;
 export type WorkSkill = typeof WORK_SKILLS[number];
 export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as const;
 
@@ -106,6 +133,7 @@ export const jobCardSchema = z.object({
   registration: z.string().min(1, "Registration number is required"),
   odometer: z.number().min(0, "Odometer reading must be positive"),
   serviceType: z.enum(SERVICE_TYPES),
+  customerRequests: z.array(z.string()).optional(),
   status: z.enum(JOB_STATUSES),
   assignedTo: z.string(),
   bay: z.enum(BAYS),
