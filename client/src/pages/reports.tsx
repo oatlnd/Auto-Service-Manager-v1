@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import type { JobCard } from "@shared/schema";
-import { SERVICE_TYPES, JOB_STATUSES, HONDA_MODELS } from "@shared/schema";
+import { SERVICE_TYPES, JOB_STATUSES, BIKE_MODELS } from "@shared/schema";
 
 interface ReportData {
   totalJobs: number;
@@ -43,7 +43,7 @@ export default function Reports() {
       acc[status] = jobCards.filter(j => j.status === status).length;
       return acc;
     }, {} as Record<string, number>),
-    topModels: HONDA_MODELS
+    topModels: BIKE_MODELS
       .map(model => ({ model, count: jobCards.filter(j => j.bikeModel === model).length }))
       .filter(m => m.count > 0)
       .sort((a, b) => b.count - a.count)

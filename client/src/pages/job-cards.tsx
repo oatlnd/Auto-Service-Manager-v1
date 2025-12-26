@@ -49,13 +49,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { JobCard, JOB_STATUSES, Staff } from "@shared/schema";
-import { HONDA_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
+import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
 
 interface FormData {
   tagNo: string;
   customerName: string;
   phone: string;
-  bikeModel: typeof HONDA_MODELS[number];
+  bikeModel: typeof BIKE_MODELS[number];
   registration: string;
   odometer: number;
   serviceType: typeof SERVICE_TYPES[number];
@@ -71,7 +71,7 @@ const initialFormData: FormData = {
   tagNo: "",
   customerName: "",
   phone: "",
-  bikeModel: "Shine",
+  bikeModel: "Honda - Shine",
   registration: "",
   odometer: 0,
   serviceType: "Service with Oil Spray (Oil Change)",
@@ -527,13 +527,13 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                 <Label htmlFor="bikeModel">Bike Model *</Label>
                 <Select
                   value={formData.bikeModel}
-                  onValueChange={(value) => updateField("bikeModel", value as typeof HONDA_MODELS[number])}
+                  onValueChange={(value) => updateField("bikeModel", value as typeof BIKE_MODELS[number])}
                 >
                   <SelectTrigger data-testid="select-bike-model" className={errors.bikeModel ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {HONDA_MODELS.map((model) => (
+                    {BIKE_MODELS.map((model) => (
                       <SelectItem key={model} value={model}>{model}</SelectItem>
                     ))}
                   </SelectContent>
@@ -948,13 +948,13 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 <Label htmlFor="edit-bikeModel">Bike Model *</Label>
                 <Select
                   value={formData.bikeModel}
-                  onValueChange={(value) => updateField("bikeModel", value as typeof HONDA_MODELS[number])}
+                  onValueChange={(value) => updateField("bikeModel", value as typeof BIKE_MODELS[number])}
                 >
                   <SelectTrigger data-testid="select-edit-bike-model">
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {HONDA_MODELS.map((model) => (
+                    {BIKE_MODELS.map((model) => (
                       <SelectItem key={model} value={model}>{model}</SelectItem>
                     ))}
                   </SelectContent>
