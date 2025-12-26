@@ -71,7 +71,7 @@ const initialFormData: FormData = {
   tagNo: "",
   customerName: "",
   phone: "",
-  bikeModel: "Honda - Shine",
+  bikeModel: "Shine",
   registration: "",
   odometer: 0,
   serviceType: "Service with Oil Spray (Oil Change)",
