@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -448,33 +448,18 @@ const SERVICE_CATEGORY_LABELS: Record<string, string> = {
 function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: CreateJobCardDialogProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedCategories, setSelectedCategories] = useState<Set<typeof SERVICE_CATEGORIES[number]>>(new Set(["Paid Service" as typeof SERVICE_CATEGORIES[number]]));
+  const [selectedCategory, setSelectedCategory] = useState<typeof SERVICE_CATEGORIES[number]>("Paid Service");
 
   useEffect(() => {
     if (open) {
       setFormData(initialFormData);
       setErrors({});
-      setSelectedCategories(new Set(["Paid Service" as typeof SERVICE_CATEGORIES[number]]));
+      setSelectedCategory("Paid Service");
     }
   }, [open]);
 
-  const toggleCategory = (category: typeof SERVICE_CATEGORIES[number]) => {
-    setSelectedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(category)) {
-        newSet.delete(category);
-      } else {
-        newSet.add(category);
-      }
-      return newSet;
-    });
-  };
-
   const getFilteredServiceTypes = () => {
-    if (selectedCategories.size === 0) {
-      return SERVICE_TYPES;
-    }
-    return SERVICE_TYPES.filter(st => selectedCategories.has(SERVICE_TYPE_DETAILS[st].category));
+    return SERVICE_TYPES.filter(st => SERVICE_TYPE_DETAILS[st].category === selectedCategory);
   };
 
   const calculatePayment = () => {
@@ -647,21 +632,24 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
             
             <div className="space-y-2">
               <Label>Type of Service</Label>
-              <div className="flex flex-wrap gap-4">
+              <RadioGroup
+                value={selectedCategory}
+                onValueChange={(value) => setSelectedCategory(value as typeof SERVICE_CATEGORIES[number])}
+                className="flex flex-wrap gap-4"
+              >
                 {SERVICE_CATEGORIES.map((category) => (
                   <div key={category} className="flex items-center gap-2">
-                    <Checkbox
+                    <RadioGroupItem
+                      value={category}
                       id={`category-${category}`}
-                      checked={selectedCategories.has(category)}
-                      onCheckedChange={() => toggleCategory(category)}
-                      data-testid={`checkbox-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                      data-testid={`radio-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                     />
                     <Label htmlFor={`category-${category}`} className="text-sm font-normal cursor-pointer">
                       {SERVICE_CATEGORY_LABELS[category]}
                     </Label>
                   </div>
                 ))}
-              </div>
+              </RadioGroup>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -905,7 +893,7 @@ interface EditJobCardDialogProps {
 
 function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mechanics }: EditJobCardDialogProps) {
   const [formData, setFormData] = useState<Partial<FormData>>({});
-  const [selectedCategories, setSelectedCategories] = useState<Set<typeof SERVICE_CATEGORIES[number]>>(new Set(SERVICE_CATEGORIES as unknown as typeof SERVICE_CATEGORIES[number][]));
+  const [selectedCategory, setSelectedCategory] = useState<typeof SERVICE_CATEGORIES[number]>("Paid Service");
 
   useEffect(() => {
     if (open && job) {
@@ -926,28 +914,13 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
       });
       const jobCategory = SERVICE_TYPE_DETAILS[job.serviceType]?.category;
       if (jobCategory) {
-        setSelectedCategories(new Set([jobCategory]));
+        setSelectedCategory(jobCategory);
       }
     }
   }, [open, job]);
 
-  const toggleCategory = (category: typeof SERVICE_CATEGORIES[number]) => {
-    setSelectedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(category)) {
-        newSet.delete(category);
-      } else {
-        newSet.add(category);
-      }
-      return newSet;
-    });
-  };
-
   const getFilteredServiceTypes = () => {
-    if (selectedCategories.size === 0) {
-      return SERVICE_TYPES;
-    }
-    return SERVICE_TYPES.filter(st => selectedCategories.has(SERVICE_TYPE_DETAILS[st].category));
+    return SERVICE_TYPES.filter(st => SERVICE_TYPE_DETAILS[st].category === selectedCategory);
   };
 
   if (!job) return null;
@@ -1107,21 +1080,24 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
             
             <div className="space-y-2">
               <Label>Type of Service</Label>
-              <div className="flex flex-wrap gap-4">
+              <RadioGroup
+                value={selectedCategory}
+                onValueChange={(value) => setSelectedCategory(value as typeof SERVICE_CATEGORIES[number])}
+                className="flex flex-wrap gap-4"
+              >
                 {SERVICE_CATEGORIES.map((category) => (
                   <div key={category} className="flex items-center gap-2">
-                    <Checkbox
+                    <RadioGroupItem
+                      value={category}
                       id={`edit-category-${category}`}
-                      checked={selectedCategories.has(category)}
-                      onCheckedChange={() => toggleCategory(category)}
-                      data-testid={`checkbox-edit-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                      data-testid={`radio-edit-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                     />
                     <Label htmlFor={`edit-category-${category}`} className="text-sm font-normal cursor-pointer">
                       {SERVICE_CATEGORY_LABELS[category]}
                     </Label>
                   </div>
                 ))}
-              </div>
+              </RadioGroup>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
