@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -438,16 +439,43 @@ interface CreateJobCardDialogProps {
   isPending: boolean;
 }
 
+const SERVICE_CATEGORY_LABELS: Record<string, string> = {
+  "Paid Service": "Paid Service",
+  "Company Free Service": "Free Service",
+  "Repair": "Repair",
+};
+
 function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: CreateJobCardDialogProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedCategories, setSelectedCategories] = useState<Set<typeof SERVICE_CATEGORIES[number]>>(new Set(["Paid Service" as typeof SERVICE_CATEGORIES[number]]));
 
   useEffect(() => {
     if (open) {
       setFormData(initialFormData);
       setErrors({});
+      setSelectedCategories(new Set(["Paid Service" as typeof SERVICE_CATEGORIES[number]]));
     }
   }, [open]);
+
+  const toggleCategory = (category: typeof SERVICE_CATEGORIES[number]) => {
+    setSelectedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
+
+  const getFilteredServiceTypes = () => {
+    if (selectedCategories.size === 0) {
+      return SERVICE_TYPES;
+    }
+    return SERVICE_TYPES.filter(st => selectedCategories.has(SERVICE_TYPE_DETAILS[st].category));
+  };
 
   const calculatePayment = () => {
     const cost = formData.cost || 0;
@@ -616,26 +644,41 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
 
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Requests</h3>
+            
+            <div className="space-y-2">
+              <Label>Type of Service</Label>
+              <div className="flex flex-wrap gap-4">
+                {SERVICE_CATEGORIES.map((category) => (
+                  <div key={category} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`category-${category}`}
+                      checked={selectedCategories.has(category)}
+                      onCheckedChange={() => toggleCategory(category)}
+                      data-testid={`checkbox-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                    />
+                    <Label htmlFor={`category-${category}`} className="text-sm font-normal cursor-pointer">
+                      {SERVICE_CATEGORY_LABELS[category]}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="serviceType">Service Type</Label>
                 <Select
-                  value={formData.serviceType}
+                  value={getFilteredServiceTypes().includes(formData.serviceType) ? formData.serviceType : ""}
                   onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
                 >
                   <SelectTrigger data-testid="select-service-type">
                     <SelectValue placeholder="Select service type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SERVICE_CATEGORIES.map((category) => (
-                      <SelectGroup key={category}>
-                        <SelectLabel className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</SelectLabel>
-                        {getServiceTypesByCategory(category).map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
+                    {getFilteredServiceTypes().map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -862,6 +905,7 @@ interface EditJobCardDialogProps {
 
 function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mechanics }: EditJobCardDialogProps) {
   const [formData, setFormData] = useState<Partial<FormData>>({});
+  const [selectedCategories, setSelectedCategories] = useState<Set<typeof SERVICE_CATEGORIES[number]>>(new Set(SERVICE_CATEGORIES as unknown as typeof SERVICE_CATEGORIES[number][]));
 
   useEffect(() => {
     if (open && job) {
@@ -878,9 +922,33 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
         cost: job.cost,
         estimatedTime: job.estimatedTime,
         repairDetails: job.repairDetails || "",
+        tagNo: job.tagNo || "",
       });
+      const jobCategory = SERVICE_TYPE_DETAILS[job.serviceType]?.category;
+      if (jobCategory) {
+        setSelectedCategories(new Set([jobCategory]));
+      }
     }
   }, [open, job]);
+
+  const toggleCategory = (category: typeof SERVICE_CATEGORIES[number]) => {
+    setSelectedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
+
+  const getFilteredServiceTypes = () => {
+    if (selectedCategories.size === 0) {
+      return SERVICE_TYPES;
+    }
+    return SERVICE_TYPES.filter(st => selectedCategories.has(SERVICE_TYPE_DETAILS[st].category));
+  };
 
   if (!job) return null;
 
@@ -1036,26 +1104,41 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
 
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Requests</h3>
+            
+            <div className="space-y-2">
+              <Label>Type of Service</Label>
+              <div className="flex flex-wrap gap-4">
+                {SERVICE_CATEGORIES.map((category) => (
+                  <div key={category} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`edit-category-${category}`}
+                      checked={selectedCategories.has(category)}
+                      onCheckedChange={() => toggleCategory(category)}
+                      data-testid={`checkbox-edit-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                    />
+                    <Label htmlFor={`edit-category-${category}`} className="text-sm font-normal cursor-pointer">
+                      {SERVICE_CATEGORY_LABELS[category]}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-serviceType">Service Type</Label>
                 <Select
-                  value={formData.serviceType}
+                  value={getFilteredServiceTypes().includes(formData.serviceType as typeof SERVICE_TYPES[number]) ? formData.serviceType : ""}
                   onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
                 >
                   <SelectTrigger data-testid="select-edit-service-type">
                     <SelectValue placeholder="Select service type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SERVICE_CATEGORIES.map((category) => (
-                      <SelectGroup key={category}>
-                        <SelectLabel className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</SelectLabel>
-                        {getServiceTypesByCategory(category).map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
+                    {getFilteredServiceTypes().map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
