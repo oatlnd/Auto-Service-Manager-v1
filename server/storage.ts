@@ -93,7 +93,7 @@ export class MemStorage implements IStorage {
     
     const sampleJobs: Omit<JobCard, "id">[] = [
       {
-        tagNo: "T001",
+        tagNo: "1",
         customerName: "Rajesh Kumar",
         phone: "0771234567",
         bikeModel: "Shine",
@@ -112,7 +112,7 @@ export class MemStorage implements IStorage {
         createdAt: new Date().toISOString(),
       },
       {
-        tagNo: "T002",
+        tagNo: "2",
         customerName: "Priya Shankar",
         phone: "0779876543",
         bikeModel: "CB350",
@@ -131,7 +131,7 @@ export class MemStorage implements IStorage {
         createdAt: twoDaysAgo,
       },
       {
-        tagNo: "T003",
+        tagNo: "3",
         customerName: "Anand Murthy",
         phone: "0765432109",
         bikeModel: "Unicorn",
@@ -150,7 +150,7 @@ export class MemStorage implements IStorage {
         createdAt: new Date(Date.now() - 7200000).toISOString(),
       },
       {
-        tagNo: "T004",
+        tagNo: "4",
         customerName: "Suresh Pillai",
         phone: "0778765432",
         bikeModel: "Activa 6G",
