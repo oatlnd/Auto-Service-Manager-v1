@@ -556,13 +556,19 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="tagNo">Tag No</Label>
-                <Input
-                  id="tagNo"
+                <Select
                   value={formData.tagNo}
-                  onChange={(e) => updateField("tagNo", e.target.value)}
-                  placeholder="e.g., T001"
-                  data-testid="input-tag-no"
-                />
+                  onValueChange={(value) => updateField("tagNo", value)}
+                >
+                  <SelectTrigger data-testid="select-tag-no">
+                    <SelectValue placeholder="Select tag" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
+                      <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="odometer">Odometer Reading (km)</Label>
@@ -974,13 +980,19 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-tagNo">Tag No</Label>
-                <Input
-                  id="edit-tagNo"
+                <Select
                   value={formData.tagNo ?? ""}
-                  onChange={(e) => updateField("tagNo", e.target.value)}
-                  placeholder="e.g., T001"
-                  data-testid="input-edit-tag-no"
-                />
+                  onValueChange={(value) => updateField("tagNo", value)}
+                >
+                  <SelectTrigger data-testid="select-edit-tag-no">
+                    <SelectValue placeholder="Select tag" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
+                      <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-odometer">Odometer Reading (km)</Label>
