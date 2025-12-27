@@ -1,21 +1,36 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Briefcase, CheckCircle, Clock, CalendarIcon, Pause, Wrench } from "lucide-react";
+import { Briefcase, CheckCircle, Clock, CalendarIcon, Pause, Wrench, MoreVertical, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/status-badge";
 import { Link } from "wouter";
-import type { JobCard, DailyStatistics, BayStatus, ServiceCategoryStats } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/contexts/UserRoleContext";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { JobCard, DailyStatistics, BayStatus, ServiceCategoryStats, JOB_STATUSES } from "@shared/schema";
+import { SERVICE_TYPE_DETAILS, getStatusesForCategory } from "@shared/schema";
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const { isLimitedRole } = useUserRole();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
   
   const dateParam = format(selectedDate, "yyyy-MM-dd");
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -52,8 +67,53 @@ export default function Dashboard() {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: typeof JOB_STATUSES[number] }) => {
+      return apiRequest("PATCH", `/api/job-cards/${id}/status`, { status });
+    },
+    onMutate: ({ id }) => {
+      setUpdatingJobId(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/job-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/statistics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bays/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/job-cards/recent"] });
+      toast({ title: t("common.success"), description: t("messages.updatedSuccess") });
+    },
+    onError: () => {
+      toast({ title: t("common.error"), description: t("messages.errorOccurred"), variant: "destructive" });
+    },
+    onSettled: () => {
+      setUpdatingJobId(null);
+    },
+  });
+
   const formatCurrency = (amount: number) => {
     return `LKR ${amount.toLocaleString()}`;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      "Pending": t("jobCards.pending"),
+      "In Progress": t("jobCards.inProgress"),
+      "Oil Change": t("jobCards.oilChange"),
+      "Quality Check": t("jobCards.qualityCheck"),
+      "Completed": t("jobCards.completed"),
+      "Delivered": t("jobCards.delivered"),
+    };
+    return labels[status] || status;
+  };
+
+  const getAvailableStatuses = (job: JobCard) => {
+    const serviceTypeDetails = SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS];
+    const category = serviceTypeDetails?.category || "Paid Service";
+    const allStatuses = getStatusesForCategory(category) as (typeof JOB_STATUSES[number])[];
+    
+    if (isLimitedRole) {
+      return allStatuses.filter(s => s === "In Progress" || s === "Completed");
+    }
+    return allStatuses;
   };
 
   const occupiedBays = bayStatus?.filter(b => b.isOccupied).length || 0;
@@ -285,6 +345,37 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <StatusBadge status={job.status} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        disabled={updatingJobId === job.id}
+                        data-testid={`button-status-menu-${job.id}`}
+                      >
+                        {updatingJobId === job.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <MoreVertical className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{t("jobCards.updateStatus")}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {getAvailableStatuses(job).map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          disabled={job.status === status}
+                          onClick={() => updateStatusMutation.mutate({ id: job.id, status })}
+                          data-testid={`menu-item-status-${status.toLowerCase().replace(" ", "-")}-${job.id}`}
+                        >
+                          {getStatusLabel(status)}
+                          {job.status === status && " ✓"}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))
             )}
