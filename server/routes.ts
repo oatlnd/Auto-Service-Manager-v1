@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema } from "@shared/schema";
 import { z } from "zod";
 
 declare global {
@@ -409,6 +409,230 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching staff by skill:", error);
       res.status(500).json({ error: "Failed to fetch staff by skill" });
+    }
+  });
+
+  // Loyalty Program Routes
+  app.get("/api/loyalty/customers", requireAuth, async (req, res) => {
+    try {
+      const customers = await storage.getLoyaltyCustomers();
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching loyalty customers:", error);
+      res.status(500).json({ error: "Failed to fetch loyalty customers" });
+    }
+  });
+
+  app.get("/api/loyalty/customers/:id", requireAuth, async (req, res) => {
+    try {
+      const customer = await storage.getLoyaltyCustomer(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching loyalty customer:", error);
+      res.status(500).json({ error: "Failed to fetch loyalty customer" });
+    }
+  });
+
+  app.get("/api/loyalty/customers/phone/:phone", requireAuth, async (req, res) => {
+    try {
+      const customer = await storage.getLoyaltyCustomerByPhone(req.params.phone);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching loyalty customer by phone:", error);
+      res.status(500).json({ error: "Failed to fetch loyalty customer" });
+    }
+  });
+
+  app.post("/api/loyalty/customers", requireAuth, async (req, res) => {
+    try {
+      const parsed = insertLoyaltyCustomerSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      
+      const existing = await storage.getLoyaltyCustomerByPhone(parsed.data.phone);
+      if (existing) {
+        return res.status(409).json({ error: "Customer with this phone already exists" });
+      }
+      
+      const customer = await storage.createLoyaltyCustomer(parsed.data);
+      res.status(201).json(customer);
+    } catch (error) {
+      console.error("Error creating loyalty customer:", error);
+      res.status(500).json({ error: "Failed to create loyalty customer" });
+    }
+  });
+
+  app.patch("/api/loyalty/customers/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parsed = insertLoyaltyCustomerSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const customer = await storage.updateLoyaltyCustomer(req.params.id, parsed.data);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error updating loyalty customer:", error);
+      res.status(500).json({ error: "Failed to update loyalty customer" });
+    }
+  });
+
+  app.delete("/api/loyalty/customers/:id", requireRole("Admin"), async (req, res) => {
+    try {
+      const success = await storage.deleteLoyaltyCustomer(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting loyalty customer:", error);
+      res.status(500).json({ error: "Failed to delete loyalty customer" });
+    }
+  });
+
+  app.get("/api/loyalty/customers/:id/transactions", requireAuth, async (req, res) => {
+    try {
+      const transactions = await storage.getPointsTransactions(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching points transactions:", error);
+      res.status(500).json({ error: "Failed to fetch points transactions" });
+    }
+  });
+
+  app.post("/api/loyalty/customers/:id/earn", requireAuth, async (req, res) => {
+    try {
+      const { amount, description, jobCardId } = req.body;
+      if (typeof amount !== "number" || amount <= 0) {
+        return res.status(400).json({ error: "Valid amount is required" });
+      }
+      const transaction = await storage.earnPoints(req.params.id, amount, description || "Service completed", jobCardId);
+      res.status(201).json(transaction);
+    } catch (error) {
+      console.error("Error earning points:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to earn points" });
+    }
+  });
+
+  app.post("/api/loyalty/customers/:id/redeem", requireAuth, async (req, res) => {
+    try {
+      const { rewardId } = req.body;
+      if (!rewardId) {
+        return res.status(400).json({ error: "Reward ID is required" });
+      }
+      const reward = await storage.getReward(rewardId);
+      if (!reward) {
+        return res.status(404).json({ error: "Reward not found" });
+      }
+      const result = await storage.redeemPoints(req.params.id, reward.pointsCost, rewardId, reward.name);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error redeeming points:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to redeem points" });
+    }
+  });
+
+  app.get("/api/loyalty/rewards", requireAuth, async (req, res) => {
+    try {
+      const rewards = await storage.getRewards();
+      res.json(rewards);
+    } catch (error) {
+      console.error("Error fetching rewards:", error);
+      res.status(500).json({ error: "Failed to fetch rewards" });
+    }
+  });
+
+  app.get("/api/loyalty/rewards/:id", requireAuth, async (req, res) => {
+    try {
+      const reward = await storage.getReward(req.params.id);
+      if (!reward) {
+        return res.status(404).json({ error: "Reward not found" });
+      }
+      res.json(reward);
+    } catch (error) {
+      console.error("Error fetching reward:", error);
+      res.status(500).json({ error: "Failed to fetch reward" });
+    }
+  });
+
+  app.post("/api/loyalty/rewards", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parsed = insertRewardSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const reward = await storage.createReward(parsed.data);
+      res.status(201).json(reward);
+    } catch (error) {
+      console.error("Error creating reward:", error);
+      res.status(500).json({ error: "Failed to create reward" });
+    }
+  });
+
+  app.patch("/api/loyalty/rewards/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parsed = insertRewardSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const reward = await storage.updateReward(req.params.id, parsed.data);
+      if (!reward) {
+        return res.status(404).json({ error: "Reward not found" });
+      }
+      res.json(reward);
+    } catch (error) {
+      console.error("Error updating reward:", error);
+      res.status(500).json({ error: "Failed to update reward" });
+    }
+  });
+
+  app.delete("/api/loyalty/rewards/:id", requireRole("Admin"), async (req, res) => {
+    try {
+      const success = await storage.deleteReward(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Reward not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting reward:", error);
+      res.status(500).json({ error: "Failed to delete reward" });
+    }
+  });
+
+  app.get("/api/loyalty/redemptions", requireAuth, async (req, res) => {
+    try {
+      const customerId = req.query.customerId as string | undefined;
+      const redemptions = await storage.getRedemptions(customerId);
+      res.json(redemptions);
+    } catch (error) {
+      console.error("Error fetching redemptions:", error);
+      res.status(500).json({ error: "Failed to fetch redemptions" });
+    }
+  });
+
+  app.patch("/api/loyalty/redemptions/:id/status", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!["Pending", "Fulfilled", "Cancelled"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      const redemption = await storage.updateRedemptionStatus(req.params.id, status);
+      if (!redemption) {
+        return res.status(404).json({ error: "Redemption not found" });
+      }
+      res.json(redemption);
+    } catch (error) {
+      console.error("Error updating redemption status:", error);
+      res.status(500).json({ error: "Failed to update redemption status" });
     }
   });
 
