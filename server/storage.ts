@@ -1,9 +1,11 @@
 import type { 
   JobCard, InsertJobCard, DailyStatistics, BayStatus, ServiceCategoryStats,
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
-  User, BAYS, JOB_STATUSES, WorkSkill 
+  User, BAYS, JOB_STATUSES, WorkSkill,
+  LoyaltyCustomer, InsertLoyaltyCustomer, PointsTransaction, InsertPointsTransaction,
+  Reward, InsertReward, Redemption, InsertRedemption
 } from "@shared/schema";
-import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
+import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface Session {
@@ -45,6 +47,28 @@ export interface IStorage {
   getTodayAttendance(): Promise<Attendance[]>;
   
   getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]>;
+  
+  // Loyalty Program
+  getLoyaltyCustomers(): Promise<LoyaltyCustomer[]>;
+  getLoyaltyCustomer(id: string): Promise<LoyaltyCustomer | undefined>;
+  getLoyaltyCustomerByPhone(phone: string): Promise<LoyaltyCustomer | undefined>;
+  createLoyaltyCustomer(data: InsertLoyaltyCustomer): Promise<LoyaltyCustomer>;
+  updateLoyaltyCustomer(id: string, data: Partial<InsertLoyaltyCustomer>): Promise<LoyaltyCustomer | undefined>;
+  deleteLoyaltyCustomer(id: string): Promise<boolean>;
+  
+  getPointsTransactions(customerId: string): Promise<PointsTransaction[]>;
+  createPointsTransaction(data: InsertPointsTransaction): Promise<PointsTransaction>;
+  earnPoints(customerId: string, amount: number, description: string, jobCardId?: string): Promise<PointsTransaction>;
+  redeemPoints(customerId: string, points: number, rewardId: string, rewardName: string): Promise<{ transaction: PointsTransaction; redemption: Redemption }>;
+  
+  getRewards(): Promise<Reward[]>;
+  getReward(id: string): Promise<Reward | undefined>;
+  createReward(data: InsertReward): Promise<Reward>;
+  updateReward(id: string, data: Partial<InsertReward>): Promise<Reward | undefined>;
+  deleteReward(id: string): Promise<boolean>;
+  
+  getRedemptions(customerId?: string): Promise<Redemption[]>;
+  updateRedemptionStatus(id: string, status: "Pending" | "Fulfilled" | "Cancelled"): Promise<Redemption | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -53,10 +77,18 @@ export class MemStorage implements IStorage {
   private attendance: Map<string, Attendance>;
   private users: Map<string, User>;
   private sessions: Map<string, Session>;
+  private loyaltyCustomers: Map<string, LoyaltyCustomer>;
+  private pointsTransactions: Map<string, PointsTransaction>;
+  private rewards: Map<string, Reward>;
+  private redemptions: Map<string, Redemption>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
   private userIdCounter: number;
+  private loyaltyCustomerIdCounter: number;
+  private transactionIdCounter: number;
+  private rewardIdCounter: number;
+  private redemptionIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
@@ -64,10 +96,18 @@ export class MemStorage implements IStorage {
     this.attendance = new Map();
     this.users = new Map();
     this.sessions = new Map();
+    this.loyaltyCustomers = new Map();
+    this.pointsTransactions = new Map();
+    this.rewards = new Map();
+    this.redemptions = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
     this.userIdCounter = 1;
+    this.loyaltyCustomerIdCounter = 1;
+    this.transactionIdCounter = 1;
+    this.rewardIdCounter = 1;
+    this.redemptionIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -526,6 +566,230 @@ export class MemStorage implements IStorage {
 
   async deleteSession(sessionId: string): Promise<boolean> {
     return this.sessions.delete(sessionId);
+  }
+
+  // Loyalty Program Methods
+  private calculateTier(totalPoints: number): typeof LOYALTY_TIERS[number] {
+    if (totalPoints >= LOYALTY_TIER_THRESHOLDS.Platinum) return "Platinum";
+    if (totalPoints >= LOYALTY_TIER_THRESHOLDS.Gold) return "Gold";
+    if (totalPoints >= LOYALTY_TIER_THRESHOLDS.Silver) return "Silver";
+    return "Bronze";
+  }
+
+  async getLoyaltyCustomers(): Promise<LoyaltyCustomer[]> {
+    return Array.from(this.loyaltyCustomers.values())
+      .sort((a, b) => b.totalPoints - a.totalPoints);
+  }
+
+  async getLoyaltyCustomer(id: string): Promise<LoyaltyCustomer | undefined> {
+    return this.loyaltyCustomers.get(id);
+  }
+
+  async getLoyaltyCustomerByPhone(phone: string): Promise<LoyaltyCustomer | undefined> {
+    return Array.from(this.loyaltyCustomers.values()).find((c) => c.phone === phone);
+  }
+
+  async createLoyaltyCustomer(data: InsertLoyaltyCustomer): Promise<LoyaltyCustomer> {
+    const id = `LYL${String(this.loyaltyCustomerIdCounter++).padStart(4, "0")}`;
+    const customer: LoyaltyCustomer = {
+      ...data,
+      id,
+      totalPoints: 0,
+      availablePoints: 0,
+      tier: "Bronze",
+      totalSpent: 0,
+      visitCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+    this.loyaltyCustomers.set(id, customer);
+    return customer;
+  }
+
+  async updateLoyaltyCustomer(id: string, data: Partial<InsertLoyaltyCustomer>): Promise<LoyaltyCustomer | undefined> {
+    const existing = this.loyaltyCustomers.get(id);
+    if (!existing) return undefined;
+
+    const updated: LoyaltyCustomer = {
+      ...existing,
+      ...data,
+    };
+    this.loyaltyCustomers.set(id, updated);
+    return updated;
+  }
+
+  async deleteLoyaltyCustomer(id: string): Promise<boolean> {
+    return this.loyaltyCustomers.delete(id);
+  }
+
+  async getPointsTransactions(customerId: string): Promise<PointsTransaction[]> {
+    return Array.from(this.pointsTransactions.values())
+      .filter((t) => t.customerId === customerId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createPointsTransaction(data: InsertPointsTransaction): Promise<PointsTransaction> {
+    const id = `TXN${String(this.transactionIdCounter++).padStart(5, "0")}`;
+    const transaction: PointsTransaction = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.pointsTransactions.set(id, transaction);
+    return transaction;
+  }
+
+  async earnPoints(customerId: string, amount: number, description: string, jobCardId?: string): Promise<PointsTransaction> {
+    const customer = await this.getLoyaltyCustomer(customerId);
+    if (!customer) throw new Error("Customer not found");
+
+    const tierMultiplier = LOYALTY_TIER_MULTIPLIERS[customer.tier];
+    const basePoints = Math.floor((amount / 100) * POINTS_PER_100_LKR);
+    const earnedPoints = Math.floor(basePoints * tierMultiplier);
+
+    const transaction = await this.createPointsTransaction({
+      customerId,
+      type: "Earned",
+      points: earnedPoints,
+      description,
+      jobCardId,
+    });
+
+    const updatedCustomer: LoyaltyCustomer = {
+      ...customer,
+      totalPoints: customer.totalPoints + earnedPoints,
+      availablePoints: customer.availablePoints + earnedPoints,
+      totalSpent: customer.totalSpent + amount,
+      visitCount: customer.visitCount + 1,
+      lastVisit: new Date().toISOString(),
+      tier: this.calculateTier(customer.totalPoints + earnedPoints),
+    };
+    this.loyaltyCustomers.set(customerId, updatedCustomer);
+
+    return transaction;
+  }
+
+  async redeemPoints(customerId: string, points: number, rewardId: string, rewardName: string): Promise<{ transaction: PointsTransaction; redemption: Redemption }> {
+    const customer = await this.getLoyaltyCustomer(customerId);
+    if (!customer) throw new Error("Customer not found");
+    if (customer.availablePoints < points) throw new Error("Insufficient points");
+
+    const reward = await this.getReward(rewardId);
+    if (!reward) throw new Error("Reward not found");
+    if (reward.stock !== undefined && reward.stock <= 0) throw new Error("Reward out of stock");
+
+    const transaction = await this.createPointsTransaction({
+      customerId,
+      type: "Redeemed",
+      points: -points,
+      description: `Redeemed for: ${rewardName}`,
+      rewardId,
+    });
+
+    const redemptionId = `RDM${String(this.redemptionIdCounter++).padStart(5, "0")}`;
+    const redemption: Redemption = {
+      id: redemptionId,
+      customerId,
+      rewardId,
+      rewardName,
+      pointsUsed: points,
+      status: "Pending",
+      createdAt: new Date().toISOString(),
+    };
+    this.redemptions.set(redemptionId, redemption);
+
+    const updatedCustomer: LoyaltyCustomer = {
+      ...customer,
+      availablePoints: customer.availablePoints - points,
+    };
+    this.loyaltyCustomers.set(customerId, updatedCustomer);
+
+    if (reward.stock !== undefined) {
+      const updatedReward: Reward = {
+        ...reward,
+        stock: reward.stock - 1,
+      };
+      this.rewards.set(rewardId, updatedReward);
+    }
+
+    return { transaction, redemption };
+  }
+
+  async getRewards(): Promise<Reward[]> {
+    return Array.from(this.rewards.values())
+      .sort((a, b) => a.pointsCost - b.pointsCost);
+  }
+
+  async getReward(id: string): Promise<Reward | undefined> {
+    return this.rewards.get(id);
+  }
+
+  async createReward(data: InsertReward): Promise<Reward> {
+    const id = `RWD${String(this.rewardIdCounter++).padStart(3, "0")}`;
+    const reward: Reward = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.rewards.set(id, reward);
+    return reward;
+  }
+
+  async updateReward(id: string, data: Partial<InsertReward>): Promise<Reward | undefined> {
+    const existing = this.rewards.get(id);
+    if (!existing) return undefined;
+
+    const updated: Reward = {
+      ...existing,
+      ...data,
+    };
+    this.rewards.set(id, updated);
+    return updated;
+  }
+
+  async deleteReward(id: string): Promise<boolean> {
+    return this.rewards.delete(id);
+  }
+
+  async getRedemptions(customerId?: string): Promise<Redemption[]> {
+    let redemptions = Array.from(this.redemptions.values());
+    if (customerId) {
+      redemptions = redemptions.filter((r) => r.customerId === customerId);
+    }
+    return redemptions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async updateRedemptionStatus(id: string, status: "Pending" | "Fulfilled" | "Cancelled"): Promise<Redemption | undefined> {
+    const existing = this.redemptions.get(id);
+    if (!existing) return undefined;
+
+    const updated: Redemption = {
+      ...existing,
+      status,
+      fulfilledAt: status === "Fulfilled" ? new Date().toISOString() : existing.fulfilledAt,
+    };
+    this.redemptions.set(id, updated);
+
+    if (status === "Cancelled") {
+      const customer = await this.getLoyaltyCustomer(existing.customerId);
+      if (customer) {
+        const updatedCustomer: LoyaltyCustomer = {
+          ...customer,
+          availablePoints: customer.availablePoints + existing.pointsUsed,
+        };
+        this.loyaltyCustomers.set(existing.customerId, updatedCustomer);
+      }
+
+      const reward = await this.getReward(existing.rewardId);
+      if (reward && reward.stock !== undefined) {
+        const updatedReward: Reward = {
+          ...reward,
+          stock: reward.stock + 1,
+        };
+        this.rewards.set(existing.rewardId, updatedReward);
+      }
+    }
+
+    return updated;
   }
 }
 
