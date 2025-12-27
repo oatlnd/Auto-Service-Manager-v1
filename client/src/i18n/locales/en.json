@@ -72,6 +72,7 @@
     "customerNamePlaceholder": "Enter customer name",
     "vehicleNumber": "Vehicle Number",
     "registration": "Registration",
+    "created": "Created",
     "registrationPlaceholder": "Enter registration number",
     "bikeModel": "Bike Model",
     "selectBikeModel": "Select bike model",

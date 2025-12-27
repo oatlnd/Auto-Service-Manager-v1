@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -279,11 +280,11 @@ export default function JobCards() {
                   <TableHead>Job ID</TableHead>
                   <TableHead className="hidden sm:table-cell">Tag No</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead className="hidden md:table-cell">Bike Details</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("jobCards.registration")}</TableHead>
                   <TableHead className="hidden sm:table-cell">Service Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Bay</TableHead>
-                  {canViewRevenue && <TableHead className="hidden md:table-cell">Cost</TableHead>}
+                  <TableHead className="hidden md:table-cell">{t("jobCards.created")}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -294,17 +295,17 @@ export default function JobCards() {
                       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                       <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-12" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
                       <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                       <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-12" /></TableCell>
-                      {canViewRevenue && <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>}
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
                       <TableCell><Skeleton className="h-8 w-24" /></TableCell>
                     </TableRow>
                   ))
                 ) : filteredJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canViewRevenue ? 9 : 8} className="text-center py-12">
+                    <TableCell colSpan={9} className="text-center py-12">
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
                       <p className="text-muted-foreground">
                         {searchQuery || statusFilter !== "all" 
@@ -324,11 +325,8 @@ export default function JobCards() {
                           <p className="text-xs text-muted-foreground">{job.phone}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div>
-                          <p>{job.bikeModel}</p>
-                          <p className="text-xs text-muted-foreground">{job.registration}</p>
-                        </div>
+                      <TableCell className="hidden md:table-cell font-medium">
+                        {job.registration}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge variant="outline">{job.serviceType}</Badge>
@@ -337,11 +335,9 @@ export default function JobCards() {
                         <StatusBadge status={job.status} />
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">{job.bay}</TableCell>
-                      {canViewRevenue && (
-                        <TableCell className="hidden md:table-cell font-medium">
-                          {formatCurrency(job.cost || 0)}
-                        </TableCell>
-                      )}
+                      <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                        {format(new Date(job.createdAt), "dd/MM/yyyy")}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
                           <Button
