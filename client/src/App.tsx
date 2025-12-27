@@ -17,6 +17,7 @@ import ServiceBays from "@/pages/service-bays";
 import Reports from "@/pages/reports";
 import StaffManagement from "@/pages/staff-management";
 import Attendance from "@/pages/attendance";
+import LoyaltyProgram from "@/pages/loyalty-program";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       {canAccessAdmin && <Route path="/staff" component={StaffManagement} />}
       {canAccessAdmin && <Route path="/attendance" component={Attendance} />}
+      {canAccessAdmin && <Route path="/loyalty" component={LoyaltyProgram} />}
       <Route component={NotFound} />
     </Switch>
   );

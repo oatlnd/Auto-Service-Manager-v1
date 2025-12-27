@@ -281,6 +281,7 @@ export const loyaltyCustomerSchema = z.object({
   name: z.string().min(1, "Customer name is required"),
   phone: z.string().min(10, "Valid phone number required"),
   email: z.string().email().optional().or(z.literal("")),
+  vehicleNumbers: z.array(z.string()).optional(),
   totalPoints: z.number().default(0),
   availablePoints: z.number().default(0),
   tier: z.enum(LOYALTY_TIERS).default("Bronze"),
