@@ -97,6 +97,7 @@ export default function JobCards() {
   const { canViewRevenue, isLimitedRole, isService } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("non-completed");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<typeof SERVICE_CATEGORIES[number] | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -194,12 +195,16 @@ export default function JobCards() {
         statusFilter === "non-completed" ? job.status !== "Completed" :
         job.status === statusFilter;
       
+      const matchesServiceType = 
+        serviceTypeFilter === null ? true :
+        SERVICE_TYPE_DETAILS[job.serviceType]?.category === serviceTypeFilter;
+      
       const limitedRoleStatuses = ["Pending", "In Progress"];
       const matchesLimitedRole = !isLimitedRole || limitedRoleStatuses.includes(job.status);
       
       const matchesServiceBay = !isService || job.bay === "Wash Bay 1" || job.bay === "Wash Bay 2";
       
-      return matchesSearch && matchesStatus && matchesLimitedRole && matchesServiceBay;
+      return matchesSearch && matchesStatus && matchesServiceType && matchesLimitedRole && matchesServiceBay;
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -218,6 +223,20 @@ export default function JobCards() {
             {t("jobCards.addJobCard")}
           </Button>
         )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {SERVICE_CATEGORIES.map((category) => (
+          <Button
+            key={category}
+            variant={serviceTypeFilter === category ? "default" : "outline"}
+            size="sm"
+            onClick={() => setServiceTypeFilter(serviceTypeFilter === category ? null : category)}
+            data-testid={`button-filter-${category.toLowerCase().replace(" ", "-")}`}
+          >
+            {category}
+          </Button>
+        ))}
       </div>
 
       <Card className="border border-card-border">
