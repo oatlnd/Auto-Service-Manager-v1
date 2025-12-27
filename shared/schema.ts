@@ -255,3 +255,99 @@ export const insertTechnicianSchema = technicianSchema.omit({ id: true, createdA
 
 export type Technician = z.infer<typeof technicianSchema>;
 export type InsertTechnician = z.infer<typeof insertTechnicianSchema>;
+
+// Loyalty Program
+export const LOYALTY_TIERS = ["Bronze", "Silver", "Gold", "Platinum"] as const;
+export const POINTS_TRANSACTION_TYPES = ["Earned", "Redeemed", "Expired", "Adjusted"] as const;
+
+export const LOYALTY_TIER_THRESHOLDS = {
+  Bronze: 0,
+  Silver: 500,
+  Gold: 1500,
+  Platinum: 3000,
+} as const;
+
+export const LOYALTY_TIER_MULTIPLIERS = {
+  Bronze: 1,
+  Silver: 1.25,
+  Gold: 1.5,
+  Platinum: 2,
+} as const;
+
+export const POINTS_PER_100_LKR = 1;
+
+export const loyaltyCustomerSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, "Customer name is required"),
+  phone: z.string().min(10, "Valid phone number required"),
+  email: z.string().email().optional().or(z.literal("")),
+  totalPoints: z.number().default(0),
+  availablePoints: z.number().default(0),
+  tier: z.enum(LOYALTY_TIERS).default("Bronze"),
+  totalSpent: z.number().default(0),
+  visitCount: z.number().default(0),
+  lastVisit: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export const insertLoyaltyCustomerSchema = loyaltyCustomerSchema.omit({ 
+  id: true, 
+  totalPoints: true, 
+  availablePoints: true, 
+  tier: true, 
+  totalSpent: true, 
+  visitCount: true, 
+  lastVisit: true,
+  createdAt: true 
+});
+
+export type LoyaltyCustomer = z.infer<typeof loyaltyCustomerSchema>;
+export type InsertLoyaltyCustomer = z.infer<typeof insertLoyaltyCustomerSchema>;
+
+export const pointsTransactionSchema = z.object({
+  id: z.string(),
+  customerId: z.string(),
+  type: z.enum(POINTS_TRANSACTION_TYPES),
+  points: z.number(),
+  description: z.string(),
+  jobCardId: z.string().optional(),
+  rewardId: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export const insertPointsTransactionSchema = pointsTransactionSchema.omit({ id: true, createdAt: true });
+
+export type PointsTransaction = z.infer<typeof pointsTransactionSchema>;
+export type InsertPointsTransaction = z.infer<typeof insertPointsTransactionSchema>;
+
+export const rewardSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, "Reward name is required"),
+  description: z.string(),
+  pointsCost: z.number().min(1, "Points cost must be at least 1"),
+  category: z.enum(["Discount", "Free Service", "Merchandise", "Special"]),
+  isActive: z.boolean().default(true),
+  stock: z.number().optional(),
+  createdAt: z.string(),
+});
+
+export const insertRewardSchema = rewardSchema.omit({ id: true, createdAt: true });
+
+export type Reward = z.infer<typeof rewardSchema>;
+export type InsertReward = z.infer<typeof insertRewardSchema>;
+
+export const redemptionSchema = z.object({
+  id: z.string(),
+  customerId: z.string(),
+  rewardId: z.string(),
+  rewardName: z.string(),
+  pointsUsed: z.number(),
+  status: z.enum(["Pending", "Fulfilled", "Cancelled"]),
+  fulfilledAt: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export const insertRedemptionSchema = redemptionSchema.omit({ id: true, fulfilledAt: true, createdAt: true });
+
+export type Redemption = z.infer<typeof redemptionSchema>;
+export type InsertRedemption = z.infer<typeof insertRedemptionSchema>;
