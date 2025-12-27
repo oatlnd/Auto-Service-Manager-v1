@@ -240,6 +240,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/statistics/by-category", requireAuth, async (req, res) => {
+    try {
+      const categoryStats = await storage.getStatisticsByCategory();
+      res.json(categoryStats);
+    } catch (error) {
+      console.error("Error fetching statistics by category:", error);
+      res.status(500).json({ error: "Failed to fetch statistics by category" });
+    }
+  });
+
   app.get("/api/bays/status", requireAuth, async (req, res) => {
     try {
       const bayStatus = await storage.getBayStatus();

@@ -159,6 +159,13 @@ export interface DailyStatistics {
   revenue: number;
 }
 
+export interface ServiceCategoryStats {
+  category: typeof SERVICE_CATEGORIES[number];
+  total: number;
+  completed: number;
+  inProgress: number;
+}
+
 export interface BayStatus {
   bay: typeof BAYS[number];
   isOccupied: boolean;

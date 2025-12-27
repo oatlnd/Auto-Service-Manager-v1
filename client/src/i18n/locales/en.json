@@ -48,6 +48,7 @@
     "title": "Dashboard",
     "subtitle": "Honda Service Center Overview",
     "todaysJobs": "Today's Jobs",
+    "todaysJobsByType": "Today's Jobs by Type",
     "completed": "Completed",
     "inProgress": "In Progress",
     "todaysRevenue": "Today's Revenue",

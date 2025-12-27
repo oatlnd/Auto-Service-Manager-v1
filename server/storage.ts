@@ -1,8 +1,9 @@
 import type { 
-  JobCard, InsertJobCard, DailyStatistics, BayStatus, 
+  JobCard, InsertJobCard, DailyStatistics, BayStatus, ServiceCategoryStats,
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
   User, BAYS, JOB_STATUSES, WorkSkill 
 } from "@shared/schema";
+import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface Session {
@@ -27,6 +28,7 @@ export interface IStorage {
   updateJobCardStatus(id: string, status: typeof JOB_STATUSES[number]): Promise<JobCard | undefined>;
   deleteJobCard(id: string): Promise<boolean>;
   getStatistics(): Promise<DailyStatistics>;
+  getStatisticsByCategory(): Promise<ServiceCategoryStats[]>;
   getBayStatus(): Promise<BayStatus[]>;
   
   getStaff(): Promise<Staff[]>;
@@ -321,6 +323,28 @@ export class MemStorage implements IStorage {
         .filter((job) => job.status === "Completed")
         .reduce((sum, job) => sum + job.cost, 0),
     };
+  }
+
+  async getStatisticsByCategory(): Promise<ServiceCategoryStats[]> {
+    const jobs = Array.from(this.jobCards.values());
+    const today = new Date().toDateString();
+    
+    const todayJobs = jobs.filter(
+      (job) => new Date(job.createdAt).toDateString() === today
+    );
+
+    return SERVICE_CATEGORIES.map((category) => {
+      const categoryJobs = todayJobs.filter(
+        (job) => SERVICE_TYPE_DETAILS[job.serviceType]?.category === category
+      );
+      
+      return {
+        category,
+        total: categoryJobs.length,
+        completed: categoryJobs.filter((job) => job.status === "Completed").length,
+        inProgress: categoryJobs.filter((job) => job.status === "In Progress").length,
+      };
+    });
   }
 
   async getBayStatus(): Promise<BayStatus[]> {

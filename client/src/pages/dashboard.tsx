@@ -9,7 +9,7 @@ import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { Link } from "wouter";
 import { useUserRole } from "@/contexts/UserRoleContext";
-import type { JobCard, DailyStatistics, BayStatus } from "@shared/schema";
+import type { JobCard, DailyStatistics, BayStatus, ServiceCategoryStats } from "@shared/schema";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -25,6 +25,10 @@ export default function Dashboard() {
 
   const { data: bayStatus, isLoading: baysLoading } = useQuery<BayStatus[]>({
     queryKey: ["/api/bays/status"],
+  });
+
+  const { data: categoryStats, isLoading: categoryLoading } = useQuery<ServiceCategoryStats[]>({
+    queryKey: ["/api/statistics/by-category"],
   });
 
   const formatCurrency = (amount: number) => {
@@ -91,6 +95,52 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+
+      <Card className="border border-card-border">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold">{t("dashboard.todaysJobsByType")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {categoryLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array(3).fill(0).map((_, i) => (
+                <div key={i} className="p-4 rounded-md bg-muted/30">
+                  <Skeleton className="h-5 w-24 mb-3" />
+                  <Skeleton className="h-8 w-12 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {categoryStats?.map((stat) => (
+                <div 
+                  key={stat.category} 
+                  className="p-4 rounded-md bg-muted/30"
+                  data-testid={`category-stat-${stat.category.toLowerCase().replace(" ", "-")}`}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="outline">
+                      {t(`jobCards.${stat.category === "Paid Service" ? "paidService" : stat.category === "Company Free Service" ? "freeService" : "repair"}`)}
+                    </Badge>
+                  </div>
+                  <p className="text-2xl font-bold mb-1">{stat.total}</p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-green-600" />
+                      {stat.completed} {t("dashboard.completed")}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-blue-600" />
+                      {stat.inProgress} {t("dashboard.inProgress")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border border-card-border">
