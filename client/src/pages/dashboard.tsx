@@ -2,22 +2,19 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Briefcase, CheckCircle, Clock, DollarSign, Wrench, Lock, CalendarIcon, Pause } from "lucide-react";
+import { Briefcase, CheckCircle, Clock, CalendarIcon, Pause, Wrench } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { Link } from "wouter";
-import { useUserRole } from "@/contexts/UserRoleContext";
 import type { JobCard, DailyStatistics, BayStatus, ServiceCategoryStats } from "@shared/schema";
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { canViewRevenue } = useUserRole();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
   const dateParam = format(selectedDate, "yyyy-MM-dd");
@@ -99,63 +96,100 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard
-          title={isToday ? t("dashboard.todaysJobs") : `${t("dashboard.jobs")} (${format(selectedDate, "dd/MM")})`}
-          value={stats?.today || 0}
-          icon={Briefcase}
-          iconColor="text-primary"
-          isLoading={statsLoading}
-          testId="stat-today-jobs"
-        />
-        <StatCard
-          title={t("dashboard.completed")}
-          value={stats?.completed || 0}
-          icon={CheckCircle}
-          iconColor="text-green-600"
-          isLoading={statsLoading}
-          testId="stat-completed"
-        />
-        <StatCard
-          title={t("dashboard.inProgress")}
-          value={stats?.inProgress || 0}
-          icon={Clock}
-          iconColor="text-blue-600"
-          isLoading={statsLoading}
-          testId="stat-in-progress"
-        />
-        <StatCard
-          title={t("dashboard.pending")}
-          value={stats?.pending || 0}
-          icon={Pause}
-          iconColor="text-amber-600"
-          isLoading={statsLoading}
-          testId="stat-pending"
-        />
-        {canViewRevenue ? (
-          <StatCard
-            title={isToday ? t("dashboard.todaysRevenue") : `${t("dashboard.revenueForDate")} (${format(selectedDate, "dd/MM")})`}
-            value={formatCurrency(stats?.revenue || 0)}
-            icon={DollarSign}
-            iconColor="text-green-600"
-            isLoading={statsLoading}
-            testId="stat-revenue"
-          />
-        ) : (
-          <Card className="border border-card-border">
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{t("dashboard.todaysRevenue")}</p>
-                  <p className="text-xs text-muted-foreground">{t("roles.admin")}/{t("roles.manager")}</p>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border border-card-border" data-testid="stat-today-jobs">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-primary" />
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {isToday ? t("dashboard.todaysJobs") : `${t("dashboard.jobs")} (${format(selectedDate, "dd/MM")})`}
+                </p>
+                <p className="text-2xl font-bold">{stats?.today || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.todayByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.todayByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.todayByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-completed">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t("dashboard.completed")}</p>
+                <p className="text-2xl font-bold">{stats?.completed || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.completedByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.completedByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.completedByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-in-progress">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t("dashboard.inProgress")}</p>
+                <p className="text-2xl font-bold">{stats?.inProgress || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.inProgressByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.inProgressByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.inProgressByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-pending">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Pause className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t("dashboard.pending")}</p>
+                <p className="text-2xl font-bold">{stats?.pending || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.pendingByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.pendingByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.pendingByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="border border-card-border">

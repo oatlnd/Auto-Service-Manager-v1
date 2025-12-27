@@ -151,11 +151,21 @@ export const insertJobCardSchema = jobCardSchema.omit({ id: true, advancePayment
 export type JobCard = z.infer<typeof jobCardSchema>;
 export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
 
+export interface CategoryBreakdown {
+  paidService: number;
+  freeService: number;
+  repair: number;
+}
+
 export interface DailyStatistics {
   today: number;
+  todayByCategory: CategoryBreakdown;
   completed: number;
+  completedByCategory: CategoryBreakdown;
   inProgress: number;
+  inProgressByCategory: CategoryBreakdown;
   pending: number;
+  pendingByCategory: CategoryBreakdown;
   revenue: number;
 }
 

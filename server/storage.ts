@@ -314,14 +314,26 @@ export class MemStorage implements IStorage {
       (job) => new Date(job.createdAt).toDateString() === targetDate
     );
 
+    const getCategoryBreakdown = (filteredJobs: JobCard[]) => ({
+      paidService: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Paid Service").length,
+      freeService: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Company Free Service").length,
+      repair: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Repair").length,
+    });
+
+    const completedJobs = dateJobs.filter((job) => job.status === "Completed");
+    const inProgressJobs = dateJobs.filter((job) => job.status === "In Progress");
+    const pendingJobs = dateJobs.filter((job) => job.status === "Pending");
+
     return {
       today: dateJobs.length,
-      completed: dateJobs.filter((job) => job.status === "Completed").length,
-      inProgress: dateJobs.filter((job) => job.status === "In Progress").length,
-      pending: dateJobs.filter((job) => job.status === "Pending").length,
-      revenue: dateJobs
-        .filter((job) => job.status === "Completed")
-        .reduce((sum, job) => sum + job.cost, 0),
+      todayByCategory: getCategoryBreakdown(dateJobs),
+      completed: completedJobs.length,
+      completedByCategory: getCategoryBreakdown(completedJobs),
+      inProgress: inProgressJobs.length,
+      inProgressByCategory: getCategoryBreakdown(inProgressJobs),
+      pending: pendingJobs.length,
+      pendingByCategory: getCategoryBreakdown(pendingJobs),
+      revenue: completedJobs.reduce((sum, job) => sum + job.cost, 0),
     };
   }
 
