@@ -833,7 +833,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
         <div className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Assignment</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Assignment & Status</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="view-bay">Bay</Label>
@@ -866,6 +866,24 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="pt-2">
+              <Label className="mb-2 block">Update Status</Label>
+              <div className="flex flex-wrap gap-2">
+                {statuses.map((status) => (
+                  <Button
+                    key={status}
+                    variant={job.status === status ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => onStatusChange(status)}
+                    disabled={isUpdating}
+                    data-testid={`button-status-${status.toLowerCase().replace(" ", "-")}`}
+                  >
+                    {isUpdating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                    {status}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
@@ -973,25 +991,13 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
             </Card>
           )}
 
-          <div>
-            <h4 className="text-sm text-muted-foreground mb-3">Update Status</h4>
-            <div className="flex flex-wrap gap-2">
-              {statuses.map((status) => (
-                <Button
-                  key={status}
-                  variant={job.status === status ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onStatusChange(status)}
-                  disabled={isUpdating}
-                  data-testid={`button-status-${status.toLowerCase().replace(" ", "-")}`}
-                >
-                  {isUpdating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                  {status}
-                </Button>
-              ))}
-            </div>
-          </div>
         </div>
+
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)} data-testid="button-close-view">
+            Close
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
