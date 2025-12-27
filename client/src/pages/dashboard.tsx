@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Briefcase, CheckCircle, Clock, DollarSign, Wrench, Lock, CalendarIcon } from "lucide-react";
+import { Briefcase, CheckCircle, Clock, DollarSign, Wrench, Lock, CalendarIcon, Pause } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,7 +99,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title={isToday ? t("dashboard.todaysJobs") : `${t("dashboard.jobs")} (${format(selectedDate, "dd/MM")})`}
           value={stats?.today || 0}
@@ -123,6 +123,14 @@ export default function Dashboard() {
           iconColor="text-blue-600"
           isLoading={statsLoading}
           testId="stat-in-progress"
+        />
+        <StatCard
+          title={t("dashboard.pending")}
+          value={stats?.pending || 0}
+          icon={Pause}
+          iconColor="text-amber-600"
+          isLoading={statsLoading}
+          testId="stat-pending"
         />
         {canViewRevenue ? (
           <StatCard

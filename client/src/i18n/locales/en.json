@@ -55,6 +55,7 @@
     "jobsByTypeForDate": "Jobs by Type for",
     "completed": "Completed",
     "inProgress": "In Progress",
+    "pending": "Pending",
     "todaysRevenue": "Today's Revenue",
     "revenueForDate": "Revenue for",
     "recentJobCards": "Recent Job Cards",
