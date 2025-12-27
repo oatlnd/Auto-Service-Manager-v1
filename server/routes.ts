@@ -226,7 +226,8 @@ export async function registerRoutes(
   app.get("/api/statistics", requireAuth, async (req, res) => {
     try {
       const role = getRoleFromSession(req) || "Job Card";
-      const stats = await storage.getStatistics();
+      const date = req.query.date as string | undefined;
+      const stats = await storage.getStatistics(date);
       
       if (!canViewRevenue(role)) {
         const { revenue, ...sanitized } = stats;
@@ -242,7 +243,8 @@ export async function registerRoutes(
 
   app.get("/api/statistics/by-category", requireAuth, async (req, res) => {
     try {
-      const categoryStats = await storage.getStatisticsByCategory();
+      const date = req.query.date as string | undefined;
+      const categoryStats = await storage.getStatisticsByCategory(date);
       res.json(categoryStats);
     } catch (error) {
       console.error("Error fetching statistics by category:", error);

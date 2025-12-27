@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Briefcase, CheckCircle, Clock, DollarSign, Wrench, Lock } from "lucide-react";
+import { format } from "date-fns";
+import { Briefcase, CheckCircle, Clock, DollarSign, Wrench, Lock, CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { Link } from "wouter";
@@ -14,9 +18,13 @@ import type { JobCard, DailyStatistics, BayStatus, ServiceCategoryStats } from "
 export default function Dashboard() {
   const { t } = useTranslation();
   const { canViewRevenue } = useUserRole();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  
+  const dateParam = format(selectedDate, "yyyy-MM-dd");
+  const isToday = format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
   
   const { data: stats, isLoading: statsLoading } = useQuery<DailyStatistics>({
-    queryKey: ["/api/statistics"],
+    queryKey: ["/api/statistics", dateParam],
   });
 
   const { data: recentJobs, isLoading: jobsLoading } = useQuery<JobCard[]>({
@@ -28,7 +36,7 @@ export default function Dashboard() {
   });
 
   const { data: categoryStats, isLoading: categoryLoading } = useQuery<ServiceCategoryStats[]>({
-    queryKey: ["/api/statistics/by-category"],
+    queryKey: ["/api/statistics/by-category", dateParam],
   });
 
   const formatCurrency = (amount: number) => {
@@ -40,14 +48,44 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("dashboard.title")}</h1>
-        <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("dashboard.title")}</h1>
+          <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2" data-testid="button-date-picker">
+                <CalendarIcon className="w-4 h-4" />
+                {isToday ? t("dashboard.today") : format(selectedDate, "dd/MM/yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {!isToday && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedDate(new Date())}
+              data-testid="button-reset-to-today"
+            >
+              {t("dashboard.today")}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title={t("dashboard.todaysJobs")}
+          title={isToday ? t("dashboard.todaysJobs") : `${t("dashboard.jobs")} (${format(selectedDate, "dd/MM")})`}
           value={stats?.today || 0}
           icon={Briefcase}
           iconColor="text-primary"
@@ -72,7 +110,7 @@ export default function Dashboard() {
         />
         {canViewRevenue ? (
           <StatCard
-            title={t("dashboard.todaysRevenue")}
+            title={isToday ? t("dashboard.todaysRevenue") : `${t("dashboard.revenueForDate")} (${format(selectedDate, "dd/MM")})`}
             value={formatCurrency(stats?.revenue || 0)}
             icon={DollarSign}
             iconColor="text-green-600"
@@ -98,7 +136,9 @@ export default function Dashboard() {
 
       <Card className="border border-card-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold">{t("dashboard.todaysJobsByType")}</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            {isToday ? t("dashboard.todaysJobsByType") : `${t("dashboard.jobsByTypeForDate")} ${format(selectedDate, "dd/MM/yyyy")}`}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {categoryLoading ? (

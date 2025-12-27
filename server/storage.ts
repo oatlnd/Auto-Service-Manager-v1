@@ -27,8 +27,8 @@ export interface IStorage {
   updateJobCard(id: string, data: Partial<InsertJobCard>): Promise<JobCard | undefined>;
   updateJobCardStatus(id: string, status: typeof JOB_STATUSES[number]): Promise<JobCard | undefined>;
   deleteJobCard(id: string): Promise<boolean>;
-  getStatistics(): Promise<DailyStatistics>;
-  getStatisticsByCategory(): Promise<ServiceCategoryStats[]>;
+  getStatistics(date?: string): Promise<DailyStatistics>;
+  getStatisticsByCategory(date?: string): Promise<ServiceCategoryStats[]>;
   getBayStatus(): Promise<BayStatus[]>;
   
   getStaff(): Promise<Staff[]>;
@@ -306,35 +306,35 @@ export class MemStorage implements IStorage {
     return this.jobCards.delete(id);
   }
 
-  async getStatistics(): Promise<DailyStatistics> {
+  async getStatistics(date?: string): Promise<DailyStatistics> {
     const jobs = Array.from(this.jobCards.values());
-    const today = new Date().toDateString();
+    const targetDate = date ? new Date(date).toDateString() : new Date().toDateString();
     
-    const todayJobs = jobs.filter(
-      (job) => new Date(job.createdAt).toDateString() === today
+    const dateJobs = jobs.filter(
+      (job) => new Date(job.createdAt).toDateString() === targetDate
     );
 
     return {
-      today: todayJobs.length,
-      completed: jobs.filter((job) => job.status === "Completed").length,
-      inProgress: jobs.filter((job) => job.status === "In Progress").length,
-      pending: jobs.filter((job) => job.status === "Pending").length,
-      revenue: jobs
+      today: dateJobs.length,
+      completed: dateJobs.filter((job) => job.status === "Completed").length,
+      inProgress: dateJobs.filter((job) => job.status === "In Progress").length,
+      pending: dateJobs.filter((job) => job.status === "Pending").length,
+      revenue: dateJobs
         .filter((job) => job.status === "Completed")
         .reduce((sum, job) => sum + job.cost, 0),
     };
   }
 
-  async getStatisticsByCategory(): Promise<ServiceCategoryStats[]> {
+  async getStatisticsByCategory(date?: string): Promise<ServiceCategoryStats[]> {
     const jobs = Array.from(this.jobCards.values());
-    const today = new Date().toDateString();
+    const targetDate = date ? new Date(date).toDateString() : new Date().toDateString();
     
-    const todayJobs = jobs.filter(
-      (job) => new Date(job.createdAt).toDateString() === today
+    const dateJobs = jobs.filter(
+      (job) => new Date(job.createdAt).toDateString() === targetDate
     );
 
     return SERVICE_CATEGORIES.map((category) => {
-      const categoryJobs = todayJobs.filter(
+      const categoryJobs = dateJobs.filter(
         (job) => SERVICE_TYPE_DETAILS[job.serviceType]?.category === category
       );
       
