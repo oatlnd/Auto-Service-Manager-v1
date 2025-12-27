@@ -234,7 +234,7 @@ export default function JobCards() {
             onClick={() => setServiceTypeFilter(serviceTypeFilter === category ? null : category)}
             data-testid={`button-filter-${category.toLowerCase().replace(" ", "-")}`}
           >
-            {category}
+            {t(`jobCards.${category === "Paid Service" ? "paidService" : category === "Company Free Service" ? "freeService" : "repair"}`)}
           </Button>
         ))}
       </div>
@@ -557,21 +557,21 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Job Card</DialogTitle>
-          <DialogDescription>Fill in the details to create a new service job card.</DialogDescription>
+          <DialogTitle>{t("jobCards.createNewJobCard")}</DialogTitle>
+          <DialogDescription>{t("jobCards.createDescription")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.bikeDetails")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bikeModel">Bike Model *</Label>
+                <Label htmlFor="bikeModel">{t("jobCards.bikeModel")} *</Label>
                 <Select
                   value={formData.bikeModel}
                   onValueChange={(value) => updateField("bikeModel", value as typeof BIKE_MODELS[number])}
                 >
                   <SelectTrigger data-testid="select-bike-model" className={errors.bikeModel ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Select model" />
+                    <SelectValue placeholder={t("jobCards.selectBikeModel")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BIKE_MODELS.map((model) => (
@@ -582,12 +582,12 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                 {errors.bikeModel && <p className="text-xs text-destructive">{errors.bikeModel}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="registration">Registration Number *</Label>
+                <Label htmlFor="registration">{t("jobCards.registration")} *</Label>
                 <Input
                   id="registration"
                   value={formData.registration}
                   onChange={(e) => updateField("registration", e.target.value.toUpperCase())}
-                  placeholder="e.g., NP-1234"
+                  placeholder={t("jobCards.registrationPlaceholder")}
                   className={errors.registration ? "border-destructive" : ""}
                   data-testid="input-registration"
                 />
@@ -596,13 +596,13 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tagNo">Tag No</Label>
+                <Label htmlFor="tagNo">{t("jobCards.tagNo")}</Label>
                 <Select
                   value={formData.tagNo}
                   onValueChange={(value) => updateField("tagNo", value)}
                 >
                   <SelectTrigger data-testid="select-tag-no">
-                    <SelectValue placeholder="Select tag" />
+                    <SelectValue placeholder={t("jobCards.selectTagNo")} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
@@ -612,13 +612,13 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="odometer">Odometer Reading (km)</Label>
+                <Label htmlFor="odometer">{t("jobCards.odometer")}</Label>
                 <Input
                   id="odometer"
                   type="number"
                   value={formData.odometer || ""}
                   onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
-                  placeholder="Enter odometer reading"
+                  placeholder={t("jobCards.odometer")}
                   data-testid="input-odometer"
                 />
               </div>
@@ -626,27 +626,27 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.customerDetails")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="customerName">Customer Name *</Label>
+                <Label htmlFor="customerName">{t("jobCards.customerName")} *</Label>
                 <Input
                   id="customerName"
                   value={formData.customerName}
                   onChange={(e) => updateField("customerName", e.target.value)}
-                  placeholder="Enter customer name"
+                  placeholder={t("jobCards.customerNamePlaceholder")}
                   className={errors.customerName ? "border-destructive" : ""}
                   data-testid="input-customer-name"
                 />
                 {errors.customerName && <p className="text-xs text-destructive">{errors.customerName}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">{t("common.phone")} *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  placeholder="Enter phone number"
+                  placeholder={t("common.phone")}
                   className={errors.phone ? "border-destructive" : ""}
                   data-testid="input-phone"
                 />
@@ -656,10 +656,10 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Requests</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.customerRequests")}</h3>
             
             <div className="space-y-2">
-              <Label>Type of Service</Label>
+              <Label>{t("jobCards.typeOfService")}</Label>
               <RadioGroup
                 value={selectedCategory}
                 onValueChange={(value) => setSelectedCategory(value as typeof SERVICE_CATEGORIES[number])}
@@ -673,7 +673,7 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                       data-testid={`radio-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                     />
                     <Label htmlFor={`category-${category}`} className="text-sm font-normal cursor-pointer">
-                      {SERVICE_CATEGORY_LABELS[category]}
+                      {t(`jobCards.${category === "Paid Service" ? "paidService" : category === "Company Free Service" ? "freeService" : "repair"}`)}
                     </Label>
                   </div>
                 ))}
@@ -682,49 +682,49 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="serviceType">Service Type</Label>
+                <Label htmlFor="serviceType">{t("jobCards.serviceType")}</Label>
                 <Select
                   value={getFilteredServiceTypes().includes(formData.serviceType) ? formData.serviceType : ""}
                   onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
                 >
                   <SelectTrigger data-testid="select-service-type">
-                    <SelectValue placeholder="Select service type" />
+                    <SelectValue placeholder={t("jobCards.selectServiceType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {getFilteredServiceTypes().map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                        {t(`serviceTypes.${type}`, type)} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cost">Estimated Cost (LKR)</Label>
+                <Label htmlFor="cost">{t("jobCards.cost")} (LKR)</Label>
                 <Input
                   id="cost"
                   type="number"
                   value={formData.cost || ""}
                   onChange={(e) => updateField("cost", parseInt(e.target.value) || 0)}
-                  placeholder="Enter estimated cost"
+                  placeholder={t("jobCards.cost")}
                   data-testid="input-cost"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="estimatedTime">Estimated Time</Label>
+              <Label htmlFor="estimatedTime">{t("jobCards.estimatedTime")}</Label>
               <Input
                 id="estimatedTime"
                 value={formData.estimatedTime}
                 onChange={(e) => updateField("estimatedTime", e.target.value)}
-                placeholder="e.g., 2 hours"
+                placeholder={t("jobCards.estimatedTimePlaceholder")}
                 data-testid="input-estimated-time"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Customer Requests (select all that apply)</Label>
+              <Label>{t("jobCards.customerRequests")}</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                 {CUSTOMER_REQUESTS.map((request) => (
                   <div key={request} className="flex items-center gap-2">
@@ -741,7 +741,7 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                       data-testid={`checkbox-request-${request.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                     />
                     <Label htmlFor={`request-${request}`} className="text-sm font-normal cursor-pointer">
-                      {request}
+                      {t(`customerRequestItems.${request}`, request)}
                     </Label>
                   </div>
                 ))}
@@ -749,12 +749,12 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="repairDetails">Notes / Repair Details</Label>
+              <Label htmlFor="repairDetails">{t("jobCards.repairDetails")}</Label>
               <Textarea
                 id="repairDetails"
                 value={formData.repairDetails}
                 onChange={(e) => updateField("repairDetails", e.target.value)}
-                placeholder="Enter any additional notes or repair details..."
+                placeholder={t("jobCards.repairDetailsPlaceholder")}
                 className="min-h-24"
                 data-testid="textarea-repair-details"
               />
@@ -764,18 +764,18 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
           {formData.cost > 0 && (
             <Card className="bg-muted/50 border border-card-border">
               <CardContent className="pt-4">
-                <h4 className="font-medium mb-2">Payment Summary</h4>
+                <h4 className="font-medium mb-2">{t("jobCards.paymentDetails")}</h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Cost:</span>
+                    <span className="text-muted-foreground">{t("jobCards.totalCost")}:</span>
                     <span className="font-medium">LKR {formData.cost.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Required Payment:</span>
+                    <span className="text-muted-foreground">{t("jobCards.advance")}:</span>
                     <span className="font-medium text-primary">LKR {payment.advance.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Remaining:</span>
+                    <span className="text-muted-foreground">{t("jobCards.remaining")}:</span>
                     <span>LKR {payment.remaining.toLocaleString()}</span>
                   </div>
                   <Badge variant="outline" className="mt-2">{payment.status}</Badge>
@@ -786,11 +786,11 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-create">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={isPending} data-testid="button-submit-create">
               {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Create Job Card
+              {t("jobCards.createJobCard")}
             </Button>
           </DialogFooter>
         </form>
@@ -812,6 +812,7 @@ interface ViewJobCardDialogProps {
 }
 
 function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignmentChange, isUpdating, isLimitedRole = false, canViewRevenue = true, mechanics }: ViewJobCardDialogProps) {
+  const { t } = useTranslation();
   const [selectedBay, setSelectedBay] = useState<typeof BAYS[number]>("Sudershan");
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
 
@@ -844,7 +845,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3 flex-wrap">
-            <DialogTitle>Job Card Details</DialogTitle>
+            <DialogTitle>{t("jobCards.title")}</DialogTitle>
             <Badge variant="outline">{job.id}</Badge>
             <StatusBadge status={job.status} />
           </div>
@@ -852,16 +853,16 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
         <div className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Assignment & Status</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.assignmentStatus")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="view-bay">Bay</Label>
+                <Label htmlFor="view-bay">{t("jobCards.bay")}</Label>
                 <Select
                   value={selectedBay}
                   onValueChange={(value) => handleBayChange(value as typeof BAYS[number])}
                 >
                   <SelectTrigger data-testid="select-view-bay">
-                    <SelectValue placeholder="Select bay" />
+                    <SelectValue placeholder={t("jobCards.selectBay")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BAYS.map((bay) => (
@@ -871,13 +872,13 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="view-technician">Technician</Label>
+                <Label htmlFor="view-technician">{t("jobCards.technician")}</Label>
                 <Select
                   value={selectedTechnician}
                   onValueChange={handleTechnicianChange}
                 >
                   <SelectTrigger data-testid="select-view-technician">
-                    <SelectValue placeholder="Select technician" />
+                    <SelectValue placeholder={t("jobCards.selectTechnician")} />
                   </SelectTrigger>
                   <SelectContent>
                     {mechanics.map((staff) => (
@@ -888,7 +889,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
               </div>
             </div>
             <div className="pt-2">
-              <Label className="mb-2 block">Update Status</Label>
+              <Label className="mb-2 block">{t("jobCards.updateStatus")}</Label>
               <div className="flex flex-wrap gap-2">
                 {statuses.map((status) => (
                   <Button
@@ -900,7 +901,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                     data-testid={`button-status-${status.toLowerCase().replace(" ", "-")}`}
                   >
                     {isUpdating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                    {status}
+                    {t(`jobCards.${status === "Pending" ? "pending" : status === "In Progress" ? "inProgress" : status === "Quality Check" ? "qualityCheck" : "completed"}`)}
                   </Button>
                 ))}
               </div>
@@ -908,65 +909,65 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.bikeDetails")}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Tag No</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.tagNo")}</h4>
                 <p className="font-medium">{job.tagNo || "-"}</p>
               </div>
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Registration</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.registration")}</h4>
                 <p className="font-medium">{job.registration}</p>
               </div>
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Model</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.bikeModel")}</h4>
                 <p className="font-medium">{job.bikeModel}</p>
               </div>
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Odometer</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.odometer")}</h4>
                 <p className="font-medium">{job.odometer.toLocaleString()} km</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.customerDetails")}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Customer Name</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.customerName")}</h4>
                 <p className="font-medium" data-testid="text-customer-name">{job.customerName}</p>
               </div>
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Phone Number</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("common.phone")}</h4>
                 <p className="font-medium">{job.phone}</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Service Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.serviceDetails")}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Service Type</h4>
-                <Badge variant="outline">{job.serviceType}</Badge>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.serviceType")}</h4>
+                <Badge variant="outline">{t(`serviceTypes.${job.serviceType}`, job.serviceType)}</Badge>
               </div>
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Estimated Time</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.estimatedTime")}</h4>
                 <p className="font-medium">{job.estimatedTime || "-"}</p>
               </div>
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Created</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("common.status")}</h4>
                 <p className="font-medium">{new Date(job.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
             
             {job.customerRequests && job.customerRequests.length > 0 && (
               <div>
-                <h4 className="text-sm text-muted-foreground mb-2">Customer Requests</h4>
+                <h4 className="text-sm text-muted-foreground mb-2">{t("jobCards.customerRequests")}</h4>
                 <div className="flex flex-wrap gap-1">
                   {job.customerRequests.map((request) => (
                     <Badge key={request} variant="secondary" className="text-xs">
-                      {request}
+                      {t(`customerRequestItems.${request}`, request)}
                     </Badge>
                   ))}
                 </div>
@@ -975,7 +976,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
             {job.repairDetails && (
               <div>
-                <h4 className="text-sm text-muted-foreground mb-1">Notes / Repair Details</h4>
+                <h4 className="text-sm text-muted-foreground mb-1">{t("jobCards.repairDetails")}</h4>
                 <p className="text-sm bg-muted/50 p-3 rounded-md">{job.repairDetails}</p>
               </div>
             )}
@@ -984,25 +985,25 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
           {canViewRevenue && (
             <Card className="bg-muted/50 border border-card-border">
               <CardContent className="pt-4">
-                <h4 className="font-medium mb-3">Payment Details</h4>
+                <h4 className="font-medium mb-3">{t("jobCards.paymentDetails")}</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Cost:</span>
+                    <span className="text-muted-foreground">{t("jobCards.totalCost")}:</span>
                     <span className="font-semibold">LKR {job.cost.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Advance Paid:</span>
+                    <span className="text-muted-foreground">{t("jobCards.advancePaid")}:</span>
                     <span className="text-green-600 dark:text-green-400">LKR {job.advancePayment.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Remaining:</span>
+                    <span className="text-muted-foreground">{t("jobCards.remaining")}:</span>
                     <span className={job.remainingPayment > 0 ? "text-orange-600 dark:text-orange-400" : ""}>
                       LKR {job.remainingPayment.toLocaleString()}
                     </span>
                   </div>
                   <div className="pt-2">
                     <Badge variant={job.paymentStatus === "Paid in Full" ? "default" : "secondary"}>
-                      {job.paymentStatus}
+                      {job.paymentStatus === "Paid in Full" ? t("jobCards.paidInFull") : t("jobCards.partialPayment")}
                     </Badge>
                   </div>
                 </div>
@@ -1014,7 +1015,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} data-testid="button-close-view">
-            Close
+            {t("common.close")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1032,6 +1033,7 @@ interface EditJobCardDialogProps {
 }
 
 function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mechanics }: EditJobCardDialogProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [selectedCategory, setSelectedCategory] = useState<typeof SERVICE_CATEGORIES[number]>("Paid Service");
 
@@ -1086,22 +1088,22 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3 flex-wrap">
-            <DialogTitle>Edit Job Card</DialogTitle>
+            <DialogTitle>{t("jobCards.editJobCard")}</DialogTitle>
             <Badge variant="outline">{job.id}</Badge>
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Assignment</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.assignment")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-bay">Assign Bay</Label>
+                <Label htmlFor="edit-bay">{t("jobCards.bay")}</Label>
                 <Select
                   value={formData.bay}
                   onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
                 >
                   <SelectTrigger data-testid="select-edit-bay">
-                    <SelectValue placeholder="Select bay" />
+                    <SelectValue placeholder={t("jobCards.selectBay")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BAYS.map((bay) => (
@@ -1111,13 +1113,13 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-technician">Assign Technician</Label>
+                <Label htmlFor="edit-technician">{t("jobCards.technician")}</Label>
                 <Select
                   value={formData.assignedTo}
                   onValueChange={(value) => updateField("assignedTo", value)}
                 >
                   <SelectTrigger data-testid="select-edit-technician">
-                    <SelectValue placeholder="Select technician" />
+                    <SelectValue placeholder={t("jobCards.selectTechnician")} />
                   </SelectTrigger>
                   <SelectContent>
                     {mechanics.map((staff) => (
@@ -1130,16 +1132,16 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.bikeDetails")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-bikeModel">Bike Model *</Label>
+                <Label htmlFor="edit-bikeModel">{t("jobCards.bikeModel")} *</Label>
                 <Select
                   value={formData.bikeModel}
                   onValueChange={(value) => updateField("bikeModel", value as typeof BIKE_MODELS[number])}
                 >
                   <SelectTrigger data-testid="select-edit-bike-model">
-                    <SelectValue placeholder="Select model" />
+                    <SelectValue placeholder={t("jobCards.selectBikeModel")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BIKE_MODELS.map((model) => (
@@ -1149,25 +1151,25 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-registration">Registration Number *</Label>
+                <Label htmlFor="edit-registration">{t("jobCards.registration")} *</Label>
                 <Input
                   id="edit-registration"
                   value={formData.registration ?? ""}
                   onChange={(e) => updateField("registration", e.target.value.toUpperCase())}
-                  placeholder="e.g., NP-1234"
+                  placeholder={t("jobCards.registrationPlaceholder")}
                   data-testid="input-edit-registration"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-tagNo">Tag No</Label>
+                <Label htmlFor="edit-tagNo">{t("jobCards.tagNo")}</Label>
                 <Select
                   value={formData.tagNo ?? ""}
                   onValueChange={(value) => updateField("tagNo", value)}
                 >
                   <SelectTrigger data-testid="select-edit-tag-no">
-                    <SelectValue placeholder="Select tag" />
+                    <SelectValue placeholder={t("jobCards.selectTagNo")} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
@@ -1177,13 +1179,13 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-odometer">Odometer Reading (km)</Label>
+                <Label htmlFor="edit-odometer">{t("jobCards.odometer")}</Label>
                 <Input
                   id="edit-odometer"
                   type="number"
                   value={formData.odometer ?? ""}
                   onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
-                  placeholder="Enter odometer reading"
+                  placeholder={t("jobCards.odometer")}
                   data-testid="input-edit-odometer"
                 />
               </div>
@@ -1191,25 +1193,25 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.customerDetails")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-customerName">Customer Name *</Label>
+                <Label htmlFor="edit-customerName">{t("jobCards.customerName")} *</Label>
                 <Input
                   id="edit-customerName"
                   value={formData.customerName ?? ""}
                   onChange={(e) => updateField("customerName", e.target.value)}
-                  placeholder="Enter customer name"
+                  placeholder={t("jobCards.customerNamePlaceholder")}
                   data-testid="input-edit-customer-name"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-phone">Phone Number *</Label>
+                <Label htmlFor="edit-phone">{t("common.phone")} *</Label>
                 <Input
                   id="edit-phone"
                   value={formData.phone ?? ""}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  placeholder="Enter phone number"
+                  placeholder={t("common.phone")}
                   data-testid="input-edit-phone"
                 />
               </div>
@@ -1217,10 +1219,10 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Requests</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.customerRequests")}</h3>
             
             <div className="space-y-2">
-              <Label>Type of Service</Label>
+              <Label>{t("jobCards.typeOfService")}</Label>
               <RadioGroup
                 value={selectedCategory}
                 onValueChange={(value) => setSelectedCategory(value as typeof SERVICE_CATEGORIES[number])}
@@ -1234,7 +1236,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                       data-testid={`radio-edit-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                     />
                     <Label htmlFor={`edit-category-${category}`} className="text-sm font-normal cursor-pointer">
-                      {SERVICE_CATEGORY_LABELS[category]}
+                      {t(`jobCards.${category === "Paid Service" ? "paidService" : category === "Company Free Service" ? "freeService" : "repair"}`)}
                     </Label>
                   </div>
                 ))}
@@ -1243,49 +1245,49 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-serviceType">Service Type</Label>
+                <Label htmlFor="edit-serviceType">{t("jobCards.serviceType")}</Label>
                 <Select
                   value={getFilteredServiceTypes().includes(formData.serviceType as typeof SERVICE_TYPES[number]) ? formData.serviceType : ""}
                   onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
                 >
                   <SelectTrigger data-testid="select-edit-service-type">
-                    <SelectValue placeholder="Select service type" />
+                    <SelectValue placeholder={t("jobCards.selectServiceType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {getFilteredServiceTypes().map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
+                        {t(`serviceTypes.${type}`, type)} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-cost">Estimated Cost (LKR)</Label>
+                <Label htmlFor="edit-cost">{t("jobCards.cost")} (LKR)</Label>
                 <Input
                   id="edit-cost"
                   type="number"
                   value={formData.cost ?? ""}
                   onChange={(e) => updateField("cost", parseInt(e.target.value) || 0)}
-                  placeholder="Enter estimated cost"
+                  placeholder={t("jobCards.cost")}
                   data-testid="input-edit-cost"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-estimatedTime">Estimated Time</Label>
+              <Label htmlFor="edit-estimatedTime">{t("jobCards.estimatedTime")}</Label>
               <Input
                 id="edit-estimatedTime"
                 value={formData.estimatedTime ?? ""}
                 onChange={(e) => updateField("estimatedTime", e.target.value)}
-                placeholder="e.g., 2 hours"
+                placeholder={t("jobCards.estimatedTimePlaceholder")}
                 data-testid="input-edit-estimated-time"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Customer Requests (select all that apply)</Label>
+              <Label>{t("jobCards.customerRequestsSelect")}</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                 {CUSTOMER_REQUESTS.map((request) => (
                   <div key={request} className="flex items-center gap-2">
@@ -1303,7 +1305,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                       data-testid={`checkbox-edit-request-${request.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                     />
                     <Label htmlFor={`edit-request-${request}`} className="text-sm font-normal cursor-pointer">
-                      {request}
+                      {t(`customerRequestItems.${request}`, request)}
                     </Label>
                   </div>
                 ))}
@@ -1311,12 +1313,12 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-repairDetails">Notes / Repair Details</Label>
+              <Label htmlFor="edit-repairDetails">{t("jobCards.repairDetails")}</Label>
               <Textarea
                 id="edit-repairDetails"
                 value={formData.repairDetails ?? ""}
                 onChange={(e) => updateField("repairDetails", e.target.value)}
-                placeholder="Enter any additional notes or repair details..."
+                placeholder={t("jobCards.repairDetailsPlaceholder")}
                 className="min-h-24"
                 data-testid="textarea-edit-repair-details"
               />
@@ -1325,11 +1327,11 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-edit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={isPending} data-testid="button-submit-edit">
               {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Save Changes
+              {t("common.saveChanges")}
             </Button>
           </DialogFooter>
         </form>
