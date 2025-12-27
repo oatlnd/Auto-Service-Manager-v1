@@ -25,6 +25,14 @@ export default function Dashboard() {
   
   const { data: stats, isLoading: statsLoading } = useQuery<DailyStatistics>({
     queryKey: ["/api/statistics", dateParam],
+    queryFn: async () => {
+      const res = await fetch(`/api/statistics?date=${dateParam}`, {
+        credentials: "include",
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken") || ""}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch statistics");
+      return res.json();
+    },
   });
 
   const { data: recentJobs, isLoading: jobsLoading } = useQuery<JobCard[]>({
@@ -37,6 +45,14 @@ export default function Dashboard() {
 
   const { data: categoryStats, isLoading: categoryLoading } = useQuery<ServiceCategoryStats[]>({
     queryKey: ["/api/statistics/by-category", dateParam],
+    queryFn: async () => {
+      const res = await fetch(`/api/statistics/by-category?date=${dateParam}`, {
+        credentials: "include",
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken") || ""}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch category statistics");
+      return res.json();
+    },
   });
 
   const formatCurrency = (amount: number) => {
