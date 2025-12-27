@@ -320,8 +320,8 @@ export class MemStorage implements IStorage {
       repair: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Repair").length,
     });
 
-    const completedJobs = dateJobs.filter((job) => job.status === "Completed");
-    const inProgressJobs = dateJobs.filter((job) => job.status === "In Progress");
+    const completedJobs = dateJobs.filter((job) => job.status === "Completed" || job.status === "Delivered");
+    const inProgressJobs = dateJobs.filter((job) => job.status === "In Progress" || job.status === "Oil Change");
     const pendingJobs = dateJobs.filter((job) => job.status === "Pending");
 
     return {
@@ -353,8 +353,8 @@ export class MemStorage implements IStorage {
       return {
         category,
         total: categoryJobs.length,
-        completed: categoryJobs.filter((job) => job.status === "Completed").length,
-        inProgress: categoryJobs.filter((job) => job.status === "In Progress").length,
+        completed: categoryJobs.filter((job) => job.status === "Completed" || job.status === "Delivered").length,
+        inProgress: categoryJobs.filter((job) => job.status === "In Progress" || job.status === "Oil Change").length,
       };
     });
   }
@@ -369,7 +369,7 @@ export class MemStorage implements IStorage {
       
       if (isWashBay) {
         const activeJobs = jobs
-          .filter((job) => job.bay === bay && job.status !== "Completed")
+          .filter((job) => job.bay === bay && job.status !== "Completed" && job.status !== "Delivered")
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5);
         
@@ -381,7 +381,7 @@ export class MemStorage implements IStorage {
         };
       } else {
         const activeJob = jobs.find(
-          (job) => job.bay === bay && job.status !== "Completed"
+          (job) => job.bay === bay && job.status !== "Completed" && job.status !== "Delivered"
         );
         
         return {

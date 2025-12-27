@@ -60,7 +60,17 @@ export const SERVICE_TYPE_DETAILS: Record<typeof SERVICE_TYPES[number], { catego
   "2nd Free Service": { category: "Company Free Service", price: 550 },
   "1st Free Service": { category: "Company Free Service", price: 550 },
 };
-export const JOB_STATUSES = ["Pending", "In Progress", "Quality Check", "Completed"] as const;
+export const JOB_STATUSES = ["Pending", "In Progress", "Oil Change", "Quality Check", "Completed", "Delivered"] as const;
+
+export const SERVICE_STATUSES = ["Pending", "In Progress", "Oil Change", "Quality Check", "Completed", "Delivered"] as const;
+export const REPAIR_STATUSES = ["Pending", "In Progress", "Quality Check", "Completed", "Delivered"] as const;
+
+export function getStatusesForCategory(category: typeof SERVICE_CATEGORIES[number]): readonly string[] {
+  if (category === "Repair") {
+    return REPAIR_STATUSES;
+  }
+  return SERVICE_STATUSES;
+}
 export const BAYS = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
 export const WASH_BAYS = ["Wash Bay 1", "Wash Bay 2"] as const;
 export const TECHNICIAN_BAYS = ["Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;

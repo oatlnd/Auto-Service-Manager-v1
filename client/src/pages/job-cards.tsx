@@ -52,7 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { JobCard, JOB_STATUSES, Staff } from "@shared/schema";
-import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS } from "@shared/schema";
+import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS, getStatusesForCategory } from "@shared/schema";
 
 interface FormData {
   tagNo: string;
@@ -193,7 +193,7 @@ export default function JobCards() {
       
       const matchesStatus = 
         statusFilter === "all" ? true : 
-        statusFilter === "non-completed" ? job.status !== "Completed" :
+        statusFilter === "non-completed" ? (job.status !== "Completed" && job.status !== "Delivered") :
         job.status === statusFilter;
       
       const matchesServiceType = 
@@ -260,12 +260,14 @@ export default function JobCards() {
               <SelectContent>
                 <SelectItem value="non-completed">{t("jobCards.nonCompleted")}</SelectItem>
                 <SelectItem value="all">{t("jobCards.allStatus")}</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Pending">{t("jobCards.pending")}</SelectItem>
+                <SelectItem value="In Progress">{t("jobCards.inProgress")}</SelectItem>
+                <SelectItem value="Oil Change">{t("jobCards.oilChange")}</SelectItem>
                 {!isLimitedRole && (
                   <>
-                    <SelectItem value="Quality Check">Quality Check</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Quality Check">{t("jobCards.qualityCheck")}</SelectItem>
+                    <SelectItem value="Completed">{t("jobCards.completed")}</SelectItem>
+                    <SelectItem value="Delivered">{t("jobCards.delivered")}</SelectItem>
                   </>
                 )}
               </SelectContent>
@@ -822,7 +824,9 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
   if (!job) return null;
 
-  const allStatuses: (typeof JOB_STATUSES[number])[] = ["Pending", "In Progress", "Quality Check", "Completed"];
+  const serviceTypeDetails = SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS];
+  const category = serviceTypeDetails?.category || "Paid Service";
+  const allStatuses = getStatusesForCategory(category) as (typeof JOB_STATUSES[number])[];
   const statuses = isLimitedRole 
     ? allStatuses.filter(s => s === "In Progress" || s === "Completed")
     : allStatuses;
@@ -888,19 +892,27 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
             <div className="pt-2">
               <Label className="mb-2 block">{t("jobCards.updateStatus")}</Label>
               <div className="flex flex-wrap gap-2">
-                {statuses.map((status) => (
-                  <Button
-                    key={status}
-                    variant={job.status === status ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onStatusChange(status)}
-                    disabled={isUpdating}
-                    data-testid={`button-status-${status.toLowerCase().replace(" ", "-")}`}
-                  >
-                    {isUpdating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                    {t(`jobCards.${status === "Pending" ? "pending" : status === "In Progress" ? "inProgress" : status === "Quality Check" ? "qualityCheck" : "completed"}`)}
-                  </Button>
-                ))}
+                {statuses.map((status) => {
+                  const statusKey = status === "Pending" ? "pending" 
+                    : status === "In Progress" ? "inProgress" 
+                    : status === "Oil Change" ? "oilChange"
+                    : status === "Quality Check" ? "qualityCheck" 
+                    : status === "Completed" ? "completed"
+                    : "delivered";
+                  return (
+                    <Button
+                      key={status}
+                      variant={job.status === status ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => onStatusChange(status)}
+                      disabled={isUpdating}
+                      data-testid={`button-status-${status.toLowerCase().replace(" ", "-")}`}
+                    >
+                      {isUpdating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                      {t(`jobCards.${statusKey}`)}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           </div>
