@@ -474,6 +474,7 @@ const SERVICE_CATEGORY_LABELS: Record<string, string> = {
 };
 
 function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: CreateJobCardDialogProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedCategory, setSelectedCategory] = useState<typeof SERVICE_CATEGORIES[number]>("Paid Service");
