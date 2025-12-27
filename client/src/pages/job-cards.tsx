@@ -279,6 +279,7 @@ export default function JobCards() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
                   <TableHead>Job ID</TableHead>
                   <TableHead className="hidden sm:table-cell">Tag No</TableHead>
                   <TableHead>Customer</TableHead>
@@ -294,6 +295,7 @@ export default function JobCards() {
                 {isLoading ? (
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                       <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-12" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -302,12 +304,12 @@ export default function JobCards() {
                       <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                       <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-12" /></TableCell>
                       <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-12" /></TableCell>
                     </TableRow>
                   ))
                 ) : filteredJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12">
+                    <TableCell colSpan={10} className="text-center py-12">
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
                       <p className="text-muted-foreground">
                         {searchQuery || statusFilter !== "all" 
@@ -319,6 +321,19 @@ export default function JobCards() {
                 ) : (
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover-elevate" data-testid={`row-job-${job.id}`}>
+                      <TableCell>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedJob(job);
+                            setIsViewOpen(true);
+                          }}
+                          data-testid={`button-view-${job.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                       <TableCell className="font-medium">{job.id}</TableCell>
                       <TableCell className="hidden sm:table-cell">{job.tagNo || "-"}</TableCell>
                       <TableCell>
@@ -342,17 +357,6 @@ export default function JobCards() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setIsViewOpen(true);
-                            }}
-                            data-testid={`button-view-${job.id}`}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
                           {!isLimitedRole && (
                             <>
                               <Button
