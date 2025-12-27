@@ -386,9 +386,15 @@ export default function JobCards() {
             updateStatusMutation.mutate({ id: selectedJob.id, status });
           }
         }}
-        isUpdating={updateStatusMutation.isPending}
+        onAssignmentChange={(bay, technician) => {
+          if (selectedJob) {
+            updateMutation.mutate({ id: selectedJob.id, data: { bay, assignedTo: technician } });
+          }
+        }}
+        isUpdating={updateStatusMutation.isPending || updateMutation.isPending}
         isLimitedRole={isLimitedRole}
         canViewRevenue={canViewRevenue}
+        mechanics={mechanics}
       />
 
       <EditJobCardDialog
@@ -779,18 +785,40 @@ interface ViewJobCardDialogProps {
   onOpenChange: (open: boolean) => void;
   job: JobCard | null;
   onStatusChange: (status: typeof JOB_STATUSES[number]) => void;
+  onAssignmentChange: (bay: typeof BAYS[number], technician: string) => void;
   isUpdating: boolean;
   isLimitedRole?: boolean;
   canViewRevenue?: boolean;
+  mechanics: Staff[];
 }
 
-function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating, isLimitedRole = false, canViewRevenue = true }: ViewJobCardDialogProps) {
+function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignmentChange, isUpdating, isLimitedRole = false, canViewRevenue = true, mechanics }: ViewJobCardDialogProps) {
+  const [selectedBay, setSelectedBay] = useState<typeof BAYS[number]>("Sudershan");
+  const [selectedTechnician, setSelectedTechnician] = useState<string>("");
+
+  useEffect(() => {
+    if (job) {
+      setSelectedBay(job.bay);
+      setSelectedTechnician(job.assignedTo);
+    }
+  }, [job]);
+
   if (!job) return null;
 
   const allStatuses: (typeof JOB_STATUSES[number])[] = ["Pending", "In Progress", "Quality Check", "Completed"];
   const statuses = isLimitedRole 
     ? allStatuses.filter(s => s === "In Progress" || s === "Completed")
     : allStatuses;
+
+  const handleBayChange = (bay: typeof BAYS[number]) => {
+    setSelectedBay(bay);
+    onAssignmentChange(bay, selectedTechnician);
+  };
+
+  const handleTechnicianChange = (technician: string) => {
+    setSelectedTechnician(technician);
+    onAssignmentChange(selectedBay, technician);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -799,55 +827,121 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating
           <div className="flex items-center gap-3 flex-wrap">
             <DialogTitle>Job Card Details</DialogTitle>
             <Badge variant="outline">{job.id}</Badge>
+            <StatusBadge status={job.status} />
           </div>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Customer</h4>
-              <p className="font-medium" data-testid="text-customer-name">{job.customerName}</p>
-              <p className="text-sm text-muted-foreground">{job.phone}</p>
-            </div>
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Bike</h4>
-              <p className="font-medium">{job.bikeModel}</p>
-              <p className="text-sm text-muted-foreground">{job.registration}</p>
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Assignment</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="view-bay">Bay</Label>
+                <Select
+                  value={selectedBay}
+                  onValueChange={(value) => handleBayChange(value as typeof BAYS[number])}
+                >
+                  <SelectTrigger data-testid="select-view-bay">
+                    <SelectValue placeholder="Select bay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BAYS.map((bay) => (
+                      <SelectItem key={bay} value={bay}>{bay}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="view-technician">Technician</Label>
+                <Select
+                  value={selectedTechnician}
+                  onValueChange={handleTechnicianChange}
+                >
+                  <SelectTrigger data-testid="select-view-technician">
+                    <SelectValue placeholder="Select technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mechanics.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.name}>{staff.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Service Type</h4>
-              <Badge variant="outline">{job.serviceType}</Badge>
-            </div>
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Bay</h4>
-              <p className="font-medium">{job.bay}</p>
-            </div>
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Technician</h4>
-              <p className="font-medium">{job.assignedTo}</p>
-            </div>
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Est. Time</h4>
-              <p className="font-medium">{job.estimatedTime}</p>
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Bike Details</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Tag No</h4>
+                <p className="font-medium">{job.tagNo || "-"}</p>
+              </div>
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Registration</h4>
+                <p className="font-medium">{job.registration}</p>
+              </div>
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Model</h4>
+                <p className="font-medium">{job.bikeModel}</p>
+              </div>
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Odometer</h4>
+                <p className="font-medium">{job.odometer.toLocaleString()} km</p>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Tag No</h4>
-              <p className="font-medium">{job.tagNo || "-"}</p>
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Customer Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Customer Name</h4>
+                <p className="font-medium" data-testid="text-customer-name">{job.customerName}</p>
+              </div>
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Phone Number</h4>
+                <p className="font-medium">{job.phone}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Odometer</h4>
-              <p className="font-medium">{job.odometer.toLocaleString()} km</p>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">Service Details</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Service Type</h4>
+                <Badge variant="outline">{job.serviceType}</Badge>
+              </div>
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Estimated Time</h4>
+                <p className="font-medium">{job.estimatedTime || "-"}</p>
+              </div>
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Created</h4>
+                <p className="font-medium">{new Date(job.createdAt).toLocaleDateString()}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Created</h4>
-              <p className="font-medium">{new Date(job.createdAt).toLocaleDateString()}</p>
-            </div>
+            
+            {job.customerRequests && job.customerRequests.length > 0 && (
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-2">Customer Requests</h4>
+                <div className="flex flex-wrap gap-1">
+                  {job.customerRequests.map((request) => (
+                    <Badge key={request} variant="secondary" className="text-xs">
+                      {request}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {job.repairDetails && (
+              <div>
+                <h4 className="text-sm text-muted-foreground mb-1">Notes / Repair Details</h4>
+                <p className="text-sm bg-muted/50 p-3 rounded-md">{job.repairDetails}</p>
+              </div>
+            )}
           </div>
 
           {canViewRevenue && (
@@ -877,13 +971,6 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, isUpdating
                 </div>
               </CardContent>
             </Card>
-          )}
-
-          {job.repairDetails && (
-            <div>
-              <h4 className="text-sm text-muted-foreground mb-1">Repair Details / Notes</h4>
-              <p className="text-sm bg-muted/50 p-3 rounded-md">{job.repairDetails}</p>
-            </div>
           )}
 
           <div>
