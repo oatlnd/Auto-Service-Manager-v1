@@ -344,8 +344,8 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border border-card-border">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border border-card-border">
           <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
             <CardTitle className="text-lg font-semibold">{t("dashboard.recentJobCards")}</CardTitle>
             <Link href="/job-cards">
@@ -426,65 +426,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-card-border">
-          <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
-            <CardTitle className="text-lg font-semibold">{t("serviceBays.title")}</CardTitle>
-            <Link href="/service-bays">
-              <Button variant="outline" size="sm" data-testid="link-view-all-bays">{t("dashboard.viewAll")}</Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {baysLoading ? (
-              Array(6).fill(0).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="w-3 h-3 rounded-full" />
-                  <Skeleton className="h-4 flex-1" />
-                </div>
-              ))
-            ) : (
-              <>
-                {bayStatus?.map((bay) => (
-                  <div 
-                    key={bay.bay} 
-                    className="flex items-center gap-3 p-2 rounded-md"
-                    data-testid={`bay-status-${bay.bay.replace(" ", "-").toLowerCase()}`}
-                  >
-                    <div 
-                      className={`w-3 h-3 rounded-full ${
-                        bay.isOccupied 
-                          ? "bg-red-500 animate-pulse-dot" 
-                          : "bg-green-500"
-                      }`}
-                    />
-                    <span className="font-medium text-sm flex-1">{bay.bay}</span>
-                    <span className={`text-xs ${bay.isOccupied ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                      {bay.isOccupied ? t("serviceBays.occupied") : t("serviceBays.available")}
-                    </span>
-                  </div>
-                ))}
-                
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{t("dashboard.utilization")}</span>
-                    <span className="font-semibold" data-testid="bay-utilization">
-                      {Math.round((occupiedBays / totalBays) * 100)}%
-                    </span>
-                  </div>
-                  <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary transition-all duration-500"
-                      style={{ width: `${(occupiedBays / totalBays) * 100}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                    <span>{occupiedBays} {t("serviceBays.activeBays")}</span>
-                    <span>{totalBays - occupiedBays} {t("serviceBays.available")}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        {/* Removed Service Bays section as requested */}
       </div>
     </div>
   );
