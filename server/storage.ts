@@ -415,20 +415,29 @@ export class MemStorage implements IStorage {
       repair: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Repair").length,
     });
 
-    const completedJobs = dateJobs.filter((job) => job.status === "Completed" || job.status === "Delivered");
-    const inProgressJobs = dateJobs.filter((job) => job.status === "In Progress" || job.status === "Oil Change");
     const pendingJobs = dateJobs.filter((job) => job.status === "Pending");
+    const inProgressJobs = dateJobs.filter((job) => job.status === "In Progress");
+    const oilChangeJobs = dateJobs.filter((job) => job.status === "Oil Change");
+    const qualityCheckJobs = dateJobs.filter((job) => job.status === "Quality Check");
+    const completedJobs = dateJobs.filter((job) => job.status === "Completed");
+    const deliveredJobs = dateJobs.filter((job) => job.status === "Delivered");
 
     return {
       today: dateJobs.length,
       todayByCategory: getCategoryBreakdown(dateJobs),
-      completed: completedJobs.length,
-      completedByCategory: getCategoryBreakdown(completedJobs),
-      inProgress: inProgressJobs.length,
-      inProgressByCategory: getCategoryBreakdown(inProgressJobs),
       pending: pendingJobs.length,
       pendingByCategory: getCategoryBreakdown(pendingJobs),
-      revenue: completedJobs.reduce((sum, job) => sum + job.cost, 0),
+      inProgress: inProgressJobs.length,
+      inProgressByCategory: getCategoryBreakdown(inProgressJobs),
+      oilChange: oilChangeJobs.length,
+      oilChangeByCategory: getCategoryBreakdown(oilChangeJobs),
+      qualityCheck: qualityCheckJobs.length,
+      qualityCheckByCategory: getCategoryBreakdown(qualityCheckJobs),
+      completed: completedJobs.length,
+      completedByCategory: getCategoryBreakdown(completedJobs),
+      delivered: deliveredJobs.length,
+      deliveredByCategory: getCategoryBreakdown(deliveredJobs),
+      revenue: dateJobs.filter(j => j.status === "Completed" || j.status === "Delivered").reduce((sum, job) => sum + job.cost, 0),
     };
   }
 
@@ -449,7 +458,7 @@ export class MemStorage implements IStorage {
         category,
         total: categoryJobs.length,
         completed: categoryJobs.filter((job) => job.status === "Completed" || job.status === "Delivered").length,
-        inProgress: categoryJobs.filter((job) => job.status === "In Progress" || job.status === "Oil Change").length,
+        inProgress: categoryJobs.filter((job) => job.status === "In Progress" || job.status === "Oil Change" || job.status === "Quality Check").length,
       };
     });
   }

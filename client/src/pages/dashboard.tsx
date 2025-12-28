@@ -156,96 +156,140 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-card-border" data-testid="stat-today-jobs">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                <Briefcase className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {isToday ? t("dashboard.todaysJobs") : `${t("dashboard.jobs")} (${format(selectedDate, "dd/MM")})`}
-                </p>
-                <p className="text-2xl font-bold">{stats?.today || 0}</p>
-              </div>
-            </div>
-            {statsLoading ? (
-              <Skeleton className="h-4 w-full" />
-            ) : (
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.todayByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.todayByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.todayByCategory?.repair || 0}</Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border border-card-border" data-testid="stat-completed">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-md bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t("dashboard.completed")}</p>
-                <p className="text-2xl font-bold">{stats?.completed || 0}</p>
-              </div>
-            </div>
-            {statsLoading ? (
-              <Skeleton className="h-4 w-full" />
-            ) : (
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.completedByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.completedByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.completedByCategory?.repair || 0}</Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border border-card-border" data-testid="stat-in-progress">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t("dashboard.inProgress")}</p>
-                <p className="text-2xl font-bold">{stats?.inProgress || 0}</p>
-              </div>
-            </div>
-            {statsLoading ? (
-              <Skeleton className="h-4 w-full" />
-            ) : (
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.inProgressByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.inProgressByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.inProgressByCategory?.repair || 0}</Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <Card className="border border-card-border" data-testid="stat-pending">
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
                 <Pause className="w-5 h-5 text-amber-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t("dashboard.pending")}</p>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{t("dashboard.pending")}</p>
                 <p className="text-2xl font-bold">{stats?.pending || 0}</p>
               </div>
             </div>
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="outline" className="gap-1">{t("jobCards.paidService")}: {stats?.pendingByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.freeService")}: {stats?.pendingByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="gap-1">{t("jobCards.repair")}: {stats?.pendingByCategory?.repair || 0}</Badge>
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.pendingByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.pendingByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.pendingByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-in-progress">
+          <CardContent className="pt-4 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{t("dashboard.inProgress")}</p>
+                <p className="text-2xl font-bold">{stats?.inProgress || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.inProgressByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.inProgressByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.inProgressByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-oil-change">
+          <CardContent className="pt-4 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                <Wrench className="w-5 h-5 text-purple-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{t("jobCards.oilChange")}</p>
+                <p className="text-2xl font-bold">{stats?.oilChange || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.oilChangeByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.oilChangeByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.oilChangeByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-quality-check">
+          <CardContent className="pt-4 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{t("jobCards.qualityCheck")}</p>
+                <p className="text-2xl font-bold">{stats?.qualityCheck || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.qualityCheckByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.qualityCheckByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.qualityCheckByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-completed">
+          <CardContent className="pt-4 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{t("dashboard.completed")}</p>
+                <p className="text-2xl font-bold">{stats?.completed || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.completedByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.completedByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.completedByCategory?.repair || 0}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-card-border" data-testid="stat-delivered">
+          <CardContent className="pt-4 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-900/30 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-slate-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{t("jobCards.delivered")}</p>
+                <p className="text-2xl font-bold">{stats?.delivered || 0}</p>
+              </div>
+            </div>
+            {statsLoading ? (
+              <Skeleton className="h-4 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.deliveredByCategory?.paidService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.deliveredByCategory?.freeService || 0}</Badge>
+                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.deliveredByCategory?.repair || 0}</Badge>
               </div>
             )}
           </CardContent>

@@ -176,6 +176,12 @@ export interface DailyStatistics {
   inProgressByCategory: CategoryBreakdown;
   pending: number;
   pendingByCategory: CategoryBreakdown;
+  oilChange: number;
+  oilChangeByCategory: CategoryBreakdown;
+  qualityCheck: number;
+  qualityCheckByCategory: CategoryBreakdown;
+  delivered: number;
+  deliveredByCategory: CategoryBreakdown;
   revenue: number;
 }
 
