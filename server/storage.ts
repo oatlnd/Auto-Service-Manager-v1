@@ -229,6 +229,20 @@ export class MemStorage implements IStorage {
     sampleJobs.forEach((job) => {
       const id = `JC${String(this.jobIdCounter++).padStart(3, "0")}`;
       this.jobCards.set(id, { ...job, id });
+      // Add sample audit log for creation
+      const auditId = `AUD${String(this.auditLogIdCounter++).padStart(5, "0")}`;
+      const auditLog: JobCardAuditLog = {
+        id: auditId,
+        jobCardId: id,
+        action: "created",
+        changes: [],
+        actorId: "system",
+        actorName: "System",
+        changedAt: job.createdAt || new Date().toISOString(),
+      };
+      const logs = this.jobCardAuditLogs.get(id) || [];
+      logs.push(auditLog);
+      this.jobCardAuditLogs.set(id, logs);
     });
 
     const today = new Date().toISOString().split("T")[0];

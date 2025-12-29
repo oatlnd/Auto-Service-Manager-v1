@@ -1128,7 +1128,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                         <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground mb-1">
                           <span className="font-medium text-foreground">{log.actorName}</span>
                           <span>-</span>
-                          <span>{formatSriLankaDate(new Date(log.changedAt), "dd/MM/yyyy HH:mm")}</span>
+                          <span>{log.changedAt ? formatSriLankaDate(new Date(log.changedAt), "dd/MM/yyyy HH:mm") : "-"}</span>
                         </div>
                         <div className="text-sm">
                           {log.action === "created" && (
