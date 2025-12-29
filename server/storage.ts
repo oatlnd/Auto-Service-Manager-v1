@@ -142,13 +142,14 @@ export class MemStorage implements IStorage {
         registration: "NP-2341",
         odometer: 15420,
         serviceType: "Service with Oil Spray (Oil Change)",
-        customerRequests: ["General service & wash", "Chain clean & lube"],
+        customerRequests: ["Engine Oil Change", "Washing"],
         status: "In Progress",
         assignedTo: "Kannan Selvam",
         bay: "Sudershan",
         estimatedTime: "45 mins",
         cost: 1000,
         repairDetails: "Oil change, filter replacement, chain adjustment",
+        parts: ["Engine Oil", "Oil Filter"],
         advancePayment: 1000,
         remainingPayment: 0,
         paymentStatus: "Paid in Full",
@@ -351,6 +352,7 @@ export class MemStorage implements IStorage {
       ...data,
       id,
       ...payment,
+      parts: data.parts || [],
       createdAt: new Date().toISOString(),
     };
     

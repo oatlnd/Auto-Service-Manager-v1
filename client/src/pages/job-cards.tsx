@@ -69,6 +69,7 @@ interface FormData {
   cost: number;
   estimatedTime: string;
   repairDetails: string;
+  parts: string[];
 }
 
 const initialFormData: FormData = {
@@ -86,6 +87,7 @@ const initialFormData: FormData = {
   cost: 1000,
   estimatedTime: "",
   repairDetails: "",
+  parts: [],
 };
 
 const getServiceTypesByCategory = (category: typeof SERVICE_CATEGORIES[number]) => {
@@ -412,6 +414,11 @@ export default function JobCards() {
             updateMutation.mutate({ id: selectedJob.id, data: { bay, assignedTo: technician } });
           }
         }}
+        onPartsChange={(parts) => {
+          if (selectedJob) {
+            updateMutation.mutate({ id: selectedJob.id, data: { parts } });
+          }
+        }}
         isUpdating={updateStatusMutation.isPending || updateMutation.isPending}
         isLimitedRole={isLimitedRole}
         canViewRevenue={canViewRevenue}
@@ -726,8 +733,8 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>{t("jobCards.customerRequests")}</Label>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2">{t("jobCards.customerRequests")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                 {CUSTOMER_REQUESTS.map((request) => (
                   <div key={request} className="flex items-center gap-2">
@@ -744,10 +751,56 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                       data-testid={`checkbox-request-${request.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                     />
                     <Label htmlFor={`request-${request}`} className="text-sm font-normal cursor-pointer">
-                      {t(`customerRequestItems.${request}`, request)}
+                      {request}
                     </Label>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Parts</h3>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => updateField("parts", [...(formData.parts || []), ""])}
+                  data-testid="button-add-part"
+                >
+                  <Plus className="w-3 h-3 mr-1" /> Add Part
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(formData.parts || []).map((part, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input 
+                      placeholder="Part name"
+                      value={part}
+                      onChange={(e) => {
+                        const newParts = [...(formData.parts || [])];
+                        newParts[index] = e.target.value;
+                        updateField("parts", newParts);
+                      }}
+                      data-testid={`input-part-${index}`}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => {
+                        const newParts = (formData.parts || []).filter((_, i) => i !== index);
+                        updateField("parts", newParts);
+                      }}
+                      data-testid={`button-remove-part-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                {(formData.parts || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">No parts added</p>
+                )}
               </div>
             </div>
 
@@ -808,16 +861,18 @@ interface ViewJobCardDialogProps {
   job: JobCard | null;
   onStatusChange: (status: typeof JOB_STATUSES[number]) => void;
   onAssignmentChange: (bay: typeof BAYS[number], technician: string) => void;
+  onPartsChange: (parts: string[]) => void;
   isUpdating: boolean;
   isLimitedRole?: boolean;
   canViewRevenue?: boolean;
   mechanics: Staff[];
 }
 
-function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignmentChange, isUpdating, isLimitedRole = false, canViewRevenue = true, mechanics }: ViewJobCardDialogProps) {
+function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignmentChange, onPartsChange, isUpdating, isLimitedRole = false, canViewRevenue = true, mechanics }: ViewJobCardDialogProps) {
   const { t } = useTranslation();
   const [selectedBay, setSelectedBay] = useState<typeof BAYS[number]>("Sudershan");
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
+  const [newPart, setNewPart] = useState("");
 
   useEffect(() => {
     if (job) {
@@ -827,6 +882,18 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   }, [job]);
 
   if (!job) return null;
+
+  const handleAddPart = () => {
+    if (newPart.trim()) {
+      onPartsChange([...(job.parts || []), newPart.trim()]);
+      setNewPart("");
+    }
+  };
+
+  const handleRemovePart = (index: number) => {
+    const newParts = (job.parts || []).filter((_, i) => i !== index);
+    onPartsChange(newParts);
+  };
 
   const serviceTypeDetails = SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS];
   const category = serviceTypeDetails?.category || "Paid Service";

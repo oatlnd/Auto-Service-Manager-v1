@@ -106,33 +106,18 @@ export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Servic
 export const WORK_SKILLS = ["Mechanic", "Service"] as const;
 
 export const CUSTOMER_REQUESTS = [
-  "Battery draining fast",
-  "Bike stalls in traffic",
-  "Brakes making noise",
-  "Brakes not effective",
-  "Chain clean & lube",
-  "Check everything & give estimate",
-  "Clutch slipping / Hard clutch",
-  "Engine overheating",
-  "Full check-up before a trip",
-  "Gear shifting not smooth",
-  "General service & wash",
-  "Handle wobbling / Vibrating",
-  "Hard to start / Cold start issue",
-  "Headlight is dim",
-  "Horn / Indicators not working",
-  "Lag during acceleration (Scooter)",
-  "Loss of power / Pick-up issue",
-  "Mileage has dropped",
-  "Oil leak spotted",
-  "Other issue",
-  "Self-starter not working",
-  "Suspension issue / Noise",
-  "Tighten all bolts",
-  "Unusual engine noise",
+  "Engine Oil Change",
+  "Washing",
+  "Air Cleaner",
+  "Spark Plug",
+  "Battery",
+  "Drive Belt",
+  "Brack Front/Rear",
+  "Cable",
+  "Carburetor",
+  "Cup Set",
+  "Suspension Front/Rear"
 ] as const;
-export type WorkSkill = typeof WORK_SKILLS[number];
-export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as const;
 
 export const jobCardSchema = z.object({
   id: z.string(),
@@ -150,6 +135,7 @@ export const jobCardSchema = z.object({
   estimatedTime: z.string(),
   cost: z.number().min(0, "Cost must be positive"),
   repairDetails: z.string().optional(),
+  parts: z.array(z.string()).optional(),
   advancePayment: z.number(),
   remainingPayment: z.number(),
   paymentStatus: z.enum(["Paid in Full", "Advance Paid"]),
