@@ -1,8 +1,9 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema } from "@shared/schema";
 import { z } from "zod";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 declare global {
   namespace Express {
@@ -56,6 +57,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  registerObjectStorageRoutes(app);
   
   app.use(async (req, res, next) => {
     req.session = await getSessionFromRequest(req);
@@ -320,6 +323,106 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error recording print action:", error);
       res.status(500).json({ error: "Failed to record print action" });
+    }
+  });
+
+  // Job Card Images
+  app.get("/api/job-cards/:id/images", requireAuth, async (req, res) => {
+    try {
+      const images = await storage.getJobCardImages(req.params.id);
+      res.json(images);
+    } catch (error) {
+      console.error("Error fetching job card images:", error);
+      res.status(500).json({ error: "Failed to fetch images" });
+    }
+  });
+
+  app.post("/api/job-cards/:id/images", requireAuth, async (req, res) => {
+    try {
+      const jobCard = await storage.getJobCard(req.params.id);
+      if (!jobCard) {
+        return res.status(404).json({ error: "Job card not found" });
+      }
+
+      const { objectPath, filename, mimeType, size } = req.body;
+      
+      if (!objectPath || !filename || !mimeType) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedMimeTypes.includes(mimeType)) {
+        return res.status(400).json({ error: "Invalid file type. Only JPEG, PNG, and WebP are allowed." });
+      }
+
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (size && size > maxSize) {
+        return res.status(400).json({ error: "File size exceeds 5MB limit" });
+      }
+
+      const user = req.session?.user;
+      if (!user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const image = await storage.createJobCardImage({
+        jobCardId: req.params.id,
+        objectPath,
+        filename,
+        mimeType,
+        size: size || 0,
+        uploadedBy: user.id,
+        uploadedByName: user.name || user.username,
+      });
+
+      await storage.createJobCardAuditLog(
+        req.params.id,
+        user.id,
+        user.name || user.username,
+        "image_added",
+        [{ field: "image", oldValue: null, newValue: filename }]
+      );
+
+      res.json(image);
+    } catch (error) {
+      console.error("Error creating job card image:", error);
+      res.status(500).json({ error: "Failed to create image" });
+    }
+  });
+
+  app.delete("/api/job-cards/:id/images/:imageId", requireAuth, async (req, res) => {
+    try {
+      const image = await storage.getJobCardImage(req.params.imageId);
+      if (!image) {
+        return res.status(404).json({ error: "Image not found" });
+      }
+
+      if (image.jobCardId !== req.params.id) {
+        return res.status(400).json({ error: "Image does not belong to this job card" });
+      }
+
+      const user = req.session?.user;
+      if (!user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const success = await storage.deleteJobCardImage(req.params.imageId);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to delete image" });
+      }
+
+      await storage.createJobCardAuditLog(
+        req.params.id,
+        user.id,
+        user.name || user.username,
+        "image_deleted",
+        [{ field: "image", oldValue: image.filename, newValue: null }]
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting job card image:", error);
+      res.status(500).json({ error: "Failed to delete image" });
     }
   });
 
