@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog } from "@shared/schema";
+import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog, JobCardImage } from "@shared/schema";
 import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS, getStatusesForCategory } from "@shared/schema";
 import {
   Accordion,
@@ -905,6 +905,132 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
     },
   });
 
+  const { data: images = [], isLoading: isLoadingImages, refetch: refetchImages } = useQuery<JobCardImage[]>({
+    queryKey: [`/api/job-cards/${job?.id}/images`],
+    enabled: open && !!job?.id,
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState<JobCardImage | null>(null);
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (imageData: { objectPath: string; filename: string; mimeType: string; size: number }) => {
+      const res = await apiRequest("POST", `/api/job-cards/${job?.id}/images`, imageData);
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchImages();
+      refetchAudit();
+      toast({
+        title: t("jobCards.imageUploaded", "Image uploaded"),
+        description: t("jobCards.imageUploadedDesc", "The image has been added to the job card."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("common.error", "Error"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: async (imageId: string) => {
+      const res = await apiRequest("DELETE", `/api/job-cards/${job?.id}/images/${imageId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchImages();
+      refetchAudit();
+      setImageToDelete(null);
+      toast({
+        title: t("jobCards.imageDeleted", "Image deleted"),
+        description: t("jobCards.imageDeletedDesc", "The image has been removed from the job card."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("common.error", "Error"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: t("common.error", "Error"),
+        description: t("jobCards.invalidFileType", "Only JPEG, PNG, and WebP images are allowed."),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: t("common.error", "Error"),
+        description: t("jobCards.fileTooLarge", "File size must be less than 5MB."),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const urlResponse = await fetch("/api/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          size: file.size,
+          contentType: file.type,
+        }),
+      });
+
+      if (!urlResponse.ok) {
+        throw new Error("Failed to get upload URL");
+      }
+
+      const { uploadURL, objectPath } = await urlResponse.json();
+
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      await uploadImageMutation.mutateAsync({
+        objectPath,
+        filename: file.name,
+        mimeType: file.type,
+        size: file.size,
+      });
+    } catch (error) {
+      toast({
+        title: t("common.error", "Error"),
+        description: error instanceof Error ? error.message : t("jobCards.uploadFailed", "Failed to upload image"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   useEffect(() => {
     if (job) {
       setSelectedBay(job.bay);
@@ -1252,6 +1378,114 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
             </Card>
           )}
 
+          {/* Motorbike Images Section */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="images" className="border rounded-md">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline" data-testid="accordion-images">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  <span className="text-sm font-semibold">{t("jobCards.motorbikeImages", "Motorbike Images")}</span>
+                  {images.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">{images.length}</Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-4">
+                  {/* Upload Button */}
+                  {!isLimitedRole && (
+                    <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        capture="environment"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        data-testid="input-image-file"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        data-testid="button-add-image"
+                      >
+                        {isUploading ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Camera className="w-4 h-4 mr-2" />
+                        )}
+                        {t("jobCards.addImage", "Add Image")}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Image Gallery */}
+                  {isLoadingImages ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </div>
+                  ) : images.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic py-2">{t("jobCards.noImages", "No images added yet")}</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {images.map((image) => (
+                        <div key={image.id} className="relative group rounded-md overflow-hidden border" data-testid={`image-${image.id}`}>
+                          <img
+                            src={image.objectPath}
+                            alt={image.filename}
+                            className="w-full h-24 object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            {!isLimitedRole && (
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => setImageToDelete(image)}
+                                data-testid={`button-delete-image-${image.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
+                            <p className="text-xs text-white truncate">{image.filename}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Delete Image Confirmation Dialog */}
+          <AlertDialog open={!!imageToDelete} onOpenChange={(open) => !open && setImageToDelete(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("jobCards.deleteImage", "Delete Image")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("jobCards.deleteImageConfirm", "Are you sure you want to delete this image? This action cannot be undone.")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="button-cancel-delete-image">{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => imageToDelete && deleteImageMutation.mutate(imageToDelete.id)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  data-testid="button-confirm-delete-image"
+                >
+                  {deleteImageMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {t("common.delete")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="audit-history" className="border rounded-md">
               <AccordionTrigger className="px-4 py-3 hover:no-underline" data-testid="accordion-audit-history">
@@ -1328,6 +1562,16 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                           )}
                           {log.action === "printed" && (
                             <span className="text-blue-600 dark:text-blue-400">{t("jobCards.auditPrinted", "Job card printed")}</span>
+                          )}
+                          {log.action === "image_added" && (
+                            <span className="text-green-600 dark:text-green-400">
+                              {t("jobCards.auditImageAdded", "Image added")}: {log.changes[0]?.newValue}
+                            </span>
+                          )}
+                          {log.action === "image_deleted" && (
+                            <span className="text-red-600 dark:text-red-400">
+                              {t("jobCards.auditImageDeleted", "Image deleted")}: {log.changes[0]?.oldValue}
+                            </span>
                           )}
                         </div>
                       </div>

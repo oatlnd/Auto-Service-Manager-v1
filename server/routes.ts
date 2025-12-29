@@ -327,7 +327,7 @@ export async function registerRoutes(
   });
 
   // Job Card Images
-  app.get("/api/job-cards/:id/images", requireAuth, async (req, res) => {
+  app.get("/api/job-cards/:id/images", requireRole("Admin", "Manager", "Job Card", "Technician", "Service"), async (req, res) => {
     try {
       const images = await storage.getJobCardImages(req.params.id);
       res.json(images);
@@ -337,7 +337,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/job-cards/:id/images", requireAuth, async (req, res) => {
+  app.post("/api/job-cards/:id/images", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
       const jobCard = await storage.getJobCard(req.params.id);
       if (!jobCard) {
@@ -390,7 +390,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/job-cards/:id/images/:imageId", requireAuth, async (req, res) => {
+  app.delete("/api/job-cards/:id/images/:imageId", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
       const image = await storage.getJobCardImage(req.params.imageId);
       if (!image) {
