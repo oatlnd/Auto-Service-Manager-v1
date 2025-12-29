@@ -155,7 +155,7 @@ export const jobCardAuditLogSchema = z.object({
   jobCardId: z.string(),
   actorId: z.string(),
   actorName: z.string(),
-  action: z.enum(["created", "updated", "status_changed", "assignment_changed", "parts_updated", "printed"]),
+  action: z.enum(["created", "updated", "status_changed", "assignment_changed", "parts_updated", "printed", "image_added", "image_deleted"]),
   changes: z.array(z.object({
     field: z.string(),
     oldValue: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),
@@ -165,6 +165,23 @@ export const jobCardAuditLogSchema = z.object({
 });
 
 export type JobCardAuditLog = z.infer<typeof jobCardAuditLogSchema>;
+
+export const jobCardImageSchema = z.object({
+  id: z.string(),
+  jobCardId: z.string(),
+  objectPath: z.string(),
+  filename: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+  uploadedBy: z.string(),
+  uploadedByName: z.string(),
+  createdAt: z.string(),
+});
+
+export const insertJobCardImageSchema = jobCardImageSchema.omit({ id: true, createdAt: true });
+
+export type JobCardImage = z.infer<typeof jobCardImageSchema>;
+export type InsertJobCardImage = z.infer<typeof insertJobCardImageSchema>;
 
 export interface CategoryBreakdown {
   paidService: number;
