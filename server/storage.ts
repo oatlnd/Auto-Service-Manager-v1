@@ -4,7 +4,7 @@ import type {
   User, BAYS, JOB_STATUSES, WorkSkill,
   LoyaltyCustomer, InsertLoyaltyCustomer, PointsTransaction, InsertPointsTransaction,
   Reward, InsertReward, Redemption, InsertRedemption,
-  JobCardAuditLog
+  JobCardAuditLog, JobCardImage, InsertJobCardImage
 } from "@shared/schema";
 import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -74,6 +74,12 @@ export interface IStorage {
   // Job Card Audit Log
   createJobCardAuditLog(jobCardId: string, actorId: string, actorName: string, action: JobCardAuditLog["action"], changes: JobCardAuditLog["changes"]): Promise<JobCardAuditLog>;
   getJobCardAuditLogs(jobCardId: string): Promise<JobCardAuditLog[]>;
+  
+  // Job Card Images
+  getJobCardImages(jobCardId: string): Promise<JobCardImage[]>;
+  getJobCardImage(id: string): Promise<JobCardImage | undefined>;
+  createJobCardImage(data: InsertJobCardImage): Promise<JobCardImage>;
+  deleteJobCardImage(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -87,6 +93,7 @@ export class MemStorage implements IStorage {
   private rewards: Map<string, Reward>;
   private redemptions: Map<string, Redemption>;
   private jobCardAuditLogs: Map<string, JobCardAuditLog[]>;
+  private jobCardImages: Map<string, JobCardImage>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
@@ -96,6 +103,7 @@ export class MemStorage implements IStorage {
   private rewardIdCounter: number;
   private redemptionIdCounter: number;
   private auditLogIdCounter: number;
+  private imageIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
@@ -108,6 +116,7 @@ export class MemStorage implements IStorage {
     this.rewards = new Map();
     this.redemptions = new Map();
     this.jobCardAuditLogs = new Map();
+    this.jobCardImages = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
@@ -117,6 +126,7 @@ export class MemStorage implements IStorage {
     this.rewardIdCounter = 1;
     this.redemptionIdCounter = 1;
     this.auditLogIdCounter = 1;
+    this.imageIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -909,6 +919,35 @@ export class MemStorage implements IStorage {
   async getJobCardAuditLogs(jobCardId: string): Promise<JobCardAuditLog[]> {
     const logs = this.jobCardAuditLogs.get(jobCardId) || [];
     return logs.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+  }
+
+  async getJobCardImages(jobCardId: string): Promise<JobCardImage[]> {
+    const images: JobCardImage[] = [];
+    this.jobCardImages.forEach((image) => {
+      if (image.jobCardId === jobCardId) {
+        images.push(image);
+      }
+    });
+    return images.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getJobCardImage(id: string): Promise<JobCardImage | undefined> {
+    return this.jobCardImages.get(id);
+  }
+
+  async createJobCardImage(data: InsertJobCardImage): Promise<JobCardImage> {
+    const id = `IMG${String(this.imageIdCounter++).padStart(6, "0")}`;
+    const image: JobCardImage = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.jobCardImages.set(id, image);
+    return image;
+  }
+
+  async deleteJobCardImage(id: string): Promise<boolean> {
+    return this.jobCardImages.delete(id);
   }
 }
 
