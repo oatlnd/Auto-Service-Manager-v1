@@ -171,10 +171,19 @@ export default function Dashboard() {
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-1 text-[10px]">
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.pendingByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.pendingByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.pendingByCategory?.repair || 0}</Badge>
+              <div className="flex flex-col gap-1 text-[10px] mt-2 border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.paidService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.pendingByCategory?.paidService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.freeService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.pendingByCategory?.freeService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.repair")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.pendingByCategory?.repair || 0}</Badge>
+                </div>
               </div>
             )}
           </CardContent>
@@ -194,10 +203,19 @@ export default function Dashboard() {
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-1 text-[10px]">
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.inProgressByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.inProgressByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.inProgressByCategory?.repair || 0}</Badge>
+              <div className="flex flex-col gap-1 text-[10px] mt-2 border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.paidService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.inProgressByCategory?.paidService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.freeService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.inProgressByCategory?.freeService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.repair")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.inProgressByCategory?.repair || 0}</Badge>
+                </div>
               </div>
             )}
           </CardContent>
@@ -217,10 +235,19 @@ export default function Dashboard() {
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-1 text-[10px]">
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.oilChangeByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.oilChangeByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.oilChangeByCategory?.repair || 0}</Badge>
+              <div className="flex flex-col gap-1 text-[10px] mt-2 border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.paidService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.oilChangeByCategory?.paidService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.freeService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.oilChangeByCategory?.freeService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.repair")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.oilChangeByCategory?.repair || 0}</Badge>
+                </div>
               </div>
             )}
           </CardContent>
@@ -240,10 +267,19 @@ export default function Dashboard() {
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-1 text-[10px]">
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.qualityCheckByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.qualityCheckByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.qualityCheckByCategory?.repair || 0}</Badge>
+              <div className="flex flex-col gap-1 text-[10px] mt-2 border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.paidService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.qualityCheckByCategory?.paidService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.freeService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.qualityCheckByCategory?.freeService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.repair")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.qualityCheckByCategory?.repair || 0}</Badge>
+                </div>
               </div>
             )}
           </CardContent>
@@ -263,10 +299,19 @@ export default function Dashboard() {
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-1 text-[10px]">
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.completedByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.completedByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.completedByCategory?.repair || 0}</Badge>
+              <div className="flex flex-col gap-1 text-[10px] mt-2 border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.paidService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.completedByCategory?.paidService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.freeService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.completedByCategory?.freeService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.repair")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.completedByCategory?.repair || 0}</Badge>
+                </div>
               </div>
             )}
           </CardContent>
@@ -286,10 +331,19 @@ export default function Dashboard() {
             {statsLoading ? (
               <Skeleton className="h-4 w-full" />
             ) : (
-              <div className="flex flex-wrap gap-1 text-[10px]">
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.paidService")}>{stats?.deliveredByCategory?.paidService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.freeService")}>{stats?.deliveredByCategory?.freeService || 0}</Badge>
-                <Badge variant="outline" className="px-1 py-0" title={t("jobCards.repair")}>{stats?.deliveredByCategory?.repair || 0}</Badge>
+              <div className="flex flex-col gap-1 text-[10px] mt-2 border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.paidService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.deliveredByCategory?.paidService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.freeService")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.deliveredByCategory?.freeService || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{t("jobCards.repair")}</span>
+                  <Badge variant="outline" className="px-1 py-0">{stats?.deliveredByCategory?.repair || 0}</Badge>
+                </div>
               </div>
             )}
           </CardContent>
