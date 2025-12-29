@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,8 +51,15 @@ import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { JobCard, JOB_STATUSES, Staff } from "@shared/schema";
+import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog } from "@shared/schema";
 import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS, getStatusesForCategory } from "@shared/schema";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { formatSriLankaDate } from "@/lib/timezone";
 
 interface FormData {
   tagNo: string;
@@ -874,6 +881,11 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
   const [newPart, setNewPart] = useState("");
 
+  const { data: auditLogs = [], isLoading: isLoadingAudit } = useQuery<JobCardAuditLog[]>({
+    queryKey: ["/api/job-cards", job?.id, "audit"],
+    enabled: open && !!job?.id,
+  });
+
   useEffect(() => {
     if (job) {
       setSelectedBay(job.bay);
@@ -1090,6 +1102,89 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
               </CardContent>
             </Card>
           )}
+
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="audit-history" className="border rounded-md">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline" data-testid="accordion-audit-history">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  <span className="text-sm font-semibold">{t("jobCards.auditHistory", "Audit History")}</span>
+                  {auditLogs.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">{auditLogs.length}</Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {isLoadingAudit ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                ) : auditLogs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">{t("jobCards.noAuditHistory", "No changes recorded yet")}</p>
+                ) : (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {auditLogs.map((log) => (
+                      <div key={log.id} className="border-l-2 border-muted pl-3 py-1" data-testid={`audit-log-${log.id}`}>
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground mb-1">
+                          <span className="font-medium text-foreground">{log.actorName}</span>
+                          <span>-</span>
+                          <span>{formatSriLankaDate(new Date(log.changedAt), "dd/MM/yyyy HH:mm")}</span>
+                        </div>
+                        <div className="text-sm">
+                          {log.action === "created" && (
+                            <span className="text-green-600 dark:text-green-400">{t("jobCards.auditCreated", "Job card created")}</span>
+                          )}
+                          {log.action === "updated" && (
+                            <div className="space-y-1">
+                              {log.changes.map((change, idx) => (
+                                <div key={idx} className="text-xs">
+                                  <span className="font-medium capitalize">{change.field.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                  <span className="text-muted-foreground">: </span>
+                                  <span className="line-through text-muted-foreground">
+                                    {Array.isArray(change.oldValue) ? change.oldValue.join(', ') : String(change.oldValue ?? '-')}
+                                  </span>
+                                  <span className="mx-1 text-muted-foreground">→</span>
+                                  <span className="text-foreground">
+                                    {Array.isArray(change.newValue) ? change.newValue.join(', ') : String(change.newValue ?? '-')}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {log.action === "status_changed" && (
+                            <div className="text-xs">
+                              <span>{t("jobCards.auditStatusChanged", "Status changed")}: </span>
+                              <span className="line-through text-muted-foreground">{log.changes[0]?.oldValue}</span>
+                              <span className="mx-1 text-muted-foreground">→</span>
+                              <span className="font-medium">{log.changes[0]?.newValue}</span>
+                            </div>
+                          )}
+                          {log.action === "assignment_changed" && (
+                            <div className="space-y-1">
+                              {log.changes.map((change, idx) => (
+                                <div key={idx} className="text-xs">
+                                  <span className="font-medium capitalize">{change.field}</span>
+                                  <span className="text-muted-foreground">: </span>
+                                  <span className="line-through text-muted-foreground">{String(change.oldValue ?? '-')}</span>
+                                  <span className="mx-1 text-muted-foreground">→</span>
+                                  <span className="text-foreground">{String(change.newValue ?? '-')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {log.action === "parts_updated" && (
+                            <div className="text-xs">
+                              <span>{t("jobCards.auditPartsUpdated", "Parts updated")}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
         </div>
 

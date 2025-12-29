@@ -3,7 +3,8 @@ import type {
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
   User, BAYS, JOB_STATUSES, WorkSkill,
   LoyaltyCustomer, InsertLoyaltyCustomer, PointsTransaction, InsertPointsTransaction,
-  Reward, InsertReward, Redemption, InsertRedemption
+  Reward, InsertReward, Redemption, InsertRedemption,
+  JobCardAuditLog
 } from "@shared/schema";
 import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -69,6 +70,10 @@ export interface IStorage {
   
   getRedemptions(customerId?: string): Promise<Redemption[]>;
   updateRedemptionStatus(id: string, status: "Pending" | "Fulfilled" | "Cancelled"): Promise<Redemption | undefined>;
+  
+  // Job Card Audit Log
+  createJobCardAuditLog(jobCardId: string, actorId: string, actorName: string, action: JobCardAuditLog["action"], changes: JobCardAuditLog["changes"]): Promise<JobCardAuditLog>;
+  getJobCardAuditLogs(jobCardId: string): Promise<JobCardAuditLog[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -81,6 +86,7 @@ export class MemStorage implements IStorage {
   private pointsTransactions: Map<string, PointsTransaction>;
   private rewards: Map<string, Reward>;
   private redemptions: Map<string, Redemption>;
+  private jobCardAuditLogs: Map<string, JobCardAuditLog[]>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
@@ -89,6 +95,7 @@ export class MemStorage implements IStorage {
   private transactionIdCounter: number;
   private rewardIdCounter: number;
   private redemptionIdCounter: number;
+  private auditLogIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
@@ -100,6 +107,7 @@ export class MemStorage implements IStorage {
     this.pointsTransactions = new Map();
     this.rewards = new Map();
     this.redemptions = new Map();
+    this.jobCardAuditLogs = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
@@ -108,6 +116,7 @@ export class MemStorage implements IStorage {
     this.transactionIdCounter = 1;
     this.rewardIdCounter = 1;
     this.redemptionIdCounter = 1;
+    this.auditLogIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -856,6 +865,36 @@ export class MemStorage implements IStorage {
     }
 
     return updated;
+  }
+
+  async createJobCardAuditLog(
+    jobCardId: string,
+    actorId: string,
+    actorName: string,
+    action: JobCardAuditLog["action"],
+    changes: JobCardAuditLog["changes"]
+  ): Promise<JobCardAuditLog> {
+    const id = `AUD${String(this.auditLogIdCounter++).padStart(6, "0")}`;
+    const auditLog: JobCardAuditLog = {
+      id,
+      jobCardId,
+      actorId,
+      actorName,
+      action,
+      changes,
+      changedAt: new Date().toISOString(),
+    };
+
+    const existingLogs = this.jobCardAuditLogs.get(jobCardId) || [];
+    existingLogs.push(auditLog);
+    this.jobCardAuditLogs.set(jobCardId, existingLogs);
+
+    return auditLog;
+  }
+
+  async getJobCardAuditLogs(jobCardId: string): Promise<JobCardAuditLog[]> {
+    const logs = this.jobCardAuditLogs.get(jobCardId) || [];
+    return logs.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
   }
 }
 

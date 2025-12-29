@@ -170,6 +170,17 @@ export async function registerRoutes(
         return res.status(400).json({ error: parsed.error.message });
       }
       const jobCard = await storage.createJobCard(parsed.data);
+
+      if (req.session) {
+        await storage.createJobCardAuditLog(
+          jobCard.id,
+          req.session.user.id || "unknown",
+          req.session.user.name || req.session.user.username,
+          "created",
+          [{ field: "jobCard", oldValue: null, newValue: "Created" }]
+        );
+      }
+
       res.status(201).json(jobCard);
     } catch (error) {
       console.error("Error creating job card:", error);
@@ -179,10 +190,46 @@ export async function registerRoutes(
 
   app.patch("/api/job-cards/:id", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
+      const existingJobCard = await storage.getJobCard(req.params.id);
+      if (!existingJobCard) {
+        return res.status(404).json({ error: "Job card not found" });
+      }
+
       const jobCard = await storage.updateJobCard(req.params.id, req.body);
       if (!jobCard) {
         return res.status(404).json({ error: "Job card not found" });
       }
+
+      const changes: { field: string; oldValue: any; newValue: any }[] = [];
+      const fieldsToTrack = [
+        "customerName", "phone", "bikeModel", "registration", "odometer",
+        "serviceType", "status", "assignedTo", "bay", "estimatedTime",
+        "cost", "repairDetails", "tagNo", "customerRequests", "parts"
+      ];
+
+      for (const field of fieldsToTrack) {
+        const oldVal = (existingJobCard as any)[field];
+        const newVal = (jobCard as any)[field];
+        
+        if (Array.isArray(oldVal) && Array.isArray(newVal)) {
+          if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+            changes.push({ field, oldValue: oldVal, newValue: newVal });
+          }
+        } else if (oldVal !== newVal) {
+          changes.push({ field, oldValue: oldVal ?? null, newValue: newVal ?? null });
+        }
+      }
+
+      if (changes.length > 0 && req.session) {
+        await storage.createJobCardAuditLog(
+          req.params.id,
+          req.session.user.id || "unknown",
+          req.session.user.name || req.session.user.username,
+          "updated",
+          changes
+        );
+      }
+
       res.json(jobCard);
     } catch (error) {
       console.error("Error updating job card:", error);
@@ -199,10 +246,28 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ error: "Invalid status" });
       }
+
+      const existingJobCard = await storage.getJobCard(req.params.id);
+      if (!existingJobCard) {
+        return res.status(404).json({ error: "Job card not found" });
+      }
+
+      const oldStatus = existingJobCard.status;
       const jobCard = await storage.updateJobCardStatus(req.params.id, parsed.data.status);
       if (!jobCard) {
         return res.status(404).json({ error: "Job card not found" });
       }
+
+      if (oldStatus !== parsed.data.status && req.session) {
+        await storage.createJobCardAuditLog(
+          req.params.id,
+          req.session.user.id || "unknown",
+          req.session.user.name || req.session.user.username,
+          "status_changed",
+          [{ field: "status", oldValue: oldStatus, newValue: parsed.data.status }]
+        );
+      }
+
       res.json(jobCard);
     } catch (error) {
       console.error("Error updating job card status:", error);
@@ -220,6 +285,16 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting job card:", error);
       res.status(500).json({ error: "Failed to delete job card" });
+    }
+  });
+
+  app.get("/api/job-cards/:id/audit", requireAuth, async (req, res) => {
+    try {
+      const auditLogs = await storage.getJobCardAuditLogs(req.params.id);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error("Error fetching job card audit logs:", error);
+      res.status(500).json({ error: "Failed to fetch audit logs" });
     }
   });
 

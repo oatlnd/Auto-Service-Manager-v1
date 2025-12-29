@@ -150,6 +150,22 @@ export const insertJobCardSchema = jobCardSchema.omit({ id: true, advancePayment
 export type JobCard = z.infer<typeof jobCardSchema>;
 export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
 
+export const jobCardAuditLogSchema = z.object({
+  id: z.string(),
+  jobCardId: z.string(),
+  actorId: z.string(),
+  actorName: z.string(),
+  action: z.enum(["created", "updated", "status_changed", "assignment_changed", "parts_updated"]),
+  changes: z.array(z.object({
+    field: z.string(),
+    oldValue: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),
+    newValue: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),
+  })),
+  changedAt: z.string(),
+});
+
+export type JobCardAuditLog = z.infer<typeof jobCardAuditLogSchema>;
+
 export interface CategoryBreakdown {
   paidService: number;
   freeService: number;
