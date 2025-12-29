@@ -1134,6 +1134,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
         estimatedTime: job.estimatedTime,
         repairDetails: job.repairDetails || "",
         tagNo: job.tagNo || "",
+        parts: job.parts || [],
       });
       const jobCategory = SERVICE_TYPE_DETAILS[job.serviceType]?.category;
       if (jobCategory) {
@@ -1389,6 +1390,52 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                     </Label>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between gap-2 border-b pb-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Parts</h3>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => updateField("parts", [...(formData.parts || []), ""])}
+                  data-testid="button-edit-add-part"
+                >
+                  <Plus className="w-3 h-3 mr-1" /> Add Part
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(formData.parts || []).map((part, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input 
+                      placeholder="Part name"
+                      value={part}
+                      onChange={(e) => {
+                        const newParts = [...(formData.parts || [])];
+                        newParts[index] = e.target.value;
+                        updateField("parts", newParts);
+                      }}
+                      data-testid={`input-edit-part-${index}`}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => {
+                        const newParts = (formData.parts || []).filter((_, i) => i !== index);
+                        updateField("parts", newParts);
+                      }}
+                      data-testid={`button-edit-remove-part-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                {(formData.parts || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">No parts added</p>
+                )}
               </div>
             </div>
 
