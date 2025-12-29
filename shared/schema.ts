@@ -104,6 +104,9 @@ export const BIKE_MODELS = [
 
 export const USER_ROLES = ["Admin", "Manager", "Job Card", "Technician", "Service", "Cashier"] as const;
 export const WORK_SKILLS = ["Mechanic", "Service"] as const;
+export const ATTENDANCE_STATUSES = ["Present", "Absent", "Late", "Leave"] as const;
+
+export type WorkSkill = typeof WORK_SKILLS[number];
 
 export const CUSTOMER_REQUESTS = [
   "Engine Oil Change",

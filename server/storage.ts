@@ -268,11 +268,11 @@ export class MemStorage implements IStorage {
 
     // Sample Rewards
     const sampleRewards: Omit<Reward, "id" | "createdAt">[] = [
-      { name: "10% Service Discount", description: "Get 10% off your next service", pointsCost: 200, category: "Discount", stock: null, isActive: true },
+      { name: "10% Service Discount", description: "Get 10% off your next service", pointsCost: 200, category: "Discount", stock: undefined, isActive: true },
       { name: "Free Engine Oil Change", description: "Complimentary engine oil change (1L)", pointsCost: 500, category: "Free Service", stock: 10, isActive: true },
       { name: "Honda Branded Cap", description: "Official Honda merchandise cap", pointsCost: 150, category: "Merchandise", stock: 25, isActive: true },
       { name: "Free Full Service", description: "Complete service package free of charge", pointsCost: 1000, category: "Free Service", stock: 5, isActive: true },
-      { name: "15% Repair Discount", description: "Get 15% off any repair work", pointsCost: 350, category: "Discount", stock: null, isActive: true },
+      { name: "15% Repair Discount", description: "Get 15% off any repair work", pointsCost: 350, category: "Discount", stock: undefined, isActive: true },
       { name: "Honda T-Shirt", description: "Official Honda branded t-shirt", pointsCost: 300, category: "Merchandise", stock: 15, isActive: true },
     ];
 
@@ -283,14 +283,14 @@ export class MemStorage implements IStorage {
 
     // Sample Points Transactions
     const sampleTransactions: Omit<PointsTransaction, "id" | "createdAt">[] = [
-      { customerId: "LC0001", type: "Earn", points: 100, balance: 100, description: "Service payment - 10,000 LKR" },
-      { customerId: "LC0001", type: "Earn", points: 150, balance: 250, description: "Service payment - 15,000 LKR" },
-      { customerId: "LC0001", type: "Redeem", points: -200, balance: 50, description: "Redeemed: 10% Service Discount" },
-      { customerId: "LC0001", type: "Earn", points: 200, balance: 250, description: "Service payment - 20,000 LKR" },
-      { customerId: "LC0001", type: "Earn", points: 400, balance: 650, description: "Silver tier bonus" },
-      { customerId: "LC0003", type: "Earn", points: 500, balance: 500, description: "Service payment - 50,000 LKR" },
-      { customerId: "LC0003", type: "Redeem", points: -500, balance: 0, description: "Redeemed: Free Engine Oil Change" },
-      { customerId: "LC0003", type: "Earn", points: 1150, balance: 1150, description: "Multiple service visits" },
+      { customerId: "LC0001", type: "Earned", points: 100, description: "Service payment - 10,000 LKR" },
+      { customerId: "LC0001", type: "Earned", points: 150, description: "Service payment - 15,000 LKR" },
+      { customerId: "LC0001", type: "Redeemed", points: -200, description: "Redeemed: 10% Service Discount" },
+      { customerId: "LC0001", type: "Earned", points: 200, description: "Service payment - 20,000 LKR" },
+      { customerId: "LC0001", type: "Earned", points: 400, description: "Silver tier bonus" },
+      { customerId: "LC0003", type: "Earned", points: 500, description: "Service payment - 50,000 LKR" },
+      { customerId: "LC0003", type: "Redeemed", points: -500, description: "Redeemed: Free Engine Oil Change" },
+      { customerId: "LC0003", type: "Earned", points: 1150, description: "Multiple service visits" },
     ];
 
     sampleTransactions.forEach((t) => {
