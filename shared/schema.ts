@@ -155,7 +155,7 @@ export const jobCardAuditLogSchema = z.object({
   jobCardId: z.string(),
   actorId: z.string(),
   actorName: z.string(),
-  action: z.enum(["created", "updated", "status_changed", "assignment_changed", "parts_updated"]),
+  action: z.enum(["created", "updated", "status_changed", "assignment_changed", "parts_updated", "printed"]),
   changes: z.array(z.object({
     field: z.string(),
     oldValue: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),

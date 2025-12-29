@@ -298,6 +298,31 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/job-cards/:id/print", requireAuth, async (req, res) => {
+    try {
+      const jobCard = await storage.getJobCard(req.params.id);
+      if (!jobCard) {
+        return res.status(404).json({ error: "Job card not found" });
+      }
+      
+      const user = req.session?.user;
+      if (user) {
+        await storage.createJobCardAuditLog(
+          req.params.id,
+          user.id,
+          user.name || user.username,
+          "printed",
+          []
+        );
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error recording print action:", error);
+      res.status(500).json({ error: "Failed to record print action" });
+    }
+  });
+
   app.get("/api/statistics", requireAuth, async (req, res) => {
     try {
       const role = getRoleFromSession(req) || "Job Card";

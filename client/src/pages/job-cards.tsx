@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -881,9 +881,28 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
   const [newPart, setNewPart] = useState("");
 
-  const { data: auditLogs = [], isLoading: isLoadingAudit } = useQuery<JobCardAuditLog[]>({
-    queryKey: ["/api/job-cards", job?.id, "audit"],
+  const { data: auditLogs = [], isLoading: isLoadingAudit, refetch: refetchAudit } = useQuery<JobCardAuditLog[]>({
+    queryKey: [`/api/job-cards/${job?.id}/audit`],
     enabled: open && !!job?.id,
+  });
+
+  const { toast } = useToast();
+
+  const printMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/job-cards/${job?.id}/print`);
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchAudit();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("common.error", "Error"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
@@ -894,6 +913,136 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   }, [job]);
 
   if (!job) return null;
+
+  const handlePrint = async () => {
+    try {
+      await printMutation.mutateAsync();
+    } catch {
+      return;
+    }
+    
+    const printContent = `
+      <html>
+      <head>
+        <title>Job Card - ${job.id}</title>
+        <style>
+          @page { size: 80mm auto; margin: 2mm; }
+          body { font-family: 'Courier New', monospace; font-size: 10px; width: 76mm; margin: 0; padding: 2mm; }
+          .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 4px; margin-bottom: 4px; }
+          .header h1 { font-size: 14px; margin: 0 0 2px; font-weight: bold; }
+          .header p { margin: 0; font-size: 9px; }
+          .section { margin: 4px 0; }
+          .section-title { font-weight: bold; font-size: 10px; border-bottom: 1px solid #000; margin-bottom: 2px; }
+          .row { display: flex; justify-content: space-between; padding: 1px 0; }
+          .label { font-weight: bold; }
+          .value { text-align: right; max-width: 50%; }
+          .divider { border-top: 1px dashed #000; margin: 4px 0; }
+          .footer { text-align: center; font-size: 8px; margin-top: 4px; }
+          .list { margin: 2px 0; padding-left: 8px; }
+          .list-item { padding: 1px 0; }
+          .total-row { font-weight: bold; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>HONDA SERVICE CENTER</h1>
+          <p>Jaffna, Sri Lanka</p>
+          <p>Tel: 021-XXXXXXX</p>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="section">
+          <div class="row"><span class="label">Job Card:</span><span class="value">${job.id}</span></div>
+          <div class="row"><span class="label">Tag No:</span><span class="value">${job.tagNo || '-'}</span></div>
+          <div class="row"><span class="label">Date:</span><span class="value">${formatSriLankaDate(new Date(job.createdAt), "dd/MM/yyyy HH:mm")}</span></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="section">
+          <div class="section-title">Customer Details</div>
+          <div class="row"><span class="label">Name:</span><span class="value">${job.customerName}</span></div>
+          <div class="row"><span class="label">Phone:</span><span class="value">${job.phone}</span></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="section">
+          <div class="section-title">Vehicle Details</div>
+          <div class="row"><span class="label">Model:</span><span class="value">${job.bikeModel}</span></div>
+          <div class="row"><span class="label">Reg No:</span><span class="value">${job.registration}</span></div>
+          <div class="row"><span class="label">Odometer:</span><span class="value">${job.odometer} km</span></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="section">
+          <div class="section-title">Service Details</div>
+          <div class="row"><span class="label">Type:</span><span class="value">${job.serviceType}</span></div>
+          <div class="row"><span class="label">Bay:</span><span class="value">${job.bay}</span></div>
+          <div class="row"><span class="label">Technician:</span><span class="value">${job.assignedTo || '-'}</span></div>
+          <div class="row"><span class="label">Est. Time:</span><span class="value">${job.estimatedTime}</span></div>
+          <div class="row"><span class="label">Status:</span><span class="value">${job.status}</span></div>
+        </div>
+        
+        ${job.customerRequests && job.customerRequests.length > 0 ? `
+        <div class="divider"></div>
+        <div class="section">
+          <div class="section-title">Customer Requests</div>
+          <div class="list">
+            ${job.customerRequests.map(r => `<div class="list-item">- ${r}</div>`).join('')}
+          </div>
+        </div>
+        ` : ''}
+        
+        ${job.parts && job.parts.length > 0 ? `
+        <div class="divider"></div>
+        <div class="section">
+          <div class="section-title">Parts Used</div>
+          <div class="list">
+            ${job.parts.map(p => `<div class="list-item">- ${p}</div>`).join('')}
+          </div>
+        </div>
+        ` : ''}
+        
+        ${job.repairDetails ? `
+        <div class="divider"></div>
+        <div class="section">
+          <div class="section-title">Repair Details</div>
+          <p style="margin: 2px 0; font-size: 9px;">${job.repairDetails}</p>
+        </div>
+        ` : ''}
+        
+        <div class="divider"></div>
+        
+        <div class="section">
+          <div class="section-title">Payment Details</div>
+          <div class="row"><span class="label">Total Cost:</span><span class="value">Rs. ${job.cost.toLocaleString()}</span></div>
+          <div class="row"><span class="label">Advance Paid:</span><span class="value">Rs. ${job.advancePayment.toLocaleString()}</span></div>
+          <div class="row"><span class="label">Balance:</span><span class="value">Rs. ${job.remainingPayment.toLocaleString()}</span></div>
+          <div class="row total-row"><span class="label">Status:</span><span class="value">${job.paymentStatus}</span></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="footer">
+          <p>Thank you for choosing Honda Service Center</p>
+          <p>Printed: ${formatSriLankaDate(new Date(), "dd/MM/yyyy HH:mm")}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
 
   const handleAddPart = () => {
     if (newPart.trim()) {
@@ -1177,6 +1326,9 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                               <span>{t("jobCards.auditPartsUpdated", "Parts updated")}</span>
                             </div>
                           )}
+                          {log.action === "printed" && (
+                            <span className="text-blue-600 dark:text-blue-400">{t("jobCards.auditPrinted", "Job card printed")}</span>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1188,7 +1340,11 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-wrap gap-2">
+          <Button variant="outline" onClick={handlePrint} disabled={printMutation.isPending} data-testid="button-print-jobcard">
+            {printMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
+            {t("jobCards.print", "Print")}
+          </Button>
           <Button onClick={() => onOpenChange(false)} data-testid="button-close-view">
             {t("common.close")}
           </Button>
