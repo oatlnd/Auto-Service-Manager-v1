@@ -1157,7 +1157,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     if (field === "serviceType") {
       const serviceType = value as typeof SERVICE_TYPES[number];
-      const price = SERVICE_TYPE_DETAILS[serviceType].price;
+      const price = SERVICE_TYPE_DETAILS[serviceType]?.price ?? 0;
       setFormData((prev) => ({ ...prev, [field]: value, cost: price }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
