@@ -209,7 +209,6 @@ export default function ServiceBays() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("serviceBays.title")}</h1>
-        <p className="text-muted-foreground">{t("serviceBays.subtitle")}</p>
       </div>
 
       <Card className="border border-card-border">
