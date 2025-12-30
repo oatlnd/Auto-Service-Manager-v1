@@ -61,6 +61,12 @@ import {
 } from "@/components/ui/accordion";
 import { formatSriLankaDate } from "@/lib/timezone";
 
+interface Part {
+  name: string;
+  date: string;
+  amount: number;
+}
+
 interface FormData {
   tagNo: string;
   customerName: string;
@@ -76,7 +82,7 @@ interface FormData {
   cost: number;
   estimatedTime: string;
   repairDetails: string;
-  parts: string[];
+  parts: Part[];
 }
 
 const initialFormData: FormData = {
@@ -508,23 +514,22 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
   };
 
   const calculatePayment = () => {
-    const cost = formData.cost || 0;
-    const category = SERVICE_TYPE_DETAILS[formData.serviceType]?.category;
-    if (category === "Repair") {
-      return {
-        advance: cost * 0.5,
-        remaining: cost * 0.5,
-        status: "Advance Paid (50%)",
-      };
-    }
+    const serviceCost = formData.cost || 0;
+    const partsTotal = (formData.parts || []).reduce((sum, part) => sum + (part.amount || 0), 0);
+    const total = serviceCost + partsTotal;
     return {
-      advance: cost,
-      remaining: 0,
-      status: "Full Payment Required",
+      serviceCost,
+      partsTotal,
+      total,
     };
   };
 
   const payment = calculatePayment();
+  
+  const getTodayDate = () => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -772,25 +777,55 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
                   type="button" 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => updateField("parts", [...(formData.parts || []), ""])}
+                  onClick={() => updateField("parts", [...(formData.parts || []), { name: "", date: getTodayDate(), amount: 0 }])}
                   data-testid="button-add-part"
                 >
                   <Plus className="w-3 h-3 mr-1" /> Add Part
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input 
-                      placeholder="Part name"
-                      value={part}
-                      onChange={(e) => {
-                        const newParts = [...(formData.parts || [])];
-                        newParts[index] = e.target.value;
-                        updateField("parts", newParts);
-                      }}
-                      data-testid={`input-part-${index}`}
-                    />
+                  <div key={index} className="flex flex-wrap items-end gap-2 p-3 rounded-md bg-muted/30">
+                    <div className="flex-1 min-w-[150px]">
+                      <Label className="text-xs text-muted-foreground">Part Name</Label>
+                      <Input 
+                        placeholder="Part name"
+                        value={part.name}
+                        onChange={(e) => {
+                          const newParts = [...(formData.parts || [])];
+                          newParts[index] = { ...newParts[index], name: e.target.value };
+                          updateField("parts", newParts);
+                        }}
+                        data-testid={`input-part-name-${index}`}
+                      />
+                    </div>
+                    <div className="w-[130px]">
+                      <Label className="text-xs text-muted-foreground">Date</Label>
+                      <Input 
+                        type="date"
+                        value={part.date}
+                        onChange={(e) => {
+                          const newParts = [...(formData.parts || [])];
+                          newParts[index] = { ...newParts[index], date: e.target.value };
+                          updateField("parts", newParts);
+                        }}
+                        data-testid={`input-part-date-${index}`}
+                      />
+                    </div>
+                    <div className="w-[120px]">
+                      <Label className="text-xs text-muted-foreground">Amount (LKR)</Label>
+                      <Input 
+                        type="number"
+                        placeholder="0"
+                        value={part.amount || ""}
+                        onChange={(e) => {
+                          const newParts = [...(formData.parts || [])];
+                          newParts[index] = { ...newParts[index], amount: Number(e.target.value) || 0 };
+                          updateField("parts", newParts);
+                        }}
+                        data-testid={`input-part-amount-${index}`}
+                      />
+                    </div>
                     <Button 
                       type="button" 
                       variant="ghost" 
@@ -824,24 +859,25 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
             </div>
           </div>
 
-          {formData.cost > 0 && (
+          {(formData.cost > 0 || payment.partsTotal > 0) && (
             <Card className="bg-muted/50 border border-card-border">
               <CardContent className="pt-4">
                 <h4 className="font-medium mb-2">{t("jobCards.paymentDetails")}</h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("jobCards.totalCost")}:</span>
-                    <span className="font-medium">LKR {formData.cost.toLocaleString()}</span>
+                    <span className="text-muted-foreground">{t("jobCards.serviceCost")}:</span>
+                    <span>LKR {payment.serviceCost.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("jobCards.advance")}:</span>
-                    <span className="font-medium text-primary">LKR {payment.advance.toLocaleString()}</span>
+                  {payment.partsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t("jobCards.partsTotal")}:</span>
+                      <span>LKR {payment.partsTotal.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-1 mt-1">
+                    <span className="font-medium">{t("jobCards.total")}:</span>
+                    <span className="font-bold text-lg">LKR {payment.total.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("jobCards.remaining")}:</span>
-                    <span>LKR {payment.remaining.toLocaleString()}</span>
-                  </div>
-                  <Badge variant="outline" className="mt-2">{payment.status}</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -868,7 +904,7 @@ interface ViewJobCardDialogProps {
   job: JobCard | null;
   onStatusChange: (status: typeof JOB_STATUSES[number]) => void;
   onAssignmentChange: (bay: typeof BAYS[number], technician: string) => void;
-  onPartsChange: (parts: string[]) => void;
+  onPartsChange: (parts: Part[]) => void;
   isUpdating: boolean;
   isLimitedRole?: boolean;
   canViewRevenue?: boolean;
@@ -879,7 +915,8 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const { t } = useTranslation();
   const [selectedBay, setSelectedBay] = useState<typeof BAYS[number]>("Sudershan");
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
-  const [newPart, setNewPart] = useState("");
+  const [newPartName, setNewPartName] = useState("");
+  const [newPartAmount, setNewPartAmount] = useState<number>(0);
 
   const { data: auditLogs = [], isLoading: isLoadingAudit, refetch: refetchAudit } = useQuery<JobCardAuditLog[]>({
     queryKey: [`/api/job-cards/${job?.id}/audit`],
@@ -1133,7 +1170,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <div class="section">
           <div class="section-title">Parts Used</div>
           <div class="list">
-            ${job.parts.map(p => `<div class="list-item">- ${p}</div>`).join('')}
+            ${job.parts.map(p => `<div class="row"><span class="label">${p.name} (${p.date})</span><span class="value">Rs. ${p.amount.toLocaleString()}</span></div>`).join('')}
           </div>
         </div>
         ` : ''}
@@ -1150,10 +1187,9 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         
         <div class="section">
           <div class="section-title">Payment Details</div>
-          <div class="row"><span class="label">Total Cost:</span><span class="value">Rs. ${job.cost.toLocaleString()}</span></div>
-          <div class="row"><span class="label">Advance Paid:</span><span class="value">Rs. ${job.advancePayment.toLocaleString()}</span></div>
-          <div class="row"><span class="label">Balance:</span><span class="value">Rs. ${job.remainingPayment.toLocaleString()}</span></div>
-          <div class="row total-row"><span class="label">Status:</span><span class="value">${job.paymentStatus}</span></div>
+          <div class="row"><span class="label">Service Cost:</span><span class="value">Rs. ${job.cost.toLocaleString()}</span></div>
+          ${partsTotal > 0 ? `<div class="row"><span class="label">Parts Total:</span><span class="value">Rs. ${partsTotal.toLocaleString()}</span></div>` : ''}
+          <div class="row total-row"><span class="label">Total:</span><span class="value">Rs. ${grandTotal.toLocaleString()}</span></div>
         </div>
         
         <div class="divider"></div>
@@ -1176,17 +1212,30 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
     }
   };
 
+  const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
   const handleAddPart = () => {
-    if (newPart.trim()) {
-      onPartsChange([...(job.parts || []), newPart.trim()]);
-      setNewPart("");
+    if (newPartName.trim()) {
+      const newPart: Part = {
+        name: newPartName.trim(),
+        date: getTodayDate(),
+        amount: newPartAmount || 0,
+      };
+      onPartsChange([...(job.parts || []), newPart]);
+      setNewPartName("");
+      setNewPartAmount(0);
     }
   };
 
   const handleRemovePart = (index: number) => {
-    const newParts = (job.parts || []).filter((_, i) => i !== index);
-    onPartsChange(newParts);
+    const updatedParts = (job.parts || []).filter((_, i) => i !== index);
+    onPartsChange(updatedParts);
   };
+  
+  const partsTotal = (job.parts || []).reduce((sum, part) => sum + (part.amount || 0), 0);
+  const grandTotal = (job.cost || 0) + partsTotal;
 
   const serviceTypeDetails = SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS];
   const category = serviceTypeDetails?.category || "Paid Service";
@@ -1361,23 +1410,18 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                 <h4 className="font-medium mb-3">{t("jobCards.paymentDetails")}</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("jobCards.totalCost")}:</span>
-                    <span className="font-semibold">LKR {job.cost.toLocaleString()}</span>
+                    <span className="text-muted-foreground">{t("jobCards.serviceCost")}:</span>
+                    <span>LKR {job.cost.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("jobCards.advancePaid")}:</span>
-                    <span className="text-green-600 dark:text-green-400">LKR {job.advancePayment.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("jobCards.remaining")}:</span>
-                    <span className={job.remainingPayment > 0 ? "text-orange-600 dark:text-orange-400" : ""}>
-                      LKR {job.remainingPayment.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="pt-2">
-                    <Badge variant={job.paymentStatus === "Paid in Full" ? "default" : "secondary"}>
-                      {job.paymentStatus === "Paid in Full" ? t("jobCards.paidInFull") : t("jobCards.partialPayment")}
-                    </Badge>
+                  {partsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t("jobCards.partsTotal")}:</span>
+                      <span>LKR {partsTotal.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="font-medium">{t("jobCards.total")}:</span>
+                    <span className="font-bold text-lg">LKR {grandTotal.toLocaleString()}</span>
                   </div>
                 </div>
               </CardContent>
@@ -1665,6 +1709,10 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
     }
   };
 
+  const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1901,25 +1949,55 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                   type="button" 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => updateField("parts", [...(formData.parts || []), ""])}
+                  onClick={() => updateField("parts", [...(formData.parts || []), { name: "", date: getTodayDate(), amount: 0 }])}
                   data-testid="button-edit-add-part"
                 >
                   <Plus className="w-3 h-3 mr-1" /> Add Part
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input 
-                      placeholder="Part name"
-                      value={part}
-                      onChange={(e) => {
-                        const newParts = [...(formData.parts || [])];
-                        newParts[index] = e.target.value;
-                        updateField("parts", newParts);
-                      }}
-                      data-testid={`input-edit-part-${index}`}
-                    />
+                  <div key={index} className="flex flex-wrap items-end gap-2 p-3 rounded-md bg-muted/30">
+                    <div className="flex-1 min-w-[150px]">
+                      <Label className="text-xs text-muted-foreground">Part Name</Label>
+                      <Input 
+                        placeholder="Part name"
+                        value={part.name}
+                        onChange={(e) => {
+                          const newParts = [...(formData.parts || [])];
+                          newParts[index] = { ...newParts[index], name: e.target.value };
+                          updateField("parts", newParts);
+                        }}
+                        data-testid={`input-edit-part-name-${index}`}
+                      />
+                    </div>
+                    <div className="w-[130px]">
+                      <Label className="text-xs text-muted-foreground">Date</Label>
+                      <Input 
+                        type="date"
+                        value={part.date}
+                        onChange={(e) => {
+                          const newParts = [...(formData.parts || [])];
+                          newParts[index] = { ...newParts[index], date: e.target.value };
+                          updateField("parts", newParts);
+                        }}
+                        data-testid={`input-edit-part-date-${index}`}
+                      />
+                    </div>
+                    <div className="w-[120px]">
+                      <Label className="text-xs text-muted-foreground">Amount (LKR)</Label>
+                      <Input 
+                        type="number"
+                        placeholder="0"
+                        value={part.amount || ""}
+                        onChange={(e) => {
+                          const newParts = [...(formData.parts || [])];
+                          newParts[index] = { ...newParts[index], amount: Number(e.target.value) || 0 };
+                          updateField("parts", newParts);
+                        }}
+                        data-testid={`input-edit-part-amount-${index}`}
+                      />
+                    </div>
                     <Button 
                       type="button" 
                       variant="ghost" 

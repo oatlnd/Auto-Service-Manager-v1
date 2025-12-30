@@ -168,10 +168,11 @@ export class MemStorage implements IStorage {
         estimatedTime: "45 mins",
         cost: 1000,
         repairDetails: "Oil change, filter replacement, chain adjustment",
-        parts: ["Engine Oil", "Oil Filter"],
-        advancePayment: 1000,
-        remainingPayment: 0,
-        paymentStatus: "Paid in Full",
+        parts: [
+          { name: "Engine Oil", date: new Date().toISOString().split('T')[0], amount: 250 },
+          { name: "Oil Filter", date: new Date().toISOString().split('T')[0], amount: 150 },
+        ],
+        partsTotal: 400,
         createdAt: new Date().toISOString(),
       },
       {
@@ -189,9 +190,10 @@ export class MemStorage implements IStorage {
         estimatedTime: "2 hours",
         cost: 5000,
         repairDetails: "Front brake pad replacement, disc inspection",
-        advancePayment: 2500,
-        remainingPayment: 2500,
-        paymentStatus: "Advance Paid",
+        parts: [
+          { name: "Brake Pads", date: twoDaysAgo.split('T')[0], amount: 1500 },
+        ],
+        partsTotal: 1500,
         createdAt: twoDaysAgo,
       },
       {
@@ -209,9 +211,8 @@ export class MemStorage implements IStorage {
         estimatedTime: "1 hour",
         cost: 550,
         repairDetails: "",
-        advancePayment: 550,
-        remainingPayment: 0,
-        paymentStatus: "Paid in Full",
+        parts: [],
+        partsTotal: 0,
         createdAt: new Date(Date.now() - 7200000).toISOString(),
       },
       {
@@ -229,9 +230,8 @@ export class MemStorage implements IStorage {
         estimatedTime: "30 mins",
         cost: 400,
         repairDetails: "",
-        advancePayment: 400,
-        remainingPayment: 0,
-        paymentStatus: "Paid in Full",
+        parts: [],
+        partsTotal: 0,
         createdAt: threeDaysAgo,
       },
     ];
@@ -347,19 +347,9 @@ export class MemStorage implements IStorage {
     return `JC${String(this.jobIdCounter++).padStart(3, "0")}`;
   }
 
-  private calculatePayment(serviceType: string, cost: number) {
-    if (serviceType === "Repair") {
-      return {
-        advancePayment: cost * 0.5,
-        remainingPayment: cost * 0.5,
-        paymentStatus: "Advance Paid" as const,
-      };
-    }
-    return {
-      advancePayment: cost,
-      remainingPayment: 0,
-      paymentStatus: "Paid in Full" as const,
-    };
+  private calculatePartsTotal(parts: Array<{ name: string; date: string; amount: number }> | undefined): number {
+    if (!parts || parts.length === 0) return 0;
+    return parts.reduce((sum, part) => sum + (part.amount || 0), 0);
   }
 
   async getJobCards(): Promise<JobCard[]> {
@@ -379,13 +369,14 @@ export class MemStorage implements IStorage {
 
   async createJobCard(data: InsertJobCard): Promise<JobCard> {
     const id = this.generateJobId();
-    const payment = this.calculatePayment(data.serviceType, data.cost);
+    const parts = data.parts || [];
+    const partsTotal = this.calculatePartsTotal(parts);
     
     const jobCard: JobCard = {
       ...data,
       id,
-      ...payment,
-      parts: data.parts || [],
+      parts,
+      partsTotal,
       createdAt: new Date().toISOString(),
     };
     
@@ -397,22 +388,14 @@ export class MemStorage implements IStorage {
     const existing = this.jobCards.get(id);
     if (!existing) return undefined;
 
-    let payment = {
-      advancePayment: existing.advancePayment,
-      remainingPayment: existing.remainingPayment,
-      paymentStatus: existing.paymentStatus,
-    };
-
-    if (data.serviceType !== undefined || data.cost !== undefined) {
-      const serviceType = data.serviceType ?? existing.serviceType;
-      const cost = data.cost ?? existing.cost;
-      payment = this.calculatePayment(serviceType, cost);
-    }
+    const parts = data.parts !== undefined ? data.parts : existing.parts;
+    const partsTotal = this.calculatePartsTotal(parts);
 
     const updated: JobCard = {
       ...existing,
       ...data,
-      ...payment,
+      parts,
+      partsTotal,
     };
 
     this.jobCards.set(id, updated);
