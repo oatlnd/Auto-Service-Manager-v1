@@ -1,14 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Wrench, Calendar, Car, Hash, Clock, User } from "lucide-react";
+import { Wrench, Calendar, Car, Hash, Clock, User, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { useUserRole } from "@/contexts/UserRoleContext";
-import { WASH_BAYS, TECHNICIAN_BAYS } from "@shared/schema";
-import type { BayStatus } from "@shared/schema";
+import { WASH_BAYS, TECHNICIAN_BAYS, JOB_STATUSES, SERVICE_CATEGORIES, SERVICE_TYPE_DETAILS, getStatusesForCategory } from "@shared/schema";
+import type { BayStatus, JobCard } from "@shared/schema";
+import { StatusBadge } from "@/components/status-badge";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 function calculateDaysDiff(startDate: string): number {
   const start = new Date(startDate);
@@ -26,10 +31,22 @@ function formatDate(dateString: string): string {
 interface BayCardProps {
   bay: BayStatus;
   t: (key: string) => string;
+  onStatusChange: (jobId: string, status: string, serviceCategory: string) => void;
+  isUpdating: boolean;
+  updatingJobId: string | null;
 }
 
-function WashBayCard({ bay, t }: BayCardProps) {
+function WashBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayCardProps) {
   const jobs = bay.jobCards || (bay.jobCard ? [bay.jobCard] : []);
+  
+  const getStatusKey = (status: string) => {
+    if (status === "Pending") return "pending";
+    if (status === "In Progress") return "inProgress";
+    if (status === "Oil Change") return "oilChange";
+    if (status === "Quality Check") return "qualityCheck";
+    if (status === "Completed") return "completed";
+    return "delivered";
+  };
   
   return (
     <Card 
@@ -61,30 +78,65 @@ function WashBayCard({ bay, t }: BayCardProps) {
       <CardContent>
         {jobs.length > 0 ? (
           <div className="space-y-3">
-            <div className="space-y-2">
-              {jobs.map((job) => (
-                <div 
-                  key={job.id} 
-                  className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm py-1.5 border-b border-border last:border-b-0"
-                >
-                  <div className="flex items-center gap-1.5 min-w-[70px]">
-                    <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="font-medium">{job.id}</span>
+            <div className="space-y-3">
+              {jobs.map((job) => {
+                const serviceCategory = SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.category || "Paid Service";
+                const statuses = getStatusesForCategory(serviceCategory);
+                const isJobUpdating = isUpdating && updatingJobId === job.id;
+                return (
+                  <div 
+                    key={job.id} 
+                    className="p-3 rounded-md bg-muted/30 space-y-2"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="font-medium">{job.id}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Car className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="font-medium">{job.registration}</span>
+                      </div>
+                      <StatusBadge status={job.status} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{formatDate(job.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" />
+                        <span>{job.assignedTo}</span>
+                      </div>
+                    </div>
+                    <div className="pt-1">
+                      <Select
+                        value={job.status}
+                        onValueChange={(newStatus) => onStatusChange(job.id, newStatus, serviceCategory)}
+                        disabled={isJobUpdating}
+                      >
+                        <SelectTrigger className="h-8 text-xs" data-testid={`select-status-${job.id}`}>
+                          {isJobUpdating ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>{t("common.updating")}</span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder={t("jobCards.updateStatus")} />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statuses.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {t(`jobCards.${getStatusKey(status)}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 min-w-[90px]">
-                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>{formatDate(job.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 min-w-[80px]">
-                    <Car className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="font-medium">{job.registration}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>{job.assignedTo}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <Link href="/job-cards" className="block">
               <Button variant="outline" size="sm" className="w-full" data-testid={`button-view-details-${bay.bay.replace(/\s+/g, "-").toLowerCase()}`}>
@@ -105,8 +157,22 @@ function WashBayCard({ bay, t }: BayCardProps) {
   );
 }
 
-function TechnicianBayCard({ bay, t }: BayCardProps) {
+function TechnicianBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayCardProps) {
   const daysDiff = bay.jobCard ? calculateDaysDiff(bay.jobCard.createdAt) : 0;
+  const job = bay.jobCard;
+  
+  const getStatusKey = (status: string) => {
+    if (status === "Pending") return "pending";
+    if (status === "In Progress") return "inProgress";
+    if (status === "Oil Change") return "oilChange";
+    if (status === "Quality Check") return "qualityCheck";
+    if (status === "Completed") return "completed";
+    return "delivered";
+  };
+  
+  const serviceCategory = job ? (SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.category || "Paid Service") : "Paid Service";
+  const statuses = job ? getStatusesForCategory(serviceCategory) : [];
+  const isJobUpdating = job && isUpdating && updatingJobId === job.id;
   
   return (
     <Card 
@@ -136,26 +202,29 @@ function TechnicianBayCard({ bay, t }: BayCardProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {bay.isOccupied && bay.jobCard ? (
+        {bay.isOccupied && job ? (
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm font-medium">{bay.jobCard.id}</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm font-medium">{job.id}</span>
+              </div>
+              <StatusBadge status={job.status} />
             </div>
             
             <div className="flex items-center gap-3">
               <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm">{formatDate(bay.jobCard.createdAt)}</span>
+              <span className="text-sm">{formatDate(job.createdAt)}</span>
             </div>
             
             <div className="flex items-center gap-3">
               <Car className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm font-medium">{bay.jobCard.registration}</span>
+              <span className="text-sm font-medium">{job.registration}</span>
             </div>
             
             <div className="flex items-center gap-3">
               <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm">{t("serviceBays.started")}: {formatDate(bay.jobCard.createdAt)}</span>
+              <span className="text-sm">{t("serviceBays.started")}: {formatDate(job.createdAt)}</span>
             </div>
             
             <div className="flex items-center gap-3">
@@ -165,11 +234,31 @@ function TechnicianBayCard({ bay, t }: BayCardProps) {
               </Badge>
             </div>
 
-            <Link href="/job-cards" className="block pt-2">
-              <Button variant="outline" size="sm" className="w-full" data-testid={`button-view-details-${bay.bay.replace(/\s+/g, "-").toLowerCase()}`}>
-                {t("dashboard.viewAll")}
-              </Button>
-            </Link>
+            <div className="pt-2">
+              <Select
+                value={job.status}
+                onValueChange={(newStatus) => onStatusChange(job.id, newStatus, serviceCategory)}
+                disabled={isJobUpdating}
+              >
+                <SelectTrigger className="h-8 text-xs" data-testid={`select-status-${job.id}`}>
+                  {isJobUpdating ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>{t("common.updating")}</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder={t("jobCards.updateStatus")} />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {t(`jobCards.${getStatusKey(status)}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -188,10 +277,44 @@ function TechnicianBayCard({ bay, t }: BayCardProps) {
 export default function ServiceBays() {
   const { t } = useTranslation();
   const { isService } = useUserRole();
+  const { toast } = useToast();
+  const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
   
   const { data: bayStatus, isLoading } = useQuery<BayStatus[]>({
     queryKey: ["/api/bays/status"],
   });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await apiRequest("PATCH", `/api/job-cards/${id}/status`, { status });
+      return res.json();
+    },
+    onMutate: ({ id }) => {
+      setUpdatingJobId(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bays/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/job-cards"] });
+      toast({
+        title: t("common.success"),
+        description: t("jobCards.statusUpdated"),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("common.error"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setUpdatingJobId(null);
+    },
+  });
+
+  const handleStatusChange = (jobId: string, status: string, _serviceCategory: string) => {
+    updateStatusMutation.mutate({ id: jobId, status });
+  };
 
   const washBays = bayStatus?.filter(b => WASH_BAYS.includes(b.bay as typeof WASH_BAYS[number])) || [];
   const technicianBays = bayStatus?.filter(b => TECHNICIAN_BAYS.includes(b.bay as typeof TECHNICIAN_BAYS[number])) || [];
@@ -243,7 +366,13 @@ export default function ServiceBays() {
             <div>
               <h2 className="text-lg font-semibold mb-4" data-testid="text-wash-bays-section">{t("serviceBays.washBay")}</h2>
               <div className="grid grid-cols-1 gap-6">
-                <WashBayCard bay={combinedWashBay} t={t} />
+                <WashBayCard 
+                  bay={combinedWashBay} 
+                  t={t} 
+                  onStatusChange={handleStatusChange}
+                  isUpdating={updateStatusMutation.isPending}
+                  updatingJobId={updatingJobId}
+                />
               </div>
             </div>
           )}
@@ -253,7 +382,14 @@ export default function ServiceBays() {
               <h2 className="text-lg font-semibold mb-4" data-testid="text-technician-bays-section">{t("serviceBays.technicianBays")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTechBays.map((bay) => (
-                  <TechnicianBayCard key={bay.bay} bay={bay} t={t} />
+                  <TechnicianBayCard 
+                    key={bay.bay} 
+                    bay={bay} 
+                    t={t}
+                    onStatusChange={handleStatusChange}
+                    isUpdating={updateStatusMutation.isPending}
+                    updatingJobId={updatingJobId}
+                  />
                 ))}
               </div>
             </div>
