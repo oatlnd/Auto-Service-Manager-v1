@@ -196,45 +196,19 @@ export default function ServiceBays() {
   const washBays = bayStatus?.filter(b => WASH_BAYS.includes(b.bay as typeof WASH_BAYS[number])) || [];
   const technicianBays = bayStatus?.filter(b => TECHNICIAN_BAYS.includes(b.bay as typeof TECHNICIAN_BAYS[number])) || [];
   
-  const filteredWashBays = washBays;
-  const filteredTechBays = isService ? [] : technicianBays;
+  const combinedWashBay = washBays.length > 0 ? {
+    bay: t("serviceBays.washBay") as typeof WASH_BAYS[number],
+    isOccupied: washBays.some(b => b.isOccupied),
+    jobCards: washBays.flatMap(b => b.jobCards || (b.jobCard ? [b.jobCard] : [])),
+  } as BayStatus : null;
   
-  const allFilteredBays = [...filteredWashBays, ...filteredTechBays];
-  const occupiedBays = allFilteredBays.filter(b => b.isOccupied).length;
-  const totalBays = allFilteredBays.length || (isService ? 2 : 8);
-  const availableBays = totalBays - occupiedBays;
-  const utilization = totalBays ? Math.round((occupiedBays / totalBays) * 100) : 0;
+  const filteredTechBays = isService ? [] : technicianBays;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold" data-testid="text-page-title">{t("serviceBays.title")}</h1>
       </div>
-
-      <Card className="border border-card-border">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary" data-testid="stat-active-bays">{occupiedBays}</p>
-              <p className="text-sm text-muted-foreground">{t("serviceBays.activeBays")}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400" data-testid="stat-available-bays">{availableBays}</p>
-              <p className="text-sm text-muted-foreground">{t("serviceBays.availableBays")}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold" data-testid="stat-utilization">{utilization}%</p>
-              <p className="text-sm text-muted-foreground">{t("dashboard.utilization")}</p>
-            </div>
-          </div>
-          <div className="mt-6 h-3 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
-              style={{ width: `${utilization}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {isLoading ? (
         <div className="space-y-6">
@@ -265,13 +239,11 @@ export default function ServiceBays() {
         </div>
       ) : (
         <div className="space-y-6">
-          {filteredWashBays.length > 0 && (
+          {combinedWashBay && (
             <div>
-              <h2 className="text-lg font-semibold mb-4" data-testid="text-wash-bays-section">{t("serviceBays.washBays")}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredWashBays.map((bay) => (
-                  <WashBayCard key={bay.bay} bay={bay} t={t} />
-                ))}
+              <h2 className="text-lg font-semibold mb-4" data-testid="text-wash-bays-section">{t("serviceBays.washBay")}</h2>
+              <div className="grid grid-cols-1 gap-6">
+                <WashBayCard bay={combinedWashBay} t={t} />
               </div>
             </div>
           )}
