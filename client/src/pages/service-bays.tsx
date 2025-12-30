@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Wrench, Calendar, Car, Hash, Clock, User, Loader2 } from "lucide-react";
+import { Wrench, Calendar, Car, Hash, Clock, User, Loader2, Phone, FileText, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Link } from "wouter";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { WASH_BAYS, TECHNICIAN_BAYS, JOB_STATUSES, SERVICE_CATEGORIES, SERVICE_TYPE_DETAILS, getStatusesForCategory } from "@shared/schema";
@@ -32,11 +35,12 @@ interface BayCardProps {
   bay: BayStatus;
   t: (key: string) => string;
   onStatusChange: (jobId: string, status: string, serviceCategory: string) => void;
+  onJobClick: (job: JobCard) => void;
   isUpdating: boolean;
   updatingJobId: string | null;
 }
 
-function WashBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayCardProps) {
+function WashBayCard({ bay, t, onStatusChange, onJobClick, isUpdating, updatingJobId }: BayCardProps) {
   const jobs = bay.jobCards || (bay.jobCard ? [bay.jobCard] : []);
   
   const getStatusKey = (status: string) => {
@@ -90,10 +94,14 @@ function WashBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayC
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                        <div className="flex items-center gap-1.5">
+                        <button
+                          className="flex items-center gap-1.5 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                          onClick={() => onJobClick(job)}
+                          data-testid={`button-view-job-${job.id}`}
+                        >
                           <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span className="font-medium">{job.id}</span>
-                        </div>
+                          <span className="font-medium text-primary underline underline-offset-2">{job.id}</span>
+                        </button>
                         <div className="flex items-center gap-1.5">
                           <Car className="w-3.5 h-3.5 text-muted-foreground" />
                           <span className="font-medium">{job.registration}</span>
@@ -154,7 +162,7 @@ function WashBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayC
   );
 }
 
-function TechnicianBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayCardProps) {
+function TechnicianBayCard({ bay, t, onStatusChange, onJobClick, isUpdating, updatingJobId }: BayCardProps) {
   const daysDiff = bay.jobCard ? calculateDaysDiff(bay.jobCard.createdAt) : 0;
   const job = bay.jobCard;
   
@@ -202,10 +210,14 @@ function TechnicianBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }
         {bay.isOccupied && job ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+              <button
+                className="flex items-center gap-2 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                onClick={() => onJobClick(job)}
+                data-testid={`button-view-job-${job.id}`}
+              >
                 <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm font-medium">{job.id}</span>
-              </div>
+                <span className="text-sm font-medium text-primary underline underline-offset-2">{job.id}</span>
+              </button>
               <Select
                 value={job.status}
                 onValueChange={(newStatus) => onStatusChange(job.id, newStatus, serviceCategory)}
@@ -269,13 +281,20 @@ function TechnicianBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }
 
 export default function ServiceBays() {
   const { t } = useTranslation();
-  const { isService } = useUserRole();
+  const { isService, canViewRevenue } = useUserRole();
   const { toast } = useToast();
   const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobCard | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   
   const { data: bayStatus, isLoading } = useQuery<BayStatus[]>({
     queryKey: ["/api/bays/status"],
   });
+
+  const handleJobClick = (job: JobCard) => {
+    setSelectedJob(job);
+    setViewDialogOpen(true);
+  };
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -363,6 +382,7 @@ export default function ServiceBays() {
                   bay={combinedWashBay} 
                   t={t} 
                   onStatusChange={handleStatusChange}
+                  onJobClick={handleJobClick}
                   isUpdating={updateStatusMutation.isPending}
                   updatingJobId={updatingJobId}
                 />
@@ -380,6 +400,7 @@ export default function ServiceBays() {
                     bay={bay} 
                     t={t}
                     onStatusChange={handleStatusChange}
+                    onJobClick={handleJobClick}
                     isUpdating={updateStatusMutation.isPending}
                     updatingJobId={updatingJobId}
                   />
@@ -389,6 +410,181 @@ export default function ServiceBays() {
           )}
         </div>
       )}
+
+      {/* View Job Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              {t("jobCards.viewDetails")} - {selectedJob?.id}
+            </DialogTitle>
+            <DialogDescription>
+              {t("jobCards.viewDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedJob && (
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-6">
+                {/* Customer & Bike Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    {t("jobCards.customerDetails")}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.customerName")}</p>
+                      <p className="font-medium">{selectedJob.customerName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.phone")}</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5" />
+                        {selectedJob.phone}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Bike Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    {t("jobCards.bikeDetails")}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.registration")}</p>
+                      <p className="font-medium">{selectedJob.registration}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.bikeModel")}</p>
+                      <p className="font-medium">{selectedJob.bikeModel}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.odometer")}</p>
+                      <p className="font-medium">{selectedJob.odometer?.toLocaleString()} km</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.tagNo")}</p>
+                      <p className="font-medium">{selectedJob.tagNo}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Service Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    {t("jobCards.serviceDetails")}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.serviceType")}</p>
+                      <p className="font-medium">{selectedJob.serviceType}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.status")}</p>
+                      <StatusBadge status={selectedJob.status} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.bay")}</p>
+                      <p className="font-medium">{selectedJob.bay || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.technician")}</p>
+                      <p className="font-medium">{selectedJob.assignedTo || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.estimatedTime")}</p>
+                      <p className="font-medium">{selectedJob.estimatedTime || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("jobCards.created")}</p>
+                      <p className="font-medium">{formatDate(selectedJob.createdAt)}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Customer Requests */}
+                  {selectedJob.customerRequests && selectedJob.customerRequests.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">{t("jobCards.customerRequests")}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedJob.customerRequests.map((req, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {req}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Repair Details */}
+                  {selectedJob.repairDetails && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">{t("jobCards.repairDetails")}</p>
+                      <p className="text-sm bg-muted/30 p-2 rounded">{selectedJob.repairDetails}</p>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Parts */}
+                {selectedJob.parts && selectedJob.parts.length > 0 && (
+                  <>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                        {t("jobCards.parts")}
+                      </h3>
+                      <div className="space-y-2">
+                        {selectedJob.parts.map((part, i) => (
+                          <div key={i} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                            <span>{typeof part === 'string' ? part : part.name}</span>
+                            {typeof part !== 'string' && (
+                              <div className="flex items-center gap-4 text-muted-foreground">
+                                <span>{part.date}</span>
+                                {canViewRevenue && <span className="font-medium text-foreground">Rs. {part.amount?.toLocaleString()}</span>}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+
+                {/* Payment Details (visible to Admin/Manager only) */}
+                {canViewRevenue && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      {t("jobCards.paymentDetails")}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("jobCards.serviceCost")}</p>
+                        <p className="font-medium">Rs. {selectedJob.cost?.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("jobCards.partsTotal")}</p>
+                        <p className="font-medium">Rs. {(selectedJob.partsTotal || 0).toLocaleString()}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">{t("jobCards.total")}</p>
+                        <p className="font-semibold text-lg">Rs. {((selectedJob.cost || 0) + (selectedJob.partsTotal || 0)).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
