@@ -1054,6 +1054,8 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <style>
           @page { size: 80mm auto; margin: 2mm; }
           body { font-family: 'Courier New', monospace; font-size: 10px; width: 76mm; margin: 0; padding: 2mm; }
+          .job-tag-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+          .job-tag-header .job-no, .job-tag-header .tag-no { font-size: 16px; font-weight: bold; }
           .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 4px; margin-bottom: 4px; }
           .header h1 { font-size: 14px; margin: 0 0 2px; font-weight: bold; }
           .header p { margin: 0; font-size: 9px; }
@@ -1062,6 +1064,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
           .row { display: flex; justify-content: space-between; padding: 1px 0; }
           .label { font-weight: bold; }
           .value { text-align: right; max-width: 50%; }
+          .value-bold { text-align: right; max-width: 50%; font-weight: bold; }
           .divider { border-top: 1px dashed #000; margin: 4px 0; }
           .footer { text-align: center; font-size: 8px; margin-top: 4px; }
           .list { margin: 2px 0; padding-left: 8px; }
@@ -1070,8 +1073,13 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         </style>
       </head>
       <body>
+        <div class="job-tag-header">
+          <span class="job-no">${job.id}</span>
+          <span class="tag-no">${job.tagNo || '-'}</span>
+        </div>
+        
         <div class="header">
-          <h1>HONDA SERVICE CENTER</h1>
+          <h1>RATNAM SERVICE STATION</h1>
           <p>Jaffna, Sri Lanka</p>
           <p>Tel: 021-XXXXXXX</p>
         </div>
@@ -1079,8 +1087,6 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <div class="divider"></div>
         
         <div class="section">
-          <div class="row"><span class="label">Job Card:</span><span class="value">${job.id}</span></div>
-          <div class="row"><span class="label">Tag No:</span><span class="value">${job.tagNo || '-'}</span></div>
           <div class="row"><span class="label">Date:</span><span class="value">${formatSriLankaDate(new Date(job.createdAt), "dd/MM/yyyy HH:mm")}</span></div>
         </div>
         
@@ -1097,7 +1103,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <div class="section">
           <div class="section-title">Vehicle Details</div>
           <div class="row"><span class="label">Model:</span><span class="value">${job.bikeModel}</span></div>
-          <div class="row"><span class="label">Reg No:</span><span class="value">${job.registration}</span></div>
+          <div class="row"><span class="label">Reg No:</span><span class="value-bold">${job.registration}</span></div>
           <div class="row"><span class="label">Odometer:</span><span class="value">${job.odometer} km</span></div>
         </div>
         
@@ -1153,7 +1159,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <div class="divider"></div>
         
         <div class="footer">
-          <p>Thank you for choosing Honda Service Center</p>
+          <p>Thank you for choosing Ratnam Service Station</p>
           <p>Printed: ${formatSriLankaDate(new Date(), "dd/MM/yyyy HH:mm")}</p>
         </div>
       </body>

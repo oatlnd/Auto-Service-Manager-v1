@@ -1,8 +1,8 @@
-# Honda Service Center Management System
+# Ratnam Service Station Management System
 
 ## Overview
 
-A full-stack web application for managing a Honda motorcycle service center in Jaffna, Sri Lanka. The system handles daily operations including job card management, service bay monitoring, reporting, staff management, and attendance tracking for a team of 12 staff members managing approximately 45 bikes per day (36 regular services + 9 repairs).
+A full-stack web application for managing Ratnam Service Station, a Honda motorcycle service center in Jaffna, Sri Lanka. The system handles daily operations including job card management, service bay monitoring, reporting, staff management, and attendance tracking for a team of 12 staff members managing approximately 45 bikes per day (36 regular services + 9 repairs).
 
 The application follows Material Design principles adapted for the automotive service industry, with Honda branding (Red #CC0000, Black #000000) throughout. It features a collapsible sidebar navigation, modal-based forms, color-coded status indicators, and role-based access control for efficient workflow management.
 
