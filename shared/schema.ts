@@ -138,14 +138,16 @@ export const jobCardSchema = z.object({
   estimatedTime: z.string(),
   cost: z.number().min(0, "Cost must be positive"),
   repairDetails: z.string().optional(),
-  parts: z.array(z.string()).optional(),
-  advancePayment: z.number(),
-  remainingPayment: z.number(),
-  paymentStatus: z.enum(["Paid in Full", "Advance Paid"]),
+  parts: z.array(z.object({
+    name: z.string(),
+    date: z.string(),
+    amount: z.number(),
+  })).optional(),
+  partsTotal: z.number().optional(),
   createdAt: z.string(),
 });
 
-export const insertJobCardSchema = jobCardSchema.omit({ id: true, advancePayment: true, remainingPayment: true, paymentStatus: true, createdAt: true });
+export const insertJobCardSchema = jobCardSchema.omit({ id: true, createdAt: true });
 
 export type JobCard = z.infer<typeof jobCardSchema>;
 export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
@@ -158,8 +160,8 @@ export const jobCardAuditLogSchema = z.object({
   action: z.enum(["created", "updated", "status_changed", "assignment_changed", "parts_updated", "printed", "image_added", "image_deleted"]),
   changes: z.array(z.object({
     field: z.string(),
-    oldValue: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),
-    newValue: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),
+    oldValue: z.any(),
+    newValue: z.any(),
   })),
   changedAt: z.string(),
 });
