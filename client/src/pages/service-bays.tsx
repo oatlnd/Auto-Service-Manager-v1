@@ -86,36 +86,33 @@ function WashBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }: BayC
                 return (
                   <div 
                     key={job.id} 
-                    className="p-3 rounded-md bg-muted/30 space-y-2"
+                    className="p-3 rounded-md bg-muted/30"
                   >
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="font-medium">{job.id}</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="font-medium">{job.id}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Car className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="font-medium">{job.registration}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>{formatDate(job.createdAt)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <User className="w-3.5 h-3.5" />
+                          <span>{job.assignedTo}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Car className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="font-medium">{job.registration}</span>
-                      </div>
-                      <StatusBadge status={job.status} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>{formatDate(job.createdAt)}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5" />
-                        <span>{job.assignedTo}</span>
-                      </div>
-                    </div>
-                    <div className="pt-1">
                       <Select
                         value={job.status}
                         onValueChange={(newStatus) => onStatusChange(job.id, newStatus, serviceCategory)}
                         disabled={isJobUpdating}
                       >
-                        <SelectTrigger className="h-8 text-xs" data-testid={`select-status-${job.id}`}>
+                        <SelectTrigger className="h-8 w-[140px] text-xs" data-testid={`select-status-${job.id}`}>
                           {isJobUpdating ? (
                             <div className="flex items-center gap-2">
                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -209,7 +206,29 @@ function TechnicianBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }
                 <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-sm font-medium">{job.id}</span>
               </div>
-              <StatusBadge status={job.status} />
+              <Select
+                value={job.status}
+                onValueChange={(newStatus) => onStatusChange(job.id, newStatus, serviceCategory)}
+                disabled={isJobUpdating}
+              >
+                <SelectTrigger className="h-8 w-[140px] text-xs" data-testid={`select-status-${job.id}`}>
+                  {isJobUpdating ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>{t("common.updating")}</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder={t("jobCards.updateStatus")} />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {t(`jobCards.${getStatusKey(status)}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex items-center gap-3">
@@ -232,32 +251,6 @@ function TechnicianBayCard({ bay, t, onStatusChange, isUpdating, updatingJobId }
               <Badge variant={daysDiff > 2 ? "destructive" : daysDiff > 0 ? "secondary" : "outline"}>
                 {daysDiff === 0 ? t("serviceBays.today") : `${daysDiff} ${daysDiff === 1 ? t("serviceBays.day") : t("serviceBays.days")}`}
               </Badge>
-            </div>
-
-            <div className="pt-2">
-              <Select
-                value={job.status}
-                onValueChange={(newStatus) => onStatusChange(job.id, newStatus, serviceCategory)}
-                disabled={isJobUpdating}
-              >
-                <SelectTrigger className="h-8 text-xs" data-testid={`select-status-${job.id}`}>
-                  {isJobUpdating ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>{t("common.updating")}</span>
-                    </div>
-                  ) : (
-                    <SelectValue placeholder={t("jobCards.updateStatus")} />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {t(`jobCards.${getStatusKey(status)}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
         ) : (
