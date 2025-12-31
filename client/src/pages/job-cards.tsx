@@ -95,7 +95,7 @@ const initialFormData: FormData = {
   serviceType: "Service with Oil Spray (Oil Change)",
   customerRequests: [],
   status: "Pending",
-  bay: "Sudershan",
+  bay: "" as typeof BAYS[number],
   assignedTo: "",
   cost: 1000,
   estimatedTime: "",
