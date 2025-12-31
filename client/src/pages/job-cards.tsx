@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,6 +119,17 @@ export default function JobCards() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobCard | null>(null);
+  const [sortColumn, setSortColumn] = useState<string>("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
 
   const { data: jobCards = [], isLoading } = useQuery<JobCard[]>({
     queryKey: ["/api/job-cards"],
@@ -222,7 +233,50 @@ export default function JobCards() {
       
       return matchesSearch && matchesStatus && matchesServiceType && matchesLimitedRole && matchesServiceBay;
     })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => {
+      let aValue: string | number | Date;
+      let bValue: string | number | Date;
+      
+      switch (sortColumn) {
+        case "id":
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case "tagNo":
+          aValue = a.tagNo || "";
+          bValue = b.tagNo || "";
+          break;
+        case "customerName":
+          aValue = a.customerName.toLowerCase();
+          bValue = b.customerName.toLowerCase();
+          break;
+        case "registration":
+          aValue = a.registration.toLowerCase();
+          bValue = b.registration.toLowerCase();
+          break;
+        case "serviceType":
+          aValue = a.serviceType;
+          bValue = b.serviceType;
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case "bay":
+          aValue = a.bay || "";
+          bValue = b.bay || "";
+          break;
+        case "createdAt":
+        default:
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+      }
+      
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
 
   const formatCurrency = (amount: number) => `LKR ${amount.toLocaleString()}`;
 
@@ -295,14 +349,118 @@ export default function JobCards() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Job ID</TableHead>
-                  <TableHead className="hidden sm:table-cell">Tag No</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="hidden md:table-cell">{t("jobCards.registration")}</TableHead>
-                  <TableHead className="hidden sm:table-cell">Service Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Bay</TableHead>
-                  <TableHead className="hidden md:table-cell">{t("jobCards.created")}</TableHead>
+                  <TableHead>
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("id")}
+                      data-testid="sort-id"
+                    >
+                      Job ID
+                      {sortColumn === "id" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("tagNo")}
+                      data-testid="sort-tagNo"
+                    >
+                      Tag No
+                      {sortColumn === "tagNo" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("customerName")}
+                      data-testid="sort-customerName"
+                    >
+                      Customer
+                      {sortColumn === "customerName" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("registration")}
+                      data-testid="sort-registration"
+                    >
+                      {t("jobCards.registration")}
+                      {sortColumn === "registration" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("serviceType")}
+                      data-testid="sort-serviceType"
+                    >
+                      Service Type
+                      {sortColumn === "serviceType" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("status")}
+                      data-testid="sort-status"
+                    >
+                      Status
+                      {sortColumn === "status" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("bay")}
+                      data-testid="sort-bay"
+                    >
+                      Bay
+                      {sortColumn === "bay" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    <button
+                      className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
+                      onClick={() => handleSort("createdAt")}
+                      data-testid="sort-createdAt"
+                    >
+                      {t("jobCards.created")}
+                      {sortColumn === "createdAt" ? (
+                        sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                      )}
+                    </button>
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
