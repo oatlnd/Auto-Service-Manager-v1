@@ -1041,8 +1041,8 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
               </div>
               <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex flex-wrap items-end gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-[180px]">
+                  <div key={index} className="flex items-end gap-2 p-3 rounded-md bg-muted/30">
+                    <div className="flex-1 min-w-0">
                       <Label className="text-xs text-muted-foreground">Part Name</Label>
                       <PartsCombobox
                         value={part.name}
@@ -1061,7 +1061,7 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                         }}
                       />
                     </div>
-                    <div className="w-[130px]">
+                    <div className="w-[110px] shrink-0">
                       <Label className="text-xs text-muted-foreground">Date</Label>
                       <Input 
                         type="date"
@@ -1071,10 +1071,11 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                           newParts[index] = { ...newParts[index], date: e.target.value };
                           updateField("parts", newParts);
                         }}
+                        className="text-xs"
                         data-testid={`input-part-date-${index}`}
                       />
                     </div>
-                    <div className="w-[120px]">
+                    <div className="w-[100px] shrink-0">
                       <Label className="text-xs text-muted-foreground">Amount (LKR)</Label>
                       <Input 
                         type="number"
@@ -1085,6 +1086,7 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                           newParts[index] = { ...newParts[index], amount: Number(e.target.value) || 0 };
                           updateField("parts", newParts);
                         }}
+                        className="text-right"
                         data-testid={`input-part-amount-${index}`}
                       />
                     </div>
@@ -2220,8 +2222,8 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               </div>
               <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex flex-wrap items-end gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-[180px]">
+                  <div key={index} className="flex items-end gap-2 p-3 rounded-md bg-muted/30">
+                    <div className="flex-1 min-w-0">
                       <Label className="text-xs text-muted-foreground">Part Name</Label>
                       <PartsCombobox
                         value={part.name}
@@ -2240,7 +2242,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                         }}
                       />
                     </div>
-                    <div className="w-[130px]">
+                    <div className="w-[110px] shrink-0">
                       <Label className="text-xs text-muted-foreground">Date</Label>
                       <Input 
                         type="date"
@@ -2250,10 +2252,11 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                           newParts[index] = { ...newParts[index], date: e.target.value };
                           updateField("parts", newParts);
                         }}
+                        className="text-xs"
                         data-testid={`input-edit-part-date-${index}`}
                       />
                     </div>
-                    <div className="w-[120px]">
+                    <div className="w-[100px] shrink-0">
                       <Label className="text-xs text-muted-foreground">Amount (LKR)</Label>
                       <Input 
                         type="number"
@@ -2264,6 +2267,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                           newParts[index] = { ...newParts[index], amount: Number(e.target.value) || 0 };
                           updateField("parts", newParts);
                         }}
+                        className="text-right"
                         data-testid={`input-edit-part-amount-${index}`}
                       />
                     </div>
