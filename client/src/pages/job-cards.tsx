@@ -51,8 +51,11 @@ import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog, JobCardImage } from "@shared/schema";
+import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog, JobCardImage, PartsCatalog } from "@shared/schema";
 import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS, getStatusesForCategory } from "@shared/schema";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -62,6 +65,7 @@ import {
 import { formatSriLankaDate } from "@/lib/timezone";
 
 interface Part {
+  partNumber?: string;
   name: string;
   date: string;
   amount: number;
@@ -137,6 +141,10 @@ export default function JobCards() {
 
   const { data: mechanics = [] } = useQuery<Staff[]>({
     queryKey: ["/api/staff/by-skill/Mechanic"],
+  });
+
+  const { data: partsCatalog = [] } = useQuery<PartsCatalog[]>({
+    queryKey: ["/api/parts-catalog"],
   });
 
   const createMutation = useMutation({
@@ -569,6 +577,7 @@ export default function JobCards() {
         onOpenChange={setIsCreateOpen}
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
+        partsCatalog={partsCatalog}
       />
 
       <ViewJobCardDialog
@@ -610,6 +619,7 @@ export default function JobCards() {
         }}
         isPending={updateMutation.isPending}
         mechanics={mechanics}
+        partsCatalog={partsCatalog}
       />
 
       <AlertDialog open={!!deleteJobId} onOpenChange={() => setDeleteJobId(null)}>
@@ -645,6 +655,94 @@ interface CreateJobCardDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: FormData) => void;
   isPending: boolean;
+  partsCatalog: PartsCatalog[];
+}
+
+interface PartsComboboxProps {
+  value: string;
+  partNumber?: string;
+  onSelect: (name: string, partNumber?: string, price?: number) => void;
+  partsCatalog: PartsCatalog[];
+  testId: string;
+}
+
+function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: PartsComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
+
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleSelect = (selectedPartNumber: string, name: string, price: number) => {
+    onSelect(name, selectedPartNumber, price);
+    setInputValue(name);
+    setOpen(false);
+  };
+
+  const handleInputChange = (newValue: string) => {
+    setInputValue(newValue);
+    onSelect(newValue, undefined, undefined);
+  };
+
+  const filteredParts = partsCatalog.filter(
+    (p) =>
+      p.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+      p.partNumber.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="relative">
+          <Input
+            value={inputValue}
+            onChange={(e) => handleInputChange(e.target.value)}
+            placeholder="Type or select part"
+            onClick={() => setOpen(true)}
+            data-testid={testId}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-full px-2"
+            onClick={() => setOpen(!open)}
+          >
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search parts..." />
+          <CommandList>
+            <CommandEmpty>No parts found. Type to add custom part.</CommandEmpty>
+            <CommandGroup heading="Catalog Parts">
+              {filteredParts.slice(0, 10).map((part) => (
+                <CommandItem
+                  key={part.id}
+                  value={`${part.partNumber} ${part.name}`}
+                  onSelect={() => handleSelect(part.partNumber, part.name, part.price)}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${partNumber === part.partNumber ? "opacity-100" : "opacity-0"}`}
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{part.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {part.partNumber} - LKR {part.price.toLocaleString()}
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 const SERVICE_CATEGORY_LABELS: Record<string, string> = {
@@ -653,7 +751,7 @@ const SERVICE_CATEGORY_LABELS: Record<string, string> = {
   "Repair": "Repair",
 };
 
-function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: CreateJobCardDialogProps) {
+function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCatalog }: CreateJobCardDialogProps) {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -944,17 +1042,23 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending }: Create
               <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
                   <div key={index} className="flex flex-wrap items-end gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-[150px]">
+                    <div className="flex-1 min-w-[180px]">
                       <Label className="text-xs text-muted-foreground">Part Name</Label>
-                      <Input 
-                        placeholder="Part name"
+                      <PartsCombobox
                         value={part.name}
-                        onChange={(e) => {
+                        partNumber={part.partNumber}
+                        partsCatalog={partsCatalog}
+                        testId={`input-part-name-${index}`}
+                        onSelect={(name, partNumber, price) => {
                           const newParts = [...(formData.parts || [])];
-                          newParts[index] = { ...newParts[index], name: e.target.value };
+                          newParts[index] = { 
+                            ...newParts[index], 
+                            name,
+                            partNumber,
+                            amount: price !== undefined ? price : newParts[index].amount
+                          };
                           updateField("parts", newParts);
                         }}
-                        data-testid={`input-part-name-${index}`}
                       />
                     </div>
                     <div className="w-[130px]">
@@ -1813,9 +1917,10 @@ interface EditJobCardDialogProps {
   onSubmit: (data: Partial<FormData>) => void;
   isPending: boolean;
   mechanics: Staff[];
+  partsCatalog: PartsCatalog[];
 }
 
-function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mechanics }: EditJobCardDialogProps) {
+function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mechanics, partsCatalog }: EditJobCardDialogProps) {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [selectedCategory, setSelectedCategory] = useState<typeof SERVICE_CATEGORIES[number]>("Paid Service");
@@ -2116,17 +2221,23 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
                   <div key={index} className="flex flex-wrap items-end gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-[150px]">
+                    <div className="flex-1 min-w-[180px]">
                       <Label className="text-xs text-muted-foreground">Part Name</Label>
-                      <Input 
-                        placeholder="Part name"
+                      <PartsCombobox
                         value={part.name}
-                        onChange={(e) => {
+                        partNumber={part.partNumber}
+                        partsCatalog={partsCatalog}
+                        testId={`input-edit-part-name-${index}`}
+                        onSelect={(name, partNumber, price) => {
                           const newParts = [...(formData.parts || [])];
-                          newParts[index] = { ...newParts[index], name: e.target.value };
+                          newParts[index] = { 
+                            ...newParts[index], 
+                            name,
+                            partNumber,
+                            amount: price !== undefined ? price : newParts[index].amount
+                          };
                           updateField("parts", newParts);
                         }}
-                        data-testid={`input-edit-part-name-${index}`}
                       />
                     </div>
                     <div className="w-[130px]">

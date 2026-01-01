@@ -427,7 +427,8 @@ export async function registerRoutes(
   });
 
   // Parts Catalog Routes
-  app.get("/api/parts-catalog", requireRole("Admin", "Manager"), async (req, res) => {
+  // GET is available to all authenticated users (for dropdown in job cards)
+  app.get("/api/parts-catalog", requireAuth, async (req, res) => {
     try {
       const parts = await storage.getPartsCatalog();
       res.json(parts);
@@ -437,7 +438,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/parts-catalog/:id", requireRole("Admin", "Manager"), async (req, res) => {
+  app.get("/api/parts-catalog/:id", requireAuth, async (req, res) => {
     try {
       const part = await storage.getPartsCatalogItem(req.params.id);
       if (!part) {
