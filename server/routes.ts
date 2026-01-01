@@ -168,7 +168,11 @@ export async function registerRoutes(
 
   app.post("/api/job-cards", requireRole("Admin", "Manager", "Job Card"), async (req, res) => {
     try {
-      const parsed = insertJobCardSchema.safeParse(req.body);
+      const body = { ...req.body };
+      if (body.bay === "") body.bay = undefined;
+      if (body.assignedTo === "") body.assignedTo = undefined;
+      
+      const parsed = insertJobCardSchema.safeParse(body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
