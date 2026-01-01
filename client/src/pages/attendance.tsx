@@ -317,60 +317,46 @@ export default function AttendancePage() {
                                   Edit
                                 </Button>
                               ) : (
-                                <div className="flex flex-wrap gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => markAttendanceMutation.mutate({
-                                      staffId: staff.id,
-                                      status: "Present",
-                                      checkInTime: getSriLankaTimeString(),
-                                    })}
-                                    disabled={markAttendanceMutation.isPending}
-                                    data-testid={`button-mark-present-${staff.id}`}
-                                  >
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    {t("attendance.present")}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => markAttendanceMutation.mutate({
-                                      staffId: staff.id,
-                                      status: "Late",
-                                      checkInTime: getSriLankaTimeString(),
-                                    })}
-                                    disabled={markAttendanceMutation.isPending}
-                                    data-testid={`button-mark-late-${staff.id}`}
-                                  >
-                                    {t("attendance.late")}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => markAttendanceMutation.mutate({
-                                      staffId: staff.id,
-                                      status: "Leave",
-                                    })}
-                                    disabled={markAttendanceMutation.isPending}
-                                    data-testid={`button-mark-leave-${staff.id}`}
-                                  >
-                                    {t("attendance.leave")}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => markAttendanceMutation.mutate({
-                                      staffId: staff.id,
-                                      status: "Absent",
-                                    })}
-                                    disabled={markAttendanceMutation.isPending}
-                                    data-testid={`button-mark-absent-${staff.id}`}
-                                  >
-                                    {t("attendance.absent")}
-                                  </Button>
-                                </div>
+                                <Select
+                                onValueChange={(status) => {
+                                  markAttendanceMutation.mutate({
+                                    staffId: staff.id,
+                                    status: status as "Present" | "Late" | "Leave" | "Absent",
+                                    checkInTime: (status === "Present" || status === "Late") ? getSriLankaTimeString() : undefined,
+                                  });
+                                }}
+                                disabled={markAttendanceMutation.isPending}
+                              >
+                                <SelectTrigger className="w-[140px]" data-testid={`select-mark-status-${staff.id}`}>
+                                  <SelectValue placeholder={t("attendance.markStatus")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Present">
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle className="w-3 h-3 text-green-600" />
+                                      {t("attendance.present")}
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="Late">
+                                    <div className="flex items-center gap-2">
+                                      <AlertTriangle className="w-3 h-3 text-orange-600" />
+                                      {t("attendance.late")}
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="Leave">
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-3 h-3 text-muted-foreground" />
+                                      {t("attendance.leave")}
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="Absent">
+                                    <div className="flex items-center gap-2">
+                                      <XCircle className="w-3 h-3 text-red-600" />
+                                      {t("attendance.absent")}
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
                               )}
                             </TableCell>
                           </TableRow>
