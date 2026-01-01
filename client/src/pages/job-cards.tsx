@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1041,9 +1042,9 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
               </div>
               <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex items-end gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-0">
-                      <Label className="text-xs text-muted-foreground">Part Name</Label>
+                  <div key={index} className="flex items-center gap-2 p-3 rounded-md bg-muted/30">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Part Name</Label>
                       <PartsCombobox
                         value={part.name}
                         partNumber={part.partNumber}
@@ -1061,25 +1062,35 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                         }}
                       />
                     </div>
-                    <div className="w-[110px] shrink-0">
-                      <Label className="text-xs text-muted-foreground">Date</Label>
-                      <Input 
-                        type="date"
-                        value={part.date}
-                        onChange={(e) => {
-                          const newParts = [...(formData.parts || [])];
-                          newParts[index] = { ...newParts[index], date: e.target.value };
-                          updateField("parts", newParts);
-                        }}
-                        className="text-xs"
-                        data-testid={`input-part-date-${index}`}
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-[120px] shrink-0 justify-start text-left font-normal"
+                          data-testid={`input-part-date-${index}`}
+                        >
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          <span className="text-xs">{part.date ? format(new Date(part.date), "dd/MM/yy") : "Pick date"}</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={part.date ? new Date(part.date) : undefined}
+                          onSelect={(date) => {
+                            const newParts = [...(formData.parts || [])];
+                            newParts[index] = { ...newParts[index], date: date ? format(date, "yyyy-MM-dd") : "" };
+                            updateField("parts", newParts);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <div className="w-[100px] shrink-0">
-                      <Label className="text-xs text-muted-foreground">Amount (LKR)</Label>
                       <Input 
                         type="number"
-                        placeholder="0"
+                        placeholder="Amount"
                         value={part.amount || ""}
                         onChange={(e) => {
                           const newParts = [...(formData.parts || [])];
@@ -2222,9 +2233,9 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               </div>
               <div className="space-y-3">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex items-end gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-0">
-                      <Label className="text-xs text-muted-foreground">Part Name</Label>
+                  <div key={index} className="flex items-center gap-2 p-3 rounded-md bg-muted/30">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Part Name</Label>
                       <PartsCombobox
                         value={part.name}
                         partNumber={part.partNumber}
@@ -2242,25 +2253,35 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                         }}
                       />
                     </div>
-                    <div className="w-[110px] shrink-0">
-                      <Label className="text-xs text-muted-foreground">Date</Label>
-                      <Input 
-                        type="date"
-                        value={part.date}
-                        onChange={(e) => {
-                          const newParts = [...(formData.parts || [])];
-                          newParts[index] = { ...newParts[index], date: e.target.value };
-                          updateField("parts", newParts);
-                        }}
-                        className="text-xs"
-                        data-testid={`input-edit-part-date-${index}`}
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-[120px] shrink-0 justify-start text-left font-normal"
+                          data-testid={`input-edit-part-date-${index}`}
+                        >
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          <span className="text-xs">{part.date ? format(new Date(part.date), "dd/MM/yy") : "Pick date"}</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={part.date ? new Date(part.date) : undefined}
+                          onSelect={(date) => {
+                            const newParts = [...(formData.parts || [])];
+                            newParts[index] = { ...newParts[index], date: date ? format(date, "yyyy-MM-dd") : "" };
+                            updateField("parts", newParts);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <div className="w-[100px] shrink-0">
-                      <Label className="text-xs text-muted-foreground">Amount (LKR)</Label>
                       <Input 
                         type="number"
-                        placeholder="0"
+                        placeholder="Amount"
                         value={part.amount || ""}
                         onChange={(e) => {
                           const newParts = [...(formData.parts || [])];
