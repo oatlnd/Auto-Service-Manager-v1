@@ -263,9 +263,8 @@ export default function AttendancePage() {
                     <TableRow>
                       <TableHead>Staff</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Check In</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t("attendance.markStatus")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -274,14 +273,13 @@ export default function AttendancePage() {
                         <TableRow key={i}>
                           <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                           <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-8 w-32" /></TableCell>
+                          <TableCell><Skeleton className="h-8 w-48" /></TableCell>
                         </TableRow>
                       ))
                     ) : activeStaff.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12">
+                        <TableCell colSpan={4} className="text-center py-12">
                           <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
                           <p className="text-muted-foreground">No active staff members</p>
                         </TableCell>
@@ -301,35 +299,34 @@ export default function AttendancePage() {
                               <Badge variant="outline">{staff.role}</Badge>
                             </TableCell>
                             <TableCell>
-                              {attendance ? getStatusBadge(attendance.status) : <Badge variant="outline">Not Marked</Badge>}
-                            </TableCell>
-                            <TableCell>
                               {attendance?.checkInTime || "-"}
                             </TableCell>
                             <TableCell>
-                              {attendance ? (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setEditRecord(attendance)}
-                                  data-testid={`button-edit-attendance-${staff.id}`}
-                                >
-                                  <Pencil className="w-4 h-4 mr-1" />
-                                  Edit
-                                </Button>
-                              ) : (
-                                <ToggleGroup
+                              <ToggleGroup
                                 type="single"
+                                value={attendance?.status || ""}
                                 onValueChange={(status) => {
-                                  if (status) {
-                                    markAttendanceMutation.mutate({
-                                      staffId: staff.id,
-                                      status: status as "Present" | "Late" | "Leave" | "Absent",
-                                      checkInTime: (status === "Present" || status === "Late") ? getSriLankaTimeString() : undefined,
-                                    });
+                                  if (status && status !== attendance?.status) {
+                                    if (attendance) {
+                                      updateAttendanceMutation.mutate({
+                                        id: attendance.id,
+                                        data: {
+                                          status: status as "Present" | "Late" | "Leave" | "Absent",
+                                          checkInTime: (status === "Present" || status === "Late") 
+                                            ? (attendance.checkInTime || getSriLankaTimeString()) 
+                                            : attendance.checkInTime,
+                                        }
+                                      });
+                                    } else {
+                                      markAttendanceMutation.mutate({
+                                        staffId: staff.id,
+                                        status: status as "Present" | "Late" | "Leave" | "Absent",
+                                        checkInTime: (status === "Present" || status === "Late") ? getSriLankaTimeString() : undefined,
+                                      });
+                                    }
                                   }
                                 }}
-                                disabled={markAttendanceMutation.isPending}
+                                disabled={markAttendanceMutation.isPending || updateAttendanceMutation.isPending}
                                 className="flex flex-wrap gap-1"
                               >
                                 <ToggleGroupItem 
@@ -373,7 +370,6 @@ export default function AttendancePage() {
                                   <span className="text-xs">{t("attendance.absent")}</span>
                                 </ToggleGroupItem>
                               </ToggleGroup>
-                              )}
                             </TableCell>
                           </TableRow>
                         );
