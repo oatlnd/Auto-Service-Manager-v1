@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Clock, Calendar, Users, AlertCircle, Loader2, CheckCircle, XCircle, AlertTriangle, Pencil } from "lucide-react";
+import { Clock, Calendar, Users, AlertCircle, Loader2, CheckCircle, XCircle, AlertTriangle, Pencil, MinusCircle } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
 import { formatSriLankaDate, getSriLankaDateString, getSriLankaTimeString, getSriLankaTime } from "@/lib/timezone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -317,46 +318,61 @@ export default function AttendancePage() {
                                   Edit
                                 </Button>
                               ) : (
-                                <Select
+                                <ToggleGroup
+                                type="single"
                                 onValueChange={(status) => {
-                                  markAttendanceMutation.mutate({
-                                    staffId: staff.id,
-                                    status: status as "Present" | "Late" | "Leave" | "Absent",
-                                    checkInTime: (status === "Present" || status === "Late") ? getSriLankaTimeString() : undefined,
-                                  });
+                                  if (status) {
+                                    markAttendanceMutation.mutate({
+                                      staffId: staff.id,
+                                      status: status as "Present" | "Late" | "Leave" | "Absent",
+                                      checkInTime: (status === "Present" || status === "Late") ? getSriLankaTimeString() : undefined,
+                                    });
+                                  }
                                 }}
                                 disabled={markAttendanceMutation.isPending}
+                                className="flex flex-wrap gap-1"
                               >
-                                <SelectTrigger className="w-[140px]" data-testid={`select-mark-status-${staff.id}`}>
-                                  <SelectValue placeholder={t("attendance.markStatus")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Present">
-                                    <div className="flex items-center gap-2">
-                                      <CheckCircle className="w-3 h-3 text-green-600" />
-                                      {t("attendance.present")}
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="Late">
-                                    <div className="flex items-center gap-2">
-                                      <AlertTriangle className="w-3 h-3 text-orange-600" />
-                                      {t("attendance.late")}
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="Leave">
-                                    <div className="flex items-center gap-2">
-                                      <Clock className="w-3 h-3 text-muted-foreground" />
-                                      {t("attendance.leave")}
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="Absent">
-                                    <div className="flex items-center gap-2">
-                                      <XCircle className="w-3 h-3 text-red-600" />
-                                      {t("attendance.absent")}
-                                    </div>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                                <ToggleGroupItem 
+                                  value="Present" 
+                                  size="sm"
+                                  className="data-[state=on]:bg-green-100 data-[state=on]:text-green-800 dark:data-[state=on]:bg-green-900 dark:data-[state=on]:text-green-100"
+                                  data-testid={`toggle-status-${staff.id}-present`}
+                                  aria-label={t("attendance.present")}
+                                >
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">{t("attendance.present")}</span>
+                                </ToggleGroupItem>
+                                <ToggleGroupItem 
+                                  value="Late" 
+                                  size="sm"
+                                  className="data-[state=on]:bg-orange-100 data-[state=on]:text-orange-800 dark:data-[state=on]:bg-orange-900 dark:data-[state=on]:text-orange-100"
+                                  data-testid={`toggle-status-${staff.id}-late`}
+                                  aria-label={t("attendance.late")}
+                                >
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">{t("attendance.late")}</span>
+                                </ToggleGroupItem>
+                                <ToggleGroupItem 
+                                  value="Leave" 
+                                  size="sm"
+                                  className="data-[state=on]:bg-muted"
+                                  data-testid={`toggle-status-${staff.id}-leave`}
+                                  aria-label={t("attendance.leave")}
+                                >
+                                  <MinusCircle className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">{t("attendance.leave")}</span>
+                                </ToggleGroupItem>
+                                <ToggleGroupItem 
+                                  value="Absent" 
+                                  size="sm"
+                                  className="data-[state=on]:bg-red-100 data-[state=on]:text-red-800 dark:data-[state=on]:bg-red-900 dark:data-[state=on]:text-red-100"
+                                  data-testid={`toggle-status-${staff.id}-absent`}
+                                  aria-label={t("attendance.absent")}
+                                >
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">{t("attendance.absent")}</span>
+                                </ToggleGroupItem>
+                              </ToggleGroup>
                               )}
                             </TableCell>
                           </TableRow>
