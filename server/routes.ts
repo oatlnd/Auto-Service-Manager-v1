@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
@@ -423,6 +423,91 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting job card image:", error);
       res.status(500).json({ error: "Failed to delete image" });
+    }
+  });
+
+  // Parts Catalog Routes
+  app.get("/api/parts-catalog", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parts = await storage.getPartsCatalog();
+      res.json(parts);
+    } catch (error) {
+      console.error("Error fetching parts catalog:", error);
+      res.status(500).json({ error: "Failed to fetch parts catalog" });
+    }
+  });
+
+  app.get("/api/parts-catalog/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const part = await storage.getPartsCatalogItem(req.params.id);
+      if (!part) {
+        return res.status(404).json({ error: "Part not found" });
+      }
+      res.json(part);
+    } catch (error) {
+      console.error("Error fetching part:", error);
+      res.status(500).json({ error: "Failed to fetch part" });
+    }
+  });
+
+  app.post("/api/parts-catalog", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parsed = insertPartsCatalogSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid part data", details: parsed.error.errors });
+      }
+
+      // Check if part number already exists
+      const existing = await storage.getPartByNumber(parsed.data.partNumber);
+      if (existing) {
+        return res.status(409).json({ error: "Part number already exists" });
+      }
+
+      const part = await storage.createPartsCatalogItem(parsed.data);
+      res.status(201).json(part);
+    } catch (error) {
+      console.error("Error creating part:", error);
+      res.status(500).json({ error: "Failed to create part" });
+    }
+  });
+
+  app.patch("/api/parts-catalog/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parsed = insertPartsCatalogSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid part data", details: parsed.error.errors });
+      }
+
+      // If updating part number, check for conflicts
+      if (parsed.data.partNumber) {
+        const existing = await storage.getPartByNumber(parsed.data.partNumber);
+        if (existing && existing.id !== req.params.id) {
+          return res.status(409).json({ error: "Part number already exists" });
+        }
+      }
+
+      const part = await storage.updatePartsCatalogItem(req.params.id, parsed.data);
+      if (!part) {
+        return res.status(404).json({ error: "Part not found" });
+      }
+
+      res.json(part);
+    } catch (error) {
+      console.error("Error updating part:", error);
+      res.status(500).json({ error: "Failed to update part" });
+    }
+  });
+
+  app.delete("/api/parts-catalog/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const success = await storage.deletePartsCatalogItem(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Part not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting part:", error);
+      res.status(500).json({ error: "Failed to delete part" });
     }
   });
 

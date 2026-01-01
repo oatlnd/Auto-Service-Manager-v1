@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings, Gift } from "lucide-react";
+import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings, Gift, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Sidebar,
@@ -25,6 +25,7 @@ const adminNavItems = [
   { titleKey: "sidebar.staffManagement", url: "/staff", icon: Users },
   { titleKey: "sidebar.attendance", url: "/attendance", icon: Calendar },
   { titleKey: "sidebar.loyaltyProgram", url: "/loyalty", icon: Gift },
+  { titleKey: "sidebar.partsCatalog", url: "/parts-catalog", icon: Package },
 ];
 
 export function AppSidebar() {

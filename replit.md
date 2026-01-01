@@ -126,6 +126,16 @@ shared/
 
 ## Recent Changes
 
+### January 1, 2026
+- Implemented Parts Catalog system for managing spare parts inventory
+- Schema: PartsCatalog with partNumber, name, price, isActive fields
+- Extended job card parts structure to include optional partNumber for catalog integration
+- Storage: Full CRUD operations with soft delete (isActive flag)
+- API routes: GET/POST/PATCH/DELETE /api/parts-catalog with role-based access (Admin/Manager)
+- UI: Parts Catalog page in Admin section with search, add/edit/delete functionality
+- Sample data: 19 parts including engine oils, filters, brake pads, batteries, cables, tyres
+- Added bilingual translations for Parts Catalog (English/Tamil)
+
 ### December 25, 2025
 - Consolidated Staff and Technicians into unified Staff Management system
 - Added work skills (Mechanic, Service) to Staff for flexible assignment
@@ -199,9 +209,10 @@ shared/
 - Edit attendance records (today for Manager, any day for Admin)
 - Attendance summary cards (Present, Absent, On Leave, Total)
 
-### Technicians (/technicians) - Admin Section
-- Technician directory with active/inactive status
-- Add/Edit/Delete technicians (Admin only)
-- View technician list (Admin and Manager)
-- Contact information and specialization tracking
-- Active/Inactive/Total summary cards
+### Parts Catalog (/parts-catalog) - Admin Section
+- Parts directory with part number, name, and price
+- Add/Edit/Delete parts (Admin and Manager only)
+- Search functionality by part number or name
+- Soft delete (parts marked inactive, not removed)
+- Sample data: 19 commonly used motorcycle spare parts
+- Used for dropdown selection when adding parts to job cards (future integration)

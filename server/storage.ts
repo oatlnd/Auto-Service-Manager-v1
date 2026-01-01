@@ -4,7 +4,8 @@ import type {
   User, BAYS, JOB_STATUSES, WorkSkill,
   LoyaltyCustomer, InsertLoyaltyCustomer, PointsTransaction, InsertPointsTransaction,
   Reward, InsertReward, Redemption, InsertRedemption,
-  JobCardAuditLog, JobCardImage, InsertJobCardImage
+  JobCardAuditLog, JobCardImage, InsertJobCardImage,
+  PartsCatalog, InsertPartsCatalog
 } from "@shared/schema";
 import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -80,6 +81,14 @@ export interface IStorage {
   getJobCardImage(id: string): Promise<JobCardImage | undefined>;
   createJobCardImage(data: InsertJobCardImage): Promise<JobCardImage>;
   deleteJobCardImage(id: string): Promise<boolean>;
+  
+  // Parts Catalog
+  getPartsCatalog(): Promise<PartsCatalog[]>;
+  getPartsCatalogItem(id: string): Promise<PartsCatalog | undefined>;
+  getPartByNumber(partNumber: string): Promise<PartsCatalog | undefined>;
+  createPartsCatalogItem(data: InsertPartsCatalog): Promise<PartsCatalog>;
+  updatePartsCatalogItem(id: string, data: Partial<InsertPartsCatalog>): Promise<PartsCatalog | undefined>;
+  deletePartsCatalogItem(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -94,6 +103,7 @@ export class MemStorage implements IStorage {
   private redemptions: Map<string, Redemption>;
   private jobCardAuditLogs: Map<string, JobCardAuditLog[]>;
   private jobCardImages: Map<string, JobCardImage>;
+  private partsCatalog: Map<string, PartsCatalog>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
@@ -103,6 +113,7 @@ export class MemStorage implements IStorage {
   private rewardIdCounter: number;
   private redemptionIdCounter: number;
   private auditLogIdCounter: number;
+  private partsIdCounter: number;
   private imageIdCounter: number;
 
   constructor() {
@@ -117,6 +128,7 @@ export class MemStorage implements IStorage {
     this.redemptions = new Map();
     this.jobCardAuditLogs = new Map();
     this.jobCardImages = new Map();
+    this.partsCatalog = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
@@ -127,6 +139,7 @@ export class MemStorage implements IStorage {
     this.redemptionIdCounter = 1;
     this.auditLogIdCounter = 1;
     this.imageIdCounter = 1;
+    this.partsIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -341,6 +354,34 @@ export class MemStorage implements IStorage {
     };
     const redemptionId = `RDM${String(this.redemptionIdCounter++).padStart(5, "0")}`;
     this.redemptions.set(redemptionId, { ...pendingRedemption, id: redemptionId, createdAt: new Date().toISOString() });
+
+    // Sample Parts Catalog
+    const sampleParts: Omit<PartsCatalog, "id" | "createdAt">[] = [
+      { partNumber: "EO-001", name: "Engine Oil 10W-30 (1L)", price: 850, isActive: true },
+      { partNumber: "EO-002", name: "Engine Oil 10W-40 (1L)", price: 950, isActive: true },
+      { partNumber: "EO-003", name: "Engine Oil 20W-50 (1L)", price: 750, isActive: true },
+      { partNumber: "OF-001", name: "Oil Filter", price: 350, isActive: true },
+      { partNumber: "AF-001", name: "Air Filter", price: 450, isActive: true },
+      { partNumber: "SP-001", name: "Spark Plug NGK", price: 280, isActive: true },
+      { partNumber: "SP-002", name: "Spark Plug Iridium", price: 550, isActive: true },
+      { partNumber: "BP-001", name: "Brake Pad Front", price: 1200, isActive: true },
+      { partNumber: "BP-002", name: "Brake Pad Rear", price: 1100, isActive: true },
+      { partNumber: "CL-001", name: "Clutch Cable", price: 650, isActive: true },
+      { partNumber: "AC-001", name: "Accelerator Cable", price: 550, isActive: true },
+      { partNumber: "CH-001", name: "Chain Kit", price: 2500, isActive: true },
+      { partNumber: "BT-001", name: "Battery 12V 5Ah", price: 3500, isActive: true },
+      { partNumber: "BT-002", name: "Battery 12V 7Ah", price: 4200, isActive: true },
+      { partNumber: "DB-001", name: "Drive Belt", price: 1800, isActive: true },
+      { partNumber: "TB-001", name: "Tube Front", price: 450, isActive: true },
+      { partNumber: "TB-002", name: "Tube Rear", price: 500, isActive: true },
+      { partNumber: "TR-001", name: "Tyre Front", price: 3200, isActive: true },
+      { partNumber: "TR-002", name: "Tyre Rear", price: 3500, isActive: true },
+    ];
+
+    sampleParts.forEach((p) => {
+      const id = `PRT${String(this.partsIdCounter++).padStart(4, "0")}`;
+      this.partsCatalog.set(id, { ...p, id, createdAt: new Date().toISOString() });
+    });
   }
 
   private generateJobId(): string {
@@ -931,6 +972,56 @@ export class MemStorage implements IStorage {
 
   async deleteJobCardImage(id: string): Promise<boolean> {
     return this.jobCardImages.delete(id);
+  }
+
+  // Parts Catalog Methods
+  async getPartsCatalog(): Promise<PartsCatalog[]> {
+    return Array.from(this.partsCatalog.values())
+      .filter(p => p.isActive)
+      .sort((a, b) => a.partNumber.localeCompare(b.partNumber));
+  }
+
+  async getPartsCatalogItem(id: string): Promise<PartsCatalog | undefined> {
+    return this.partsCatalog.get(id);
+  }
+
+  async getPartByNumber(partNumber: string): Promise<PartsCatalog | undefined> {
+    return Array.from(this.partsCatalog.values()).find(p => p.partNumber === partNumber);
+  }
+
+  async createPartsCatalogItem(data: InsertPartsCatalog): Promise<PartsCatalog> {
+    const id = `PRT${String(this.partsIdCounter++).padStart(4, "0")}`;
+    const part: PartsCatalog = {
+      ...data,
+      id,
+      isActive: data.isActive ?? true,
+      createdAt: new Date().toISOString(),
+    };
+    this.partsCatalog.set(id, part);
+    return part;
+  }
+
+  async updatePartsCatalogItem(id: string, data: Partial<InsertPartsCatalog>): Promise<PartsCatalog | undefined> {
+    const existing = this.partsCatalog.get(id);
+    if (!existing) return undefined;
+
+    const updated: PartsCatalog = {
+      ...existing,
+      ...data,
+    };
+
+    this.partsCatalog.set(id, updated);
+    return updated;
+  }
+
+  async deletePartsCatalogItem(id: string): Promise<boolean> {
+    // Soft delete by setting isActive to false
+    const existing = this.partsCatalog.get(id);
+    if (!existing) return false;
+    
+    existing.isActive = false;
+    this.partsCatalog.set(id, existing);
+    return true;
   }
 }
 

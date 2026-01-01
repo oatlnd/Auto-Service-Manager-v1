@@ -139,6 +139,7 @@ export const jobCardSchema = z.object({
   cost: z.number().min(0, "Cost must be positive"),
   repairDetails: z.string().optional(),
   parts: z.array(z.object({
+    partNumber: z.string().optional(),
     name: z.string(),
     date: z.string(),
     amount: z.number(),
@@ -184,6 +185,21 @@ export const insertJobCardImageSchema = jobCardImageSchema.omit({ id: true, crea
 
 export type JobCardImage = z.infer<typeof jobCardImageSchema>;
 export type InsertJobCardImage = z.infer<typeof insertJobCardImageSchema>;
+
+// Parts Catalog Schema
+export const partsCatalogSchema = z.object({
+  id: z.string(),
+  partNumber: z.string().min(1, "Part number is required"),
+  name: z.string().min(1, "Part name is required"),
+  price: z.number().min(0, "Price must be positive"),
+  isActive: z.boolean().default(true),
+  createdAt: z.string(),
+});
+
+export const insertPartsCatalogSchema = partsCatalogSchema.omit({ id: true, createdAt: true });
+
+export type PartsCatalog = z.infer<typeof partsCatalogSchema>;
+export type InsertPartsCatalog = z.infer<typeof insertPartsCatalogSchema>;
 
 export interface CategoryBreakdown {
   paidService: number;

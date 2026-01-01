@@ -37,7 +37,8 @@
     "staffManagement": "Staff Management",
     "technicians": "Technicians",
     "attendance": "Attendance",
-    "loyaltyProgram": "Loyalty Program"
+    "loyaltyProgram": "Loyalty Program",
+    "partsCatalog": "Parts Catalog"
   },
   "roles": {
     "admin": "Admin",
@@ -349,5 +350,24 @@
     "noAffordableRewards": "No rewards available for your points balance",
     "rewardRedeemed": "Reward redeemed",
     "rewardRedeemedDesc": "The reward has been added to pending redemptions."
+  },
+  "partsCatalog": {
+    "title": "Parts Catalog",
+    "subtitle": "Manage parts inventory and pricing",
+    "addPart": "Add Part",
+    "editPart": "Edit Part",
+    "addPartDesc": "Add a new part to the catalog.",
+    "editPartDesc": "Update part details.",
+    "partNumber": "Part Number",
+    "partName": "Part Name",
+    "price": "Price",
+    "partCreated": "Part created",
+    "partUpdated": "Part updated",
+    "partDeleted": "Part deleted",
+    "noParts": "No parts in catalog",
+    "totalParts": "Total Parts",
+    "searchPlaceholder": "Search parts...",
+    "partNumberExists": "Part number already exists",
+    "confirmDelete": "Are you sure you want to delete this part?"
   }
 }

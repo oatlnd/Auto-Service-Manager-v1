@@ -18,6 +18,7 @@ import Reports from "@/pages/reports";
 import StaffManagement from "@/pages/staff-management";
 import Attendance from "@/pages/attendance";
 import LoyaltyProgram from "@/pages/loyalty-program";
+import PartsCatalog from "@/pages/parts-catalog";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -34,6 +35,7 @@ function Router() {
       {canAccessAdmin && <Route path="/staff" component={StaffManagement} />}
       {canAccessAdmin && <Route path="/attendance" component={Attendance} />}
       {canAccessAdmin && <Route path="/loyalty" component={LoyaltyProgram} />}
+      {canAccessAdmin && <Route path="/parts-catalog" component={PartsCatalog} />}
       <Route component={NotFound} />
     </Switch>
   );
