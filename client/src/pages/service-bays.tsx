@@ -101,6 +101,7 @@ function WashBayCard({ bay, t, onStatusChange, onJobClick, isUpdating, updatingJ
                         >
                           <Hash className="w-3.5 h-3.5 text-muted-foreground" />
                           <span className="font-medium text-primary underline underline-offset-2">{job.id}</span>
+                          {job.tagNo && <span className="text-muted-foreground">({job.tagNo})</span>}
                         </button>
                         <div className="flex items-center gap-1.5">
                           <Car className="w-3.5 h-3.5 text-muted-foreground" />
