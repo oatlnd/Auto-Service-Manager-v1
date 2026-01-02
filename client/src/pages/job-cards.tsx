@@ -169,11 +169,12 @@ export default function JobCards() {
     mutationFn: async ({ id, data }: { id: string; data: Partial<FormData> }) => {
       return apiRequest("PATCH", `/api/job-cards/${id}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/job-cards"] });
       queryClient.invalidateQueries({ queryKey: ["/api/statistics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/bays/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/job-cards/recent"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/job-cards', variables.id, 'audit'] });
       setIsEditOpen(false);
       setSelectedJob(null);
       toast({ title: t("common.success"), description: t("messages.updatedSuccess") });
@@ -209,6 +210,7 @@ export default function JobCards() {
       queryClient.invalidateQueries({ queryKey: ["/api/statistics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/bays/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/job-cards/recent"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/job-cards', variables.id, 'audit'] });
       if (selectedJob) {
         setSelectedJob({ ...selectedJob, status: variables.status });
       }
@@ -1201,7 +1203,12 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const [newPartAmount, setNewPartAmount] = useState<number>(0);
 
   const { data: auditLogs = [], isLoading: isLoadingAudit, refetch: refetchAudit } = useQuery<JobCardAuditLog[]>({
-    queryKey: [`/api/job-cards/${job?.id}/audit`],
+    queryKey: ['/api/job-cards', job?.id, 'audit'],
+    queryFn: async () => {
+      const res = await fetch(`/api/job-cards/${job?.id}/audit`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch audit logs');
+      return res.json();
+    },
     enabled: open && !!job?.id,
   });
 
@@ -1225,7 +1232,12 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   });
 
   const { data: images = [], isLoading: isLoadingImages, refetch: refetchImages } = useQuery<JobCardImage[]>({
-    queryKey: [`/api/job-cards/${job?.id}/images`],
+    queryKey: ['/api/job-cards', job?.id, 'images'],
+    queryFn: async () => {
+      const res = await fetch(`/api/job-cards/${job?.id}/images`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch images');
+      return res.json();
+    },
     enabled: open && !!job?.id,
   });
 
