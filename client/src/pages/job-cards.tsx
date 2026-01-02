@@ -1040,11 +1040,18 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                   <Plus className="w-3 h-3 mr-1" /> Add Part
                 </Button>
               </div>
-              <div className="space-y-3">
+              {(formData.parts || []).length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="flex-1 min-w-0">Part Name</div>
+                  <div className="w-[120px] shrink-0 text-center">Date</div>
+                  <div className="w-[100px] shrink-0 text-right">Amount</div>
+                  <div className="w-9 shrink-0"></div>
+                </div>
+              )}
+              <div className="space-y-2">
                 {(formData.parts || []).map((part, index) => (
                   <div key={index} className="flex items-center gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Part Name</Label>
+                    <div className="flex-1 min-w-0">
                       <PartsCombobox
                         value={part.name}
                         partNumber={part.partNumber}
@@ -2231,11 +2238,18 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                   <Plus className="w-3 h-3 mr-1" /> Add Part
                 </Button>
               </div>
-              <div className="space-y-3">
+              {(formData.parts || []).length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="flex-1 min-w-0">Part Name</div>
+                  <div className="w-[120px] shrink-0 text-center">Date</div>
+                  <div className="w-[100px] shrink-0 text-right">Amount</div>
+                  <div className="w-9 shrink-0"></div>
+                </div>
+              )}
+              <div className="space-y-2">
                 {(formData.parts || []).map((part, index) => (
                   <div key={index} className="flex items-center gap-2 p-3 rounded-md bg-muted/30">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Part Name</Label>
+                    <div className="flex-1 min-w-0">
                       <PartsCombobox
                         value={part.name}
                         partNumber={part.partNumber}
