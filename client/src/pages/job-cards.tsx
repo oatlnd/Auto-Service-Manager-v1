@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, User, Clock } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1851,11 +1851,16 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
                 ) : (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {auditLogs.map((log) => (
-                      <div key={log.id} className="border-l-2 border-muted pl-3 py-1" data-testid={`audit-log-${log.id}`}>
-                        <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground mb-1">
-                          <span className="font-medium text-foreground">{log.actorName}</span>
-                          <span>-</span>
-                          <span>{log.changedAt ? formatSriLankaDate(new Date(log.changedAt), "dd/MM/yyyy HH:mm") : "-"}</span>
+                      <div key={log.id} className="border-l-2 border-primary/50 pl-3 py-2 bg-muted/30 rounded-r-md" data-testid={`audit-log-${log.id}`}>
+                        <div className="flex items-center gap-3 flex-wrap text-xs mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-primary" />
+                            <span className="font-semibold text-foreground">{log.actorName || "Unknown"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{log.changedAt ? formatSriLankaDate(new Date(log.changedAt), "dd MMM yyyy, HH:mm") : "-"}</span>
+                          </div>
                         </div>
                         <div className="text-sm">
                           {log.action === "created" && (
