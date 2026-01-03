@@ -1962,6 +1962,16 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [selectedCategory, setSelectedCategory] = useState<typeof SERVICE_CATEGORIES[number]>("Paid Service");
 
+  const { data: auditLogs = [], isLoading: isLoadingAudit } = useQuery<JobCardAuditLog[]>({
+    queryKey: ['/api/job-cards', job?.id, 'audit'],
+    queryFn: async () => {
+      const res = await fetch(`/api/job-cards/${job?.id}/audit`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch audit logs');
+      return res.json();
+    },
+    enabled: open && !!job?.id,
+  });
+
   useEffect(() => {
     if (open && job) {
       setFormData({
@@ -2355,6 +2365,126 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               />
             </div>
           </div>
+
+          <div className="border rounded-md p-4 bg-muted/30">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">{t("jobCards.serviceCost", "Service Cost")}</p>
+                <p className="text-lg font-medium" data-testid="text-edit-service-cost">Rs. {(formData.cost || 0).toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">{t("jobCards.partsTotal", "Parts Total")}</p>
+                <p className="text-lg font-medium" data-testid="text-edit-parts-total">Rs. {((formData.parts || []).reduce((sum, p) => sum + (p.amount || 0), 0)).toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-muted-foreground">{t("jobCards.totalAmount", "Total Amount")}</p>
+                <p className="text-xl font-bold text-primary" data-testid="text-edit-total-amount">
+                  Rs. {((formData.cost || 0) + (formData.parts || []).reduce((sum, p) => sum + (p.amount || 0), 0)).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="audit-history" className="border rounded-md">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline" data-testid="accordion-edit-audit-history">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  <span className="text-sm font-semibold">{t("jobCards.auditHistory", "Audit History")}</span>
+                  {auditLogs.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">{auditLogs.length}</Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {isLoadingAudit ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                ) : auditLogs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">{t("jobCards.noAuditHistory", "No changes recorded yet")}</p>
+                ) : (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {auditLogs.map((log) => (
+                      <div key={log.id} className="border-l-2 border-primary/50 pl-3 py-2 bg-muted/30 rounded-r-md" data-testid={`edit-audit-log-${log.id}`}>
+                        <div className="flex items-center gap-3 flex-wrap text-xs mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-primary" />
+                            <span className="font-semibold text-foreground">{log.actorName || "Unknown"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{log.changedAt ? formatSriLankaDate(new Date(log.changedAt), "dd MMM yyyy, HH:mm") : "-"}</span>
+                          </div>
+                        </div>
+                        <div className="text-sm">
+                          {log.action === "created" && (
+                            <span className="text-green-600 dark:text-green-400">{t("jobCards.auditCreated", "Job card created")}</span>
+                          )}
+                          {log.action === "updated" && (
+                            <div className="space-y-1">
+                              {log.changes.map((change, idx) => (
+                                <div key={idx} className="text-xs">
+                                  <span className="font-medium capitalize">{change.field.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                  <span className="text-muted-foreground">: </span>
+                                  <span className="line-through text-muted-foreground">
+                                    {Array.isArray(change.oldValue) ? change.oldValue.join(', ') : String(change.oldValue ?? '-')}
+                                  </span>
+                                  <span className="mx-1 text-muted-foreground">→</span>
+                                  <span className="text-foreground">
+                                    {Array.isArray(change.newValue) ? change.newValue.join(', ') : String(change.newValue ?? '-')}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {log.action === "status_changed" && (
+                            <div className="text-xs">
+                              <span>{t("jobCards.auditStatusChanged", "Status changed")}: </span>
+                              <span className="line-through text-muted-foreground">{log.changes[0]?.oldValue}</span>
+                              <span className="mx-1 text-muted-foreground">→</span>
+                              <span className="font-medium">{log.changes[0]?.newValue}</span>
+                            </div>
+                          )}
+                          {log.action === "assignment_changed" && (
+                            <div className="space-y-1">
+                              {log.changes.map((change, idx) => (
+                                <div key={idx} className="text-xs">
+                                  <span className="font-medium capitalize">{change.field}</span>
+                                  <span className="text-muted-foreground">: </span>
+                                  <span className="line-through text-muted-foreground">{String(change.oldValue ?? '-')}</span>
+                                  <span className="mx-1 text-muted-foreground">→</span>
+                                  <span className="text-foreground">{String(change.newValue ?? '-')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {log.action === "parts_updated" && (
+                            <div className="text-xs">
+                              <span>{t("jobCards.auditPartsUpdated", "Parts updated")}</span>
+                            </div>
+                          )}
+                          {log.action === "printed" && (
+                            <span className="text-blue-600 dark:text-blue-400">{t("jobCards.auditPrinted", "Job card printed")}</span>
+                          )}
+                          {log.action === "image_added" && (
+                            <span className="text-green-600 dark:text-green-400">
+                              {t("jobCards.auditImageAdded", "Image added")}: {log.changes[0]?.newValue}
+                            </span>
+                          )}
+                          {log.action === "image_deleted" && (
+                            <span className="text-red-600 dark:text-red-400">
+                              {t("jobCards.auditImageDeleted", "Image deleted")}: {log.changes[0]?.oldValue}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-edit">
