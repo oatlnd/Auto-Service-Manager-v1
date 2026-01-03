@@ -732,6 +732,30 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/staff/technical", requireAuth, async (req, res) => {
+    try {
+      const staff = await storage.getTechnicalStaff();
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching technical staff:", error);
+      res.status(500).json({ error: "Failed to fetch technical staff" });
+    }
+  });
+
+  app.get("/api/staff/by-skill/:skill", requireAuth, async (req, res) => {
+    try {
+      const skill = req.params.skill as "Mechanic" | "Service";
+      if (!WORK_SKILLS.includes(skill)) {
+        return res.status(400).json({ error: "Invalid work skill" });
+      }
+      const staff = await storage.getStaffByWorkSkill(skill);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching staff by skill:", error);
+      res.status(500).json({ error: "Failed to fetch staff by skill" });
+    }
+  });
+
   app.get("/api/staff/:id", requireRole("Admin", "Manager"), async (req, res) => {
     try {
       const staff = await storage.getStaffMember(req.params.id);
@@ -856,30 +880,6 @@ export async function registerRoutes(
 
   app.get("/api/work-skills", requireAuth, (req, res) => {
     res.json(WORK_SKILLS);
-  });
-
-  app.get("/api/staff/technical", requireAuth, async (req, res) => {
-    try {
-      const staff = await storage.getTechnicalStaff();
-      res.json(staff);
-    } catch (error) {
-      console.error("Error fetching technical staff:", error);
-      res.status(500).json({ error: "Failed to fetch technical staff" });
-    }
-  });
-
-  app.get("/api/staff/by-skill/:skill", requireAuth, async (req, res) => {
-    try {
-      const skill = req.params.skill as "Mechanic" | "Service";
-      if (!WORK_SKILLS.includes(skill)) {
-        return res.status(400).json({ error: "Invalid work skill" });
-      }
-      const staff = await storage.getStaffByWorkSkill(skill);
-      res.json(staff);
-    } catch (error) {
-      console.error("Error fetching staff by skill:", error);
-      res.status(500).json({ error: "Failed to fetch staff by skill" });
-    }
   });
 
   // Loyalty Program Routes
