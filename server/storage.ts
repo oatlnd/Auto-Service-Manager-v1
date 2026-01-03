@@ -25,6 +25,7 @@ export interface IStorage {
   deleteSession(sessionId: string): Promise<boolean>;
   
   getJobCards(): Promise<JobCard[]>;
+  getJobCardsByDateRange(fromDate: string, toDate: string): Promise<JobCard[]>;
   getJobCard(id: string): Promise<JobCard | undefined>;
   getRecentJobCards(limit: number): Promise<JobCard[]>;
   createJobCard(data: InsertJobCard): Promise<JobCard>;
@@ -397,6 +398,20 @@ export class MemStorage implements IStorage {
     return Array.from(this.jobCards.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+  }
+
+  async getJobCardsByDateRange(fromDate: string, toDate: string): Promise<JobCard[]> {
+    const from = new Date(fromDate);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(toDate);
+    to.setHours(23, 59, 59, 999);
+    
+    return Array.from(this.jobCards.values())
+      .filter((job) => {
+        const jobDate = new Date(job.createdAt);
+        return jobDate >= from && jobDate <= to;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async getJobCard(id: string): Promise<JobCard | undefined> {

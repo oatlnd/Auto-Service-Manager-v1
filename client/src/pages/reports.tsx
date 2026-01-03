@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { FileText, CheckCircle, DollarSign, TrendingUp, Lock } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { FileText, CheckCircle, DollarSign, TrendingUp, Lock, Download, CalendarIcon, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import type { JobCard } from "@shared/schema";
 import { SERVICE_TYPES, JOB_STATUSES, BIKE_MODELS } from "@shared/schema";
@@ -24,9 +30,56 @@ export default function Reports() {
   const { t } = useTranslation();
   const { canViewRevenue } = useUserRole();
   
+  const [fromDate, setFromDate] = useState<Date>(subDays(new Date(), 7));
+  const [toDate, setToDate] = useState<Date>(new Date());
+  const [isExporting, setIsExporting] = useState<"csv" | "pdf" | null>(null);
+  
   const { data: jobCards = [], isLoading } = useQuery<JobCard[]>({
     queryKey: ["/api/job-cards"],
   });
+
+  const { data: reportJobCards = [], isLoading: isLoadingReport, refetch: refetchReport } = useQuery<JobCard[]>({
+    queryKey: ["/api/reports/job-cards", format(fromDate, "yyyy-MM-dd"), format(toDate, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`/api/reports/job-cards?from=${format(fromDate, "yyyy-MM-dd")}&to=${format(toDate, "yyyy-MM-dd")}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Failed to fetch report');
+      return res.json();
+    },
+    enabled: canViewRevenue,
+  });
+
+  const handleExport = async (exportType: "csv" | "pdf") => {
+    setIsExporting(exportType);
+    try {
+      const token = localStorage.getItem("authToken");
+      const fromStr = format(fromDate, "yyyy-MM-dd");
+      const toStr = format(toDate, "yyyy-MM-dd");
+      const res = await fetch(`/api/reports/job-cards.${exportType}?from=${fromStr}&to=${toStr}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      if (!res.ok) throw new Error('Export failed');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `job-cards-report-${fromStr}-to-${toStr}.${exportType}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Export error:', error);
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   const reportData: ReportData = {
     totalJobs: jobCards.length,
@@ -302,6 +355,135 @@ export default function Reports() {
           </CardContent>
         </Card>
       </div>
+
+      {canViewRevenue && (
+        <Card className="border border-card-border">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="text-lg font-semibold">{t("reports.jobCardReport", "Job Card Report")}</CardTitle>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="button-from-date">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {format(fromDate, "dd/MM/yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={fromDate}
+                      onSelect={(date) => date && setFromDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-muted-foreground">to</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="button-to-date">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {format(toDate, "dd/MM/yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={toDate}
+                      onSelect={(date) => date && setToDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport("csv")}
+                  disabled={isExporting !== null || reportJobCards.length === 0}
+                  data-testid="button-export-csv"
+                >
+                  {isExporting === "csv" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                  CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport("pdf")}
+                  disabled={isExporting !== null || reportJobCards.length === 0}
+                  data-testid="button-export-pdf"
+                >
+                  {isExporting === "pdf" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                  PDF
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoadingReport ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : reportJobCards.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>{t("reports.noJobCardsFound", "No job cards found for the selected date range")}</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-4 mb-4 text-sm">
+                  <Badge variant="secondary">{reportJobCards.length} Jobs</Badge>
+                  <span className="text-muted-foreground">
+                    Total: Rs. {reportJobCards.reduce((sum, j) => sum + (j.cost || 0) + (j.partsTotal || 0), 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="border rounded-md overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Job ID</TableHead>
+                        <TableHead className="w-[50px]">Tag</TableHead>
+                        <TableHead className="w-[90px]">Date</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Bike</TableHead>
+                        <TableHead>Reg No</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Cost</TableHead>
+                        <TableHead className="text-right">Parts</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reportJobCards.map((job) => {
+                        const partsTotal = job.partsTotal || 0;
+                        const total = (job.cost || 0) + partsTotal;
+                        return (
+                          <TableRow key={job.id} data-testid={`report-row-${job.id}`}>
+                            <TableCell className="font-medium">{job.id}</TableCell>
+                            <TableCell>{job.tagNo || '-'}</TableCell>
+                            <TableCell>{format(new Date(job.createdAt), "dd/MM/yy")}</TableCell>
+                            <TableCell>{job.customerName}</TableCell>
+                            <TableCell>{job.bikeModel}</TableCell>
+                            <TableCell>{job.registration}</TableCell>
+                            <TableCell className="max-w-[150px] truncate">{job.serviceType}</TableCell>
+                            <TableCell>
+                              <Badge variant={job.status === "Completed" || job.status === "Delivered" ? "default" : "secondary"}>
+                                {job.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">Rs. {(job.cost || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-right">Rs. {partsTotal.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-medium">Rs. {total.toLocaleString()}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema, JobCard } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import PDFDocument from "pdfkit";
 
 declare global {
   namespace Express {
@@ -542,6 +543,172 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching statistics by category:", error);
       res.status(500).json({ error: "Failed to fetch statistics by category" });
+    }
+  });
+
+  // Job Cards Report by Date Range
+  app.get("/api/reports/job-cards", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const fromDate = req.query.from as string;
+      const toDate = req.query.to as string;
+      
+      if (!fromDate || !toDate) {
+        return res.status(400).json({ error: "Both 'from' and 'to' dates are required" });
+      }
+      
+      const jobCards = await storage.getJobCardsByDateRange(fromDate, toDate);
+      res.json(jobCards);
+    } catch (error) {
+      console.error("Error fetching job cards report:", error);
+      res.status(500).json({ error: "Failed to fetch job cards report" });
+    }
+  });
+
+  // Export Job Cards Report as CSV
+  app.get("/api/reports/job-cards.csv", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const fromDate = req.query.from as string;
+      const toDate = req.query.to as string;
+      
+      if (!fromDate || !toDate) {
+        return res.status(400).json({ error: "Both 'from' and 'to' dates are required" });
+      }
+      
+      const jobCards = await storage.getJobCardsByDateRange(fromDate, toDate);
+      
+      const csvHeader = "Job ID,Tag No,Date,Customer Name,Phone,Bike Model,Registration,Odometer,Service Type,Status,Bay,Technician,Cost,Parts Total,Total,Customer Requests,Repair Details\n";
+      const csvRows = jobCards.map((job: JobCard) => {
+        const partsTotal = job.partsTotal || 0;
+        const total = (job.cost || 0) + partsTotal;
+        const createdDate = new Date(job.createdAt).toLocaleDateString('en-GB');
+        const customerRequests = (job.customerRequests || []).join('; ');
+        const escapeCsv = (str: string) => `"${(str || '').replace(/"/g, '""')}"`;
+        
+        return [
+          job.id,
+          job.tagNo || '',
+          createdDate,
+          escapeCsv(job.customerName),
+          job.phone,
+          job.bikeModel,
+          job.registration,
+          job.odometer || 0,
+          escapeCsv(job.serviceType),
+          job.status,
+          job.bay || '',
+          job.assignedTo || '',
+          job.cost || 0,
+          partsTotal,
+          total,
+          escapeCsv(customerRequests),
+          escapeCsv(job.repairDetails || '')
+        ].join(',');
+      }).join('\n');
+      
+      const csv = csvHeader + csvRows;
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="job-cards-report-${fromDate}-to-${toDate}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      console.error("Error exporting job cards CSV:", error);
+      res.status(500).json({ error: "Failed to export job cards report" });
+    }
+  });
+
+  // Export Job Cards Report as PDF
+  app.get("/api/reports/job-cards.pdf", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const fromDate = req.query.from as string;
+      const toDate = req.query.to as string;
+      
+      if (!fromDate || !toDate) {
+        return res.status(400).json({ error: "Both 'from' and 'to' dates are required" });
+      }
+      
+      const jobCards = await storage.getJobCardsByDateRange(fromDate, toDate);
+      
+      const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="job-cards-report-${fromDate}-to-${toDate}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(18).font('Helvetica-Bold').text('Ratnam Service Station', { align: 'center' });
+      doc.fontSize(14).font('Helvetica').text('Job Cards Report', { align: 'center' });
+      doc.fontSize(10).text(`Date Range: ${new Date(fromDate).toLocaleDateString('en-GB')} to ${new Date(toDate).toLocaleDateString('en-GB')}`, { align: 'center' });
+      doc.fontSize(10).text(`Generated: ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Colombo' })}`, { align: 'center' });
+      doc.moveDown();
+      
+      // Summary
+      const totalJobs = jobCards.length;
+      const completedJobs = jobCards.filter((j: JobCard) => j.status === 'Completed' || j.status === 'Delivered').length;
+      const totalRevenue = jobCards.reduce((sum: number, j: JobCard) => sum + (j.cost || 0) + (j.partsTotal || 0), 0);
+      
+      doc.fontSize(10).font('Helvetica-Bold').text(`Summary: ${totalJobs} Jobs | ${completedJobs} Completed | Total Revenue: Rs. ${totalRevenue.toLocaleString()}`);
+      doc.moveDown();
+      
+      // Table Header
+      const tableTop = doc.y;
+      const colWidths = [50, 25, 55, 100, 70, 60, 55, 50, 50, 50, 70];
+      const headers = ['Job ID', 'Tag', 'Date', 'Customer', 'Bike Model', 'Reg No', 'Status', 'Bay', 'Cost', 'Parts', 'Total'];
+      
+      let xPos = 30;
+      doc.fontSize(8).font('Helvetica-Bold');
+      headers.forEach((header, i) => {
+        doc.text(header, xPos, tableTop, { width: colWidths[i], align: 'left' });
+        xPos += colWidths[i];
+      });
+      
+      doc.moveTo(30, tableTop + 12).lineTo(780, tableTop + 12).stroke();
+      
+      // Table Rows
+      let yPos = tableTop + 16;
+      doc.font('Helvetica').fontSize(7);
+      
+      for (const job of jobCards) {
+        if (yPos > 550) {
+          doc.addPage();
+          yPos = 30;
+        }
+        
+        const partsTotal = job.partsTotal || 0;
+        const total = (job.cost || 0) + partsTotal;
+        const createdDate = new Date(job.createdAt).toLocaleDateString('en-GB');
+        
+        xPos = 30;
+        const rowData = [
+          job.id,
+          job.tagNo || '-',
+          createdDate,
+          job.customerName.substring(0, 18),
+          job.bikeModel.substring(0, 12),
+          job.registration,
+          job.status,
+          (job.bay || '-').substring(0, 8),
+          `Rs.${(job.cost || 0).toLocaleString()}`,
+          `Rs.${partsTotal.toLocaleString()}`,
+          `Rs.${total.toLocaleString()}`
+        ];
+        
+        rowData.forEach((data, i) => {
+          doc.text(String(data), xPos, yPos, { width: colWidths[i], align: 'left' });
+          xPos += colWidths[i];
+        });
+        
+        yPos += 12;
+      }
+      
+      // Footer
+      doc.moveDown(2);
+      doc.fontSize(8).font('Helvetica').text(`Total Records: ${totalJobs}`, { align: 'right' });
+      
+      doc.end();
+    } catch (error) {
+      console.error("Error exporting job cards PDF:", error);
+      res.status(500).json({ error: "Failed to export job cards report" });
     }
   });
 
