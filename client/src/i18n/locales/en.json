@@ -25,7 +25,8 @@
     "noData": "No data available",
     "language": "Language",
     "english": "English",
-    "tamil": "தமிழ்"
+    "tamil": "தமிழ்",
+    "none": "None"
   },
   "sidebar": {
     "main": "Main",

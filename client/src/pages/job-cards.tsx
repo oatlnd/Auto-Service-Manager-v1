@@ -1574,13 +1574,14 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
               <div className="space-y-2">
                 <Label htmlFor="view-bay">{t("jobCards.bay")}</Label>
                 <Select
-                  value={selectedBay}
-                  onValueChange={(value) => handleBayChange(value as typeof BAYS[number])}
+                  value={selectedBay || "_none"}
+                  onValueChange={(value) => handleBayChange(value === "_none" ? "" as typeof BAYS[number] : value as typeof BAYS[number])}
                 >
                   <SelectTrigger data-testid="select-view-bay">
                     <SelectValue placeholder={t("jobCards.selectBay")} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="_none">-- {t("common.none")} --</SelectItem>
                     {BAYS.map((bay) => (
                       <SelectItem key={bay} value={bay}>{bay}</SelectItem>
                     ))}
@@ -1590,13 +1591,14 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
               <div className="space-y-2">
                 <Label htmlFor="view-technician">{t("jobCards.technician")}</Label>
                 <Select
-                  value={selectedTechnician}
-                  onValueChange={handleTechnicianChange}
+                  value={selectedTechnician || "_none"}
+                  onValueChange={(value) => handleTechnicianChange(value === "_none" ? "" : value)}
                 >
                   <SelectTrigger data-testid="select-view-technician">
                     <SelectValue placeholder={t("jobCards.selectTechnician")} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="_none">-- {t("common.none")} --</SelectItem>
                     {mechanics.map((staff) => (
                       <SelectItem key={staff.id} value={staff.name}>{staff.name}</SelectItem>
                     ))}
@@ -2051,13 +2053,14 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               <div className="space-y-2">
                 <Label htmlFor="edit-bay">{t("jobCards.bay")}</Label>
                 <Select
-                  value={formData.bay}
-                  onValueChange={(value) => updateField("bay", value as typeof BAYS[number])}
+                  value={formData.bay || "_none"}
+                  onValueChange={(value) => updateField("bay", value === "_none" ? "" as typeof BAYS[number] : value as typeof BAYS[number])}
                 >
                   <SelectTrigger data-testid="select-edit-bay">
                     <SelectValue placeholder={t("jobCards.selectBay")} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="_none">-- {t("common.none")} --</SelectItem>
                     {BAYS.map((bay) => (
                       <SelectItem key={bay} value={bay}>{bay}</SelectItem>
                     ))}
@@ -2067,13 +2070,14 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               <div className="space-y-2">
                 <Label htmlFor="edit-technician">{t("jobCards.technician")}</Label>
                 <Select
-                  value={formData.assignedTo}
-                  onValueChange={(value) => updateField("assignedTo", value)}
+                  value={formData.assignedTo || "_none"}
+                  onValueChange={(value) => updateField("assignedTo", value === "_none" ? "" : value)}
                 >
                   <SelectTrigger data-testid="select-edit-technician">
                     <SelectValue placeholder={t("jobCards.selectTechnician")} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="_none">-- {t("common.none")} --</SelectItem>
                     {mechanics.map((staff) => (
                       <SelectItem key={staff.id} value={staff.name}>{staff.name}</SelectItem>
                     ))}

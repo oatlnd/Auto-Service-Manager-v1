@@ -25,7 +25,8 @@
     "noData": "தரவு கிடைக்கவில்லை",
     "language": "மொழி",
     "english": "English",
-    "tamil": "தமிழ்"
+    "tamil": "தமிழ்",
+    "none": "ஏதுமில்லை"
   },
   "sidebar": {
     "main": "முதன்மை",
