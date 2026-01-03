@@ -858,6 +858,16 @@ export async function registerRoutes(
     res.json(WORK_SKILLS);
   });
 
+  app.get("/api/staff/technical", requireAuth, async (req, res) => {
+    try {
+      const staff = await storage.getTechnicalStaff();
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching technical staff:", error);
+      res.status(500).json({ error: "Failed to fetch technical staff" });
+    }
+  });
+
   app.get("/api/staff/by-skill/:skill", requireAuth, async (req, res) => {
     try {
       const skill = req.params.skill as "Mechanic" | "Service";

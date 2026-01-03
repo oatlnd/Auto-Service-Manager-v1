@@ -50,6 +50,7 @@ export interface IStorage {
   getTodayAttendance(): Promise<Attendance[]>;
   
   getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]>;
+  getTechnicalStaff(): Promise<Staff[]>;
   
   // Loyalty Program
   getLoyaltyCustomers(): Promise<LoyaltyCustomer[]>;
@@ -154,6 +155,7 @@ export class MemStorage implements IStorage {
       { name: "Kannan Selvam", phone: "0771111111", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
       { name: "Vimal Kumar", phone: "0772222222", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
       { name: "Ravi Chandran", phone: "0773333333", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
+      { name: "Ragavan", phone: "0776666666", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
       { name: "Senthil Murugan", phone: "0774444444", email: "", role: "Service", workSkills: ["Service"], isActive: true },
       { name: "Mani Kandan", phone: "0775555555", email: "", role: "Service", workSkills: ["Service"], isActive: true },
     ];
@@ -661,6 +663,12 @@ export class MemStorage implements IStorage {
   async getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]> {
     return Array.from(this.staff.values())
       .filter((s) => s.isActive && s.workSkills.includes(skill))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getTechnicalStaff(): Promise<Staff[]> {
+    return Array.from(this.staff.values())
+      .filter((s) => s.isActive && s.workSkills.length > 0)
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 

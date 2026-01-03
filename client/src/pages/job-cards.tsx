@@ -141,7 +141,7 @@ export default function JobCards() {
   });
 
   const { data: mechanics = [] } = useQuery<Staff[]>({
-    queryKey: ["/api/staff/by-skill/Mechanic"],
+    queryKey: ["/api/staff/technical"],
   });
 
   const { data: partsCatalog = [] } = useQuery<PartsCatalog[]>({
