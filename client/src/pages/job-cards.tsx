@@ -1205,7 +1205,11 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const { data: auditLogs = [], isLoading: isLoadingAudit, refetch: refetchAudit } = useQuery<JobCardAuditLog[]>({
     queryKey: ['/api/job-cards', job?.id, 'audit'],
     queryFn: async () => {
-      const res = await fetch(`/api/job-cards/${job?.id}/audit`, { credentials: 'include' });
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`/api/job-cards/${job?.id}/audit`, { 
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('Failed to fetch audit logs');
       return res.json();
     },
@@ -1234,7 +1238,11 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const { data: images = [], isLoading: isLoadingImages, refetch: refetchImages } = useQuery<JobCardImage[]>({
     queryKey: ['/api/job-cards', job?.id, 'images'],
     queryFn: async () => {
-      const res = await fetch(`/api/job-cards/${job?.id}/images`, { credentials: 'include' });
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`/api/job-cards/${job?.id}/images`, { 
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('Failed to fetch images');
       return res.json();
     },
@@ -1965,7 +1973,11 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
   const { data: auditLogs = [], isLoading: isLoadingAudit } = useQuery<JobCardAuditLog[]>({
     queryKey: ['/api/job-cards', job?.id, 'audit'],
     queryFn: async () => {
-      const res = await fetch(`/api/job-cards/${job?.id}/audit`, { credentials: 'include' });
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`/api/job-cards/${job?.id}/audit`, { 
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('Failed to fetch audit logs');
       return res.json();
     },
