@@ -508,17 +508,32 @@ export default function JobCards() {
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover-elevate" data-testid={`row-job-${job.id}`}>
                       <TableCell>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedJob(job);
-                            setIsViewOpen(true);
-                          }}
-                          data-testid={`button-view-${job.id}`}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setIsViewOpen(true);
+                            }}
+                            data-testid={`button-view-${job.id}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {!isLimitedRole && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedJob(job);
+                                setIsEditOpen(true);
+                              }}
+                              data-testid={`button-edit-${job.id}`}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">{job.id}</TableCell>
                       <TableCell className="hidden sm:table-cell">{job.tagNo || "-"}</TableCell>
@@ -544,27 +559,14 @@ export default function JobCards() {
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
                           {!isLimitedRole && (
-                            <>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  setSelectedJob(job);
-                                  setIsEditOpen(true);
-                                }}
-                                data-testid={`button-edit-${job.id}`}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setDeleteJobId(job.id)}
-                                data-testid={`button-delete-${job.id}`}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setDeleteJobId(job.id)}
+                              data-testid={`button-delete-${job.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
                           )}
                         </div>
                       </TableCell>
