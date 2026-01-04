@@ -713,6 +713,7 @@ function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: Pa
             data-testid={testId}
             title={inputValue}
             maxLength={40}
+            className="max-w-[280px]"
           />
           <Button
             type="button"
