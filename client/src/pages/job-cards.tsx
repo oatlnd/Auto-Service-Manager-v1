@@ -520,6 +520,21 @@ export default function JobCards() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setIsViewOpen(true);
+                              setTimeout(() => {
+                                const printBtn = document.querySelector('[data-testid="button-print-receipt"]') as HTMLButtonElement;
+                                if (printBtn) printBtn.click();
+                              }, 300);
+                            }}
+                            data-testid={`button-print-${job.id}`}
+                          >
+                            <Printer className="w-4 h-4" />
+                          </Button>
                           {!isLimitedRole && (
                             <Button
                               size="icon"
