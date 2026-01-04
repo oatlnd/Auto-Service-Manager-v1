@@ -704,7 +704,7 @@ function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: Pa
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative">
+        <div className="relative flex items-center">
           <Input
             value={displayValue}
             onChange={(e) => handleInputChange(e.target.value)}
@@ -713,13 +713,13 @@ function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: Pa
             data-testid={testId}
             title={inputValue}
             maxLength={40}
-            className="max-w-[280px]"
+            className="w-full pr-8"
           />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-0 top-0 h-full px-2"
+            className="absolute right-0 h-9"
             onClick={() => setOpen(!open)}
           >
             <ChevronsUpDown className="h-4 w-4 opacity-50" />
