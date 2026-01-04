@@ -669,6 +669,11 @@ interface PartsComboboxProps {
   testId: string;
 }
 
+function truncateText(text: string, maxLength: number = 40): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
+
 function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: PartsComboboxProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
@@ -694,16 +699,20 @@ function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: Pa
       p.partNumber.toLowerCase().includes(inputValue.toLowerCase())
   );
 
+  const displayValue = truncateText(inputValue, 40);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div className="relative">
           <Input
-            value={inputValue}
+            value={displayValue}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Type or select part"
             onClick={() => setOpen(true)}
             data-testid={testId}
+            title={inputValue}
+            maxLength={40}
           />
           <Button
             type="button"
@@ -733,7 +742,7 @@ function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: Pa
                     className={`mr-2 h-4 w-4 ${partNumber === part.partNumber ? "opacity-100" : "opacity-0"}`}
                   />
                   <div className="flex flex-col">
-                    <span className="font-medium">{part.name.length > 40 ? part.name.substring(0, 40) + '...' : part.name}</span>
+                    <span className="font-medium" title={part.name}>{truncateText(part.name, 40)}</span>
                     <span className="text-xs text-muted-foreground">
                       {part.partNumber} - LKR {part.price.toLocaleString()}
                     </span>
