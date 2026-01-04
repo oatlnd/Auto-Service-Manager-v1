@@ -88,6 +88,8 @@ interface FormData {
   estimatedTime: string;
   repairDetails: string;
   parts: Part[];
+  nextServiceDate?: string;
+  nextServiceKm?: number;
 }
 
 const initialFormData: FormData = {
@@ -2153,6 +2155,43 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                   onChange={(e) => updateField("odometer", parseInt(e.target.value) || 0)}
                   placeholder={t("jobCards.odometer")}
                   data-testid="input-edit-odometer"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-md bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700">
+              <div className="space-y-2">
+                <Label htmlFor="edit-nextServiceDate" className="text-yellow-800 dark:text-yellow-200">{t("jobCards.nextServiceDate")}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal bg-white dark:bg-background"
+                      data-testid="input-edit-next-service-date"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.nextServiceDate ? format(new Date(formData.nextServiceDate), "dd/MM/yyyy") : t("jobCards.selectDate")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.nextServiceDate ? new Date(formData.nextServiceDate) : undefined}
+                      onSelect={(date) => updateField("nextServiceDate", date ? format(date, "yyyy-MM-dd") : "")}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-nextServiceKm" className="text-yellow-800 dark:text-yellow-200">{t("jobCards.nextServiceKm")}</Label>
+                <Input
+                  id="edit-nextServiceKm"
+                  type="number"
+                  value={formData.nextServiceKm ?? ""}
+                  onChange={(e) => updateField("nextServiceKm", parseInt(e.target.value) || 0)}
+                  placeholder={t("jobCards.nextServiceKmPlaceholder")}
+                  className="bg-white dark:bg-background"
+                  data-testid="input-edit-next-service-km"
                 />
               </div>
             </div>

@@ -145,6 +145,8 @@ export const jobCardSchema = z.object({
     amount: z.number(),
   })).optional(),
   partsTotal: z.number().optional(),
+  nextServiceDate: z.string().optional(),
+  nextServiceKm: z.number().optional(),
   createdAt: z.string(),
 });
 
