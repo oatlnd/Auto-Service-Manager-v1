@@ -733,7 +733,7 @@ function PartsCombobox({ value, partNumber, onSelect, partsCatalog, testId }: Pa
                     className={`mr-2 h-4 w-4 ${partNumber === part.partNumber ? "opacity-100" : "opacity-0"}`}
                   />
                   <div className="flex flex-col">
-                    <span className="font-medium">{part.name}</span>
+                    <span className="font-medium">{part.name.length > 40 ? part.name.substring(0, 40) + '...' : part.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {part.partNumber} - LKR {part.price.toLocaleString()}
                     </span>
