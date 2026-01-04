@@ -508,10 +508,11 @@ export default function JobCards() {
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover-elevate" data-testid={`row-job-${job.id}`}>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center -space-x-1">
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="h-8 w-8"
                             onClick={() => {
                               setSelectedJob(job);
                               setIsViewOpen(true);
@@ -523,6 +524,7 @@ export default function JobCards() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="h-8 w-8"
                             onClick={() => {
                               setSelectedJob(job);
                               setIsViewOpen(true);
@@ -539,6 +541,7 @@ export default function JobCards() {
                             <Button
                               size="icon"
                               variant="ghost"
+                              className="h-8 w-8"
                               onClick={() => {
                                 setSelectedJob(job);
                                 setIsEditOpen(true);
