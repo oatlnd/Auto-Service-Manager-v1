@@ -1053,17 +1053,17 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                 </Button>
               </div>
               {(formData.parts || []).length > 0 && (
-                <div className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  <div className="flex-1 min-w-0">Part Name</div>
-                  <div className="w-[90px] shrink-0 text-center">Date</div>
-                  <div className="w-[80px] shrink-0 text-right">Amount</div>
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="w-[280px] shrink-0">Part Name</div>
+                  <div className="w-[100px] shrink-0 text-center">Date</div>
+                  <div className="w-[100px] shrink-0 text-right">Amount</div>
                   <div className="w-9 shrink-0"></div>
                 </div>
               )}
               <div className="space-y-2">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex items-center gap-1 p-2 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-0">
+                  <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
+                    <div className="w-[280px] shrink-0">
                       <PartsCombobox
                         value={part.name}
                         partNumber={part.partNumber}
@@ -1086,7 +1086,7 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-[90px] shrink-0 justify-start text-left font-normal px-2"
+                          className="w-[100px] shrink-0 justify-start text-left font-normal px-2"
                           data-testid={`input-part-date-${index}`}
                         >
                           <CalendarIcon className="mr-1 h-3 w-3" />
@@ -1106,17 +1106,17 @@ function CreateJobCardDialog({ open, onOpenChange, onSubmit, isPending, partsCat
                         />
                       </PopoverContent>
                     </Popover>
-                    <div className="w-[80px] shrink-0">
+                    <div className="w-[100px] shrink-0">
                       <Input 
                         type="number"
-                        placeholder="Amt"
+                        placeholder="Amount"
                         value={part.amount || ""}
                         onChange={(e) => {
                           const newParts = [...(formData.parts || [])];
                           newParts[index] = { ...newParts[index], amount: Number(e.target.value) || 0 };
                           updateField("parts", newParts);
                         }}
-                        className="text-right text-sm px-2"
+                        className="text-right text-sm"
                         data-testid={`input-part-amount-${index}`}
                       />
                     </div>
@@ -2292,17 +2292,17 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                 </Button>
               </div>
               {(formData.parts || []).length > 0 && (
-                <div className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  <div className="flex-1 min-w-0">Part Name</div>
-                  <div className="w-[90px] shrink-0 text-center">Date</div>
-                  <div className="w-[80px] shrink-0 text-right">Amount</div>
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="w-[280px] shrink-0">Part Name</div>
+                  <div className="w-[100px] shrink-0 text-center">Date</div>
+                  <div className="w-[100px] shrink-0 text-right">Amount</div>
                   <div className="w-9 shrink-0"></div>
                 </div>
               )}
               <div className="space-y-2">
                 {(formData.parts || []).map((part, index) => (
-                  <div key={index} className="flex items-center gap-1 p-2 rounded-md bg-muted/30">
-                    <div className="flex-1 min-w-0">
+                  <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
+                    <div className="w-[280px] shrink-0">
                       <PartsCombobox
                         value={part.name}
                         partNumber={part.partNumber}
@@ -2325,7 +2325,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-[90px] shrink-0 justify-start text-left font-normal px-2"
+                          className="w-[100px] shrink-0 justify-start text-left font-normal px-2"
                           data-testid={`input-edit-part-date-${index}`}
                         >
                           <CalendarIcon className="mr-1 h-3 w-3" />
@@ -2345,17 +2345,17 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                         />
                       </PopoverContent>
                     </Popover>
-                    <div className="w-[80px] shrink-0">
+                    <div className="w-[100px] shrink-0">
                       <Input 
                         type="number"
-                        placeholder="Amt"
+                        placeholder="Amount"
                         value={part.amount || ""}
                         onChange={(e) => {
                           const newParts = [...(formData.parts || [])];
                           newParts[index] = { ...newParts[index], amount: Number(e.target.value) || 0 };
                           updateField("parts", newParts);
                         }}
-                        className="text-right text-sm px-2"
+                        className="text-right text-sm"
                         data-testid={`input-edit-part-amount-${index}`}
                       />
                     </div>
