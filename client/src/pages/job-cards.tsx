@@ -76,7 +76,7 @@ interface FormData {
   tagNo: string;
   customerName: string;
   phone: string;
-  bikeModel: typeof BIKE_MODELS[number];
+  bikeModel: typeof BIKE_MODELS[number] | "";
   registration: string;
   odometer: number;
   serviceType: typeof SERVICE_TYPES[number];
@@ -96,7 +96,7 @@ const initialFormData: FormData = {
   tagNo: "",
   customerName: "",
   phone: "",
-  bikeModel: "Shine",
+  bikeModel: "",
   registration: "",
   odometer: 0,
   serviceType: "Service with Oil Spray (Oil Change)",
