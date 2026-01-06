@@ -11,6 +11,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { APP_VERSION } from "@/lib/version";
 import Dashboard from "@/pages/dashboard";
 import JobCards from "@/pages/job-cards";
 import ServiceBays from "@/pages/service-bays";
@@ -63,6 +64,7 @@ function AppContent() {
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center gap-2 h-14 px-4 border-b border-border shrink-0">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <span className="text-xs text-muted-foreground font-mono" data-testid="text-app-version">{APP_VERSION}</span>
             <div className="flex-1" />
             {user && (
               <span className="text-sm text-muted-foreground hidden sm:inline">

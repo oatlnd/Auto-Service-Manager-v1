@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { APP_VERSION } from "@/lib/version";
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, User, Clock } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -1531,6 +1532,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <div class="footer">
           <p>Thank you for choosing Ratnam Service Station</p>
           <p>Printed: ${formatSriLankaDate(new Date(), "dd/MM/yyyy HH:mm")}</p>
+          <p style="margin-top: 2px;">${APP_VERSION}</p>
         </div>
       </body>
       </html>
