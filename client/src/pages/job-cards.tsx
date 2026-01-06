@@ -229,7 +229,7 @@ export default function JobCards() {
       const matchesSearch = 
         job.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.registration.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.id.toLowerCase().includes(searchQuery.toLowerCase());
+        job.jobCode.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesStatus = 
         statusFilter === "all" ? true : 
@@ -252,9 +252,9 @@ export default function JobCards() {
       let bValue: string | number | Date;
       
       switch (sortColumn) {
-        case "id":
-          aValue = a.id;
-          bValue = b.id;
+        case "jobCode":
+          aValue = a.jobCode;
+          bValue = b.jobCode;
           break;
         case "tagNo":
           aValue = a.tagNo || "";
@@ -366,11 +366,11 @@ export default function JobCards() {
                   <TableHead>
                     <button
                       className="flex items-center gap-1 hover-elevate active-elevate-2 rounded px-1 -mx-1 cursor-pointer"
-                      onClick={() => handleSort("id")}
-                      data-testid="sort-id"
+                      onClick={() => handleSort("jobCode")}
+                      data-testid="sort-jobCode"
                     >
-                      Job ID
-                      {sortColumn === "id" ? (
+                      Job Code
+                      {sortColumn === "jobCode" ? (
                         sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
                       ) : (
                         <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
@@ -554,7 +554,7 @@ export default function JobCards() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">{job.id}</TableCell>
+                      <TableCell className="font-medium">{job.jobCode}</TableCell>
                       <TableCell className="hidden sm:table-cell">{job.tagNo || "-"}</TableCell>
                       <TableCell>
                         <div>
@@ -1422,7 +1422,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
     const printContent = `
       <html>
       <head>
-        <title>Job Card - ${job.id}</title>
+        <title>Job Card - ${job.jobCode}</title>
         <style>
           @page { size: 80mm auto; margin: 2mm; }
           body { font-family: 'Courier New', monospace; font-size: 10px; width: 76mm; margin: 0; padding: 2mm; }
@@ -1446,7 +1446,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
       </head>
       <body>
         <div class="job-tag-header">
-          <span class="job-no">${job.id}</span>
+          <span class="job-no">${job.jobCode}</span>
           <span class="tag-no">${job.tagNo || '-'}</span>
         </div>
         
@@ -1596,7 +1596,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <DialogHeader>
           <div className="flex items-center gap-3 flex-wrap">
             <DialogTitle>{t("jobCards.title")}</DialogTitle>
-            <Badge variant="outline">{job.id}</Badge>
+            <Badge variant="outline">{job.jobCode}</Badge>
             <StatusBadge status={job.status} />
           </div>
         </DialogHeader>
@@ -2077,7 +2077,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
         <DialogHeader>
           <div className="flex items-center gap-3 flex-wrap">
             <DialogTitle>{t("jobCards.editJobCard")}</DialogTitle>
-            <Badge variant="outline">{job.id}</Badge>
+            <Badge variant="outline">{job.jobCode}</Badge>
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">

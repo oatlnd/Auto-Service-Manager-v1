@@ -436,7 +436,7 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm">{job.customerName}</span>
-                      <Badge variant="outline" className="text-xs">{job.id}</Badge>
+                      <Badge variant="outline" className="text-xs">{job.jobCode}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
                       {job.bikeModel} - {job.registration}

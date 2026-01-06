@@ -439,7 +439,7 @@ export default function Reports() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[80px]">Job ID</TableHead>
+                        <TableHead className="w-[80px]">Job Code</TableHead>
                         <TableHead className="w-[50px]">Tag</TableHead>
                         <TableHead className="w-[90px]">Date</TableHead>
                         <TableHead>Customer</TableHead>
@@ -458,7 +458,7 @@ export default function Reports() {
                         const total = (job.cost || 0) + partsTotal;
                         return (
                           <TableRow key={job.id} data-testid={`report-row-${job.id}`}>
-                            <TableCell className="font-medium">{job.id}</TableCell>
+                            <TableCell className="font-medium">{job.jobCode}</TableCell>
                             <TableCell>{job.tagNo || '-'}</TableCell>
                             <TableCell>{format(new Date(job.createdAt), "dd/MM/yy")}</TableCell>
                             <TableCell>{job.customerName}</TableCell>

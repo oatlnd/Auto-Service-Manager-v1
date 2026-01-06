@@ -51,6 +51,7 @@ async function seed() {
   
   const sampleJobCards = [
     {
+      jobCode: "JB1000",
       tagNo: "1",
       customerName: "Rajesh Kumar",
       phone: "0771234567",
@@ -72,6 +73,7 @@ async function seed() {
       partsTotal: 400,
     },
     {
+      jobCode: "JB1001",
       tagNo: "2",
       customerName: "Priya Shankar",
       phone: "0779876543",
@@ -92,6 +94,7 @@ async function seed() {
       partsTotal: 1500,
     },
     {
+      jobCode: "JB1002",
       tagNo: "3",
       customerName: "Anand Murthy",
       phone: "0765432109",
@@ -110,6 +113,7 @@ async function seed() {
       partsTotal: 0,
     },
     {
+      jobCode: "JB1003",
       tagNo: "4",
       customerName: "Suresh Pillai",
       phone: "0778765432",

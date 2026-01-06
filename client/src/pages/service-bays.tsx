@@ -100,7 +100,7 @@ function WashBayCard({ bay, t, onStatusChange, onJobClick, isUpdating, updatingJ
                           data-testid={`button-view-job-${job.id}`}
                         >
                           <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span className="font-medium text-primary underline underline-offset-2">{job.id}</span>
+                          <span className="font-medium text-primary underline underline-offset-2">{job.jobCode}</span>
                           {job.tagNo && <span className="text-muted-foreground">({job.tagNo})</span>}
                         </button>
                         <div className="flex items-center gap-1.5">
@@ -217,7 +217,7 @@ function TechnicianBayCard({ bay, t, onStatusChange, onJobClick, isUpdating, upd
                 data-testid={`button-view-job-${job.id}`}
               >
                 <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm font-medium text-primary underline underline-offset-2">{job.id}</span>
+                <span className="text-sm font-medium text-primary underline underline-offset-2">{job.jobCode}</span>
               </button>
               <Select
                 value={job.status}
