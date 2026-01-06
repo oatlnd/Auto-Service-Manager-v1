@@ -64,6 +64,7 @@ export const insertAttendanceDbSchema = createInsertSchema(attendance).omit({ id
 // Job Cards table
 export const jobCards = pgTable("job_cards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobCode: varchar("job_code", { length: 10 }).notNull().unique(),
   tagNo: text("tag_no"),
   customerName: text("customer_name").notNull(),
   phone: text("phone").notNull(),
@@ -85,7 +86,7 @@ export const jobCards = pgTable("job_cards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertJobCardDbSchema = createInsertSchema(jobCards).omit({ id: true, createdAt: true });
+export const insertJobCardDbSchema = createInsertSchema(jobCards).omit({ id: true, jobCode: true, createdAt: true });
 
 // Job Card Audit Logs table
 export const jobCardAuditLogs = pgTable("job_card_audit_logs", {
@@ -317,6 +318,7 @@ export const CUSTOMER_REQUESTS = [
 // Zod schemas for validation (used by frontend and API)
 export const jobCardSchema = z.object({
   id: z.string(),
+  jobCode: z.string(),
   tagNo: z.string().optional().nullable(),
   customerName: z.string().min(1, "Customer name is required"),
   phone: z.string().min(10, "Valid phone number required"),

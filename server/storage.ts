@@ -114,6 +114,7 @@ export interface IStorage {
 function toJobCard(row: any): JobCard {
   return {
     id: row.id,
+    jobCode: row.jobCode,
     tagNo: row.tagNo,
     customerName: row.customerName,
     phone: row.phone,
@@ -370,7 +371,22 @@ export class DatabaseStorage implements IStorage {
     const parts = data.parts || [];
     const partsTotal = this.calculatePartsTotal(parts);
     
+    // Generate next job code (JB1000, JB1001, etc.)
+    const [maxResult] = await db.select({ 
+      maxCode: sql<string>`MAX(job_code)` 
+    }).from(jobCardsTable);
+    
+    let nextNumber = 1000; // Starting number
+    if (maxResult?.maxCode) {
+      const currentNumber = parseInt(maxResult.maxCode.replace('JB', ''), 10);
+      if (!isNaN(currentNumber)) {
+        nextNumber = currentNumber + 1;
+      }
+    }
+    const jobCode = `JB${nextNumber}`;
+    
     const [row] = await db.insert(jobCardsTable).values({
+      jobCode,
       tagNo: data.tagNo,
       customerName: data.customerName,
       phone: data.phone,
