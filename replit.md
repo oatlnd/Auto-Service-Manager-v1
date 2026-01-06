@@ -31,9 +31,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Layer
 - **ORM**: Drizzle ORM with PostgreSQL dialect
+- **Database**: PostgreSQL (Neon-backed) with full data persistence
 - **Schema Validation**: Zod with drizzle-zod integration
-- **Current Storage**: In-memory storage implementation (MemStorage class)
-- **Database Ready**: PostgreSQL schema defined, ready for database provisioning
+- **Storage Implementation**: DatabaseStorage class using Drizzle ORM queries
+- **Session Storage**: Database-backed sessions with expiration handling
 
 ### Key Design Patterns
 - **Shared Types**: Schema definitions in `/shared/schema.ts` used by both client and server
@@ -125,6 +126,17 @@ shared/
 - **express-session**: Session middleware support
 
 ## Recent Changes
+
+### January 6, 2026
+- Migrated from in-memory storage (MemStorage) to PostgreSQL database (DatabaseStorage)
+- Created database connection module (server/db.ts) using Drizzle ORM
+- Updated shared/schema.ts with pgTable definitions for all entities:
+  - users, staff, attendance, jobCards, jobCardAuditLogs, jobCardImages
+  - loyaltyCustomers, pointsTransactions, rewards, redemptions
+  - partsCatalog, systemLogs, sessions
+- Rewrote server/storage.ts with DatabaseStorage class implementing IStorage interface
+- Created server/seed.ts script for database initialization with sample data
+- All data now persists across application restarts
 
 ### January 1, 2026
 - Implemented Parts Catalog system for managing spare parts inventory
