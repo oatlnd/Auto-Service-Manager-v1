@@ -26,7 +26,11 @@
     "language": "மொழி",
     "english": "English",
     "tamil": "தமிழ்",
-    "none": "ஏதுமில்லை"
+    "none": "ஏதுமில்லை",
+    "all": "அனைத்தும்",
+    "reset": "மீட்டமை",
+    "page": "பக்கம்",
+    "selectDate": "தேதி தேர்வு செய்யவும்"
   },
   "sidebar": {
     "main": "முதன்மை",
@@ -39,7 +43,8 @@
     "technicians": "தொழில்நுட்ப வல்லுநர்கள்",
     "attendance": "வருகைப்பதிவு",
     "loyaltyProgram": "விசுவாசத் திட்டம்",
-    "partsCatalog": "பாகங்கள் பட்டியல்"
+    "partsCatalog": "பாகங்கள் பட்டியல்",
+    "systemLogs": "கணினி பதிவுகள்"
   },
   "roles": {
     "admin": "நிர்வாகி",
@@ -375,5 +380,38 @@
     "searchPlaceholder": "பாகங்களைத் தேடு...",
     "partNumberExists": "பாகம் எண் ஏற்கனவே உள்ளது",
     "confirmDelete": "இந்த பாகத்தை நிச்சயமாக நீக்க விரும்புகிறீர்களா?"
+  },
+  "systemLogs": {
+    "title": "கணினி பதிவுகள்",
+    "subtitle": "கணினி பிழைகள் மற்றும் செயலி பதிவுகளைக் காணவும்",
+    "filters": "வடிகட்டிகள்",
+    "level": "நிலை",
+    "source": "மூலம்",
+    "levels": {
+      "info": "தகவல்",
+      "warn": "எச்சரிக்கை",
+      "error": "பிழை"
+    },
+    "sources": {
+      "api": "API",
+      "frontend": "முகப்பு",
+      "system": "கணினி"
+    },
+    "searchPlaceholder": "பதிவுகளைத் தேடு...",
+    "logEntries": "பதிவு பதிவுகள்",
+    "noLogs": "பதிவுகள் கிடைக்கவில்லை",
+    "logDetails": "பதிவு விவரங்கள்",
+    "logId": "பதிவு எண்",
+    "timestamp": "நேர முத்திரை",
+    "user": "பயனர்",
+    "endpoint": "முடிவுப்புள்ளி",
+    "message": "செய்தி",
+    "stackTrace": "ஸ்டேக் ட்ரேஸ்",
+    "context": "சூழல்",
+    "clearOld": "பழைய பதிவுகளை அழி",
+    "logsCleared": "பதிவுகள் அழிக்கப்பட்டன",
+    "logsClearedDesc": "{{count}} பழைய பதிவுகள் நீக்கப்பட்டன",
+    "clearError": "பழைய பதிவுகளை அழிக்க முடியவில்லை",
+    "logDeleted": "பதிவு நீக்கப்பட்டது"
   }
 }

@@ -26,7 +26,11 @@
     "language": "Language",
     "english": "English",
     "tamil": "தமிழ்",
-    "none": "None"
+    "none": "None",
+    "all": "All",
+    "reset": "Reset",
+    "page": "Page",
+    "selectDate": "Select date"
   },
   "sidebar": {
     "main": "Main",
@@ -39,7 +43,8 @@
     "technicians": "Technicians",
     "attendance": "Attendance",
     "loyaltyProgram": "Loyalty Program",
-    "partsCatalog": "Parts Catalog"
+    "partsCatalog": "Parts Catalog",
+    "systemLogs": "System Logs"
   },
   "roles": {
     "admin": "Admin",
@@ -375,5 +380,38 @@
     "searchPlaceholder": "Search parts...",
     "partNumberExists": "Part number already exists",
     "confirmDelete": "Are you sure you want to delete this part?"
+  },
+  "systemLogs": {
+    "title": "System Logs",
+    "subtitle": "View system errors and application logs",
+    "filters": "Filters",
+    "level": "Level",
+    "source": "Source",
+    "levels": {
+      "info": "Info",
+      "warn": "Warning",
+      "error": "Error"
+    },
+    "sources": {
+      "api": "API",
+      "frontend": "Frontend",
+      "system": "System"
+    },
+    "searchPlaceholder": "Search logs...",
+    "logEntries": "Log Entries",
+    "noLogs": "No logs found",
+    "logDetails": "Log Details",
+    "logId": "Log ID",
+    "timestamp": "Timestamp",
+    "user": "User",
+    "endpoint": "Endpoint",
+    "message": "Message",
+    "stackTrace": "Stack Trace",
+    "context": "Context",
+    "clearOld": "Clear Old Logs",
+    "logsCleared": "Logs Cleared",
+    "logsClearedDesc": "{{count}} old logs have been removed",
+    "clearError": "Failed to clear old logs",
+    "logDeleted": "Log deleted"
   }
 }

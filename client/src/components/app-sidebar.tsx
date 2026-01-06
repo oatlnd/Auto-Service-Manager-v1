@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings, Gift, Package } from "lucide-react";
+import { Home, FileText, Wrench, BarChart3, Users, Calendar, Settings, Gift, Package, ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Sidebar,
@@ -22,10 +22,11 @@ const mainNavItems = [
 ];
 
 const adminNavItems = [
-  { titleKey: "sidebar.staffManagement", url: "/staff", icon: Users },
-  { titleKey: "sidebar.attendance", url: "/attendance", icon: Calendar },
-  { titleKey: "sidebar.loyaltyProgram", url: "/loyalty", icon: Gift },
-  { titleKey: "sidebar.partsCatalog", url: "/parts-catalog", icon: Package },
+  { titleKey: "sidebar.staffManagement", url: "/staff", icon: Users, adminOnly: false },
+  { titleKey: "sidebar.attendance", url: "/attendance", icon: Calendar, adminOnly: false },
+  { titleKey: "sidebar.loyaltyProgram", url: "/loyalty", icon: Gift, adminOnly: false },
+  { titleKey: "sidebar.partsCatalog", url: "/parts-catalog", icon: Package, adminOnly: false },
+  { titleKey: "sidebar.systemLogs", url: "/system-logs", icon: ScrollText, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -87,20 +88,22 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.titleKey}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(item.url)}
-                      className={isActive(item.url) ? "bg-primary text-primary-foreground" : ""}
-                    >
-                      <Link href={item.url} data-testid={`nav-${item.url.replace("/", "")}`}>
-                        <item.icon className="w-4 h-4" />
-                        <span>{t(item.titleKey)}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {adminNavItems
+                  .filter((item) => !item.adminOnly || isAdmin)
+                  .map((item) => (
+                    <SidebarMenuItem key={item.titleKey}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(item.url)}
+                        className={isActive(item.url) ? "bg-primary text-primary-foreground" : ""}
+                      >
+                        <Link href={item.url} data-testid={`nav-${item.url.replace("/", "")}`}>
+                          <item.icon className="w-4 h-4" />
+                          <span>{t(item.titleKey)}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
