@@ -400,3 +400,27 @@ export const insertRedemptionSchema = redemptionSchema.omit({ id: true, fulfille
 
 export type Redemption = z.infer<typeof redemptionSchema>;
 export type InsertRedemption = z.infer<typeof insertRedemptionSchema>;
+
+// System Logs
+export const LOG_LEVELS = ["info", "warn", "error"] as const;
+export const LOG_SOURCES = ["api", "frontend", "system"] as const;
+
+export const systemLogSchema = z.object({
+  id: z.string(),
+  level: z.enum(LOG_LEVELS),
+  source: z.enum(LOG_SOURCES),
+  message: z.string(),
+  endpoint: z.string().optional(),
+  method: z.string().optional(),
+  userId: z.string().optional(),
+  userName: z.string().optional(),
+  statusCode: z.number().optional(),
+  context: z.record(z.any()).optional(),
+  stack: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export const insertSystemLogSchema = systemLogSchema.omit({ id: true, createdAt: true });
+
+export type SystemLog = z.infer<typeof systemLogSchema>;
+export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
