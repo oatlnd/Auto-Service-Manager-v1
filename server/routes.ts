@@ -1,10 +1,11 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema, JobCard } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema, JobCard, LOG_LEVELS, LOG_SOURCES, insertSystemLogSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import PDFDocument from "pdfkit";
+import { logger } from "./logger";
 
 declare global {
   namespace Express {
@@ -1104,6 +1105,131 @@ export async function registerRoutes(
       console.error("Error updating redemption status:", error);
       res.status(500).json({ error: "Failed to update redemption status" });
     }
+  });
+
+  // System Logs Routes (Admin only)
+  app.get("/api/system-logs", requireRole("Admin"), async (req, res) => {
+    try {
+      const level = req.query.level as typeof LOG_LEVELS[number] | undefined;
+      const source = req.query.source as typeof LOG_SOURCES[number] | undefined;
+      const fromDate = req.query.fromDate as string | undefined;
+      const toDate = req.query.toDate as string | undefined;
+      const search = req.query.search as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+
+      const result = await storage.getSystemLogs({
+        level,
+        source,
+        fromDate,
+        toDate,
+        search,
+        limit,
+        offset,
+      });
+
+      res.json(result);
+    } catch (error) {
+      logger.apiError("Error fetching system logs", {
+        endpoint: "/api/system-logs",
+        method: "GET",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to fetch system logs" });
+    }
+  });
+
+  app.get("/api/system-logs/:id", requireRole("Admin"), async (req, res) => {
+    try {
+      const log = await storage.getSystemLog(req.params.id);
+      if (!log) {
+        return res.status(404).json({ error: "Log not found" });
+      }
+      res.json(log);
+    } catch (error) {
+      logger.apiError("Error fetching system log", {
+        endpoint: `/api/system-logs/${req.params.id}`,
+        method: "GET",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to fetch system log" });
+    }
+  });
+
+  app.post("/api/system-logs", async (req, res) => {
+    try {
+      const parsed = insertSystemLogSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      
+      const logData = {
+        ...parsed.data,
+        userId: req.session?.user.id,
+        userName: req.session?.user.name,
+      };
+      
+      const log = await storage.createSystemLog(logData);
+      res.status(201).json(log);
+    } catch (error) {
+      console.error("Error creating system log:", error);
+      res.status(500).json({ error: "Failed to create system log" });
+    }
+  });
+
+  app.delete("/api/system-logs/:id", requireRole("Admin"), async (req, res) => {
+    try {
+      const success = await storage.deleteSystemLog(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Log not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      logger.apiError("Error deleting system log", {
+        endpoint: `/api/system-logs/${req.params.id}`,
+        method: "DELETE",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to delete system log" });
+    }
+  });
+
+  app.post("/api/system-logs/clear-old", requireRole("Admin"), async (req, res) => {
+    try {
+      const daysOld = req.body.daysOld || 90;
+      const deletedCount = await storage.clearOldLogs(daysOld);
+      logger.systemInfo(`Cleared ${deletedCount} old logs (${daysOld} days old)`, {
+        userId: req.session?.user.id,
+        userName: req.session?.user.name,
+      });
+      res.json({ success: true, deletedCount });
+    } catch (error) {
+      logger.apiError("Error clearing old logs", {
+        endpoint: "/api/system-logs/clear-old",
+        method: "POST",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to clear old logs" });
+    }
+  });
+
+  // Global error handler for unhandled errors
+  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    logger.apiError(err.message, {
+      endpoint: req.path,
+      method: req.method,
+      userId: req.session?.user?.id,
+      userName: req.session?.user?.name,
+      statusCode: 500,
+      stack: err.stack,
+      context: {
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      },
+    });
+
+    res.status(500).json({ error: "Internal server error" });
   });
 
   return httpServer;
