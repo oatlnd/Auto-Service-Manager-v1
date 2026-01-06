@@ -5,7 +5,8 @@ import type {
   LoyaltyCustomer, InsertLoyaltyCustomer, PointsTransaction, InsertPointsTransaction,
   Reward, InsertReward, Redemption, InsertRedemption,
   JobCardAuditLog, JobCardImage, InsertJobCardImage,
-  PartsCatalog, InsertPartsCatalog
+  PartsCatalog, InsertPartsCatalog,
+  SystemLog, InsertSystemLog, LOG_LEVELS, LOG_SOURCES
 } from "@shared/schema";
 import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -91,6 +92,21 @@ export interface IStorage {
   createPartsCatalogItem(data: InsertPartsCatalog): Promise<PartsCatalog>;
   updatePartsCatalogItem(id: string, data: Partial<InsertPartsCatalog>): Promise<PartsCatalog | undefined>;
   deletePartsCatalogItem(id: string): Promise<boolean>;
+  
+  // System Logs
+  getSystemLogs(filters?: {
+    level?: typeof LOG_LEVELS[number];
+    source?: typeof LOG_SOURCES[number];
+    fromDate?: string;
+    toDate?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ logs: SystemLog[]; total: number }>;
+  getSystemLog(id: string): Promise<SystemLog | undefined>;
+  createSystemLog(data: InsertSystemLog): Promise<SystemLog>;
+  deleteSystemLog(id: string): Promise<boolean>;
+  clearOldLogs(daysOld: number): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -106,6 +122,7 @@ export class MemStorage implements IStorage {
   private jobCardAuditLogs: Map<string, JobCardAuditLog[]>;
   private jobCardImages: Map<string, JobCardImage>;
   private partsCatalog: Map<string, PartsCatalog>;
+  private systemLogs: Map<string, SystemLog>;
   private jobIdCounter: number;
   private staffIdCounter: number;
   private attendanceIdCounter: number;
@@ -117,6 +134,7 @@ export class MemStorage implements IStorage {
   private auditLogIdCounter: number;
   private partsIdCounter: number;
   private imageIdCounter: number;
+  private logIdCounter: number;
 
   constructor() {
     this.jobCards = new Map();
@@ -131,6 +149,7 @@ export class MemStorage implements IStorage {
     this.jobCardAuditLogs = new Map();
     this.jobCardImages = new Map();
     this.partsCatalog = new Map();
+    this.systemLogs = new Map();
     this.jobIdCounter = 1;
     this.staffIdCounter = 1;
     this.attendanceIdCounter = 1;
@@ -142,6 +161,7 @@ export class MemStorage implements IStorage {
     this.auditLogIdCounter = 1;
     this.imageIdCounter = 1;
     this.partsIdCounter = 1;
+    this.logIdCounter = 1;
     this.initializeSampleData();
   }
 
@@ -1045,6 +1065,84 @@ export class MemStorage implements IStorage {
     existing.isActive = false;
     this.partsCatalog.set(id, existing);
     return true;
+  }
+
+  // System Logs Methods
+  async getSystemLogs(filters?: {
+    level?: typeof LOG_LEVELS[number];
+    source?: typeof LOG_SOURCES[number];
+    fromDate?: string;
+    toDate?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ logs: SystemLog[]; total: number }> {
+    let logs = Array.from(this.systemLogs.values());
+    
+    if (filters?.level) {
+      logs = logs.filter(log => log.level === filters.level);
+    }
+    if (filters?.source) {
+      logs = logs.filter(log => log.source === filters.source);
+    }
+    if (filters?.fromDate) {
+      logs = logs.filter(log => log.createdAt >= filters.fromDate!);
+    }
+    if (filters?.toDate) {
+      logs = logs.filter(log => log.createdAt <= filters.toDate! + "T23:59:59.999Z");
+    }
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      logs = logs.filter(log => 
+        log.message.toLowerCase().includes(searchLower) ||
+        (log.endpoint && log.endpoint.toLowerCase().includes(searchLower)) ||
+        (log.userName && log.userName.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    const total = logs.length;
+    const limit = filters?.limit || 50;
+    const offset = filters?.offset || 0;
+    
+    return {
+      logs: logs.slice(offset, offset + limit),
+      total,
+    };
+  }
+
+  async getSystemLog(id: string): Promise<SystemLog | undefined> {
+    return this.systemLogs.get(id);
+  }
+
+  async createSystemLog(data: InsertSystemLog): Promise<SystemLog> {
+    const id = `LOG${String(this.logIdCounter++).padStart(6, "0")}`;
+    const log: SystemLog = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.systemLogs.set(id, log);
+    return log;
+  }
+
+  async deleteSystemLog(id: string): Promise<boolean> {
+    return this.systemLogs.delete(id);
+  }
+
+  async clearOldLogs(daysOld: number): Promise<number> {
+    const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString();
+    let deletedCount = 0;
+    
+    this.systemLogs.forEach((log, id) => {
+      if (log.createdAt < cutoffDate) {
+        this.systemLogs.delete(id);
+        deletedCount++;
+      }
+    });
+    
+    return deletedCount;
   }
 }
 
