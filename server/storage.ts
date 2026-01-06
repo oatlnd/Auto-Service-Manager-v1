@@ -1,4 +1,4 @@
-import type { 
+import { 
   JobCard, InsertJobCard, DailyStatistics, BayStatus, ServiceCategoryStats,
   Staff, InsertStaff, Attendance, InsertAttendance, UpdateAttendance,
   User, BAYS, JOB_STATUSES, WorkSkill,
@@ -6,9 +6,16 @@ import type {
   Reward, InsertReward, Redemption, InsertRedemption,
   JobCardAuditLog, JobCardImage, InsertJobCardImage,
   PartsCatalog, InsertPartsCatalog,
-  SystemLog, InsertSystemLog, LOG_LEVELS, LOG_SOURCES
+  SystemLog, InsertSystemLog, LOG_LEVELS, LOG_SOURCES,
+  SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR,
+  users, staff as staffTable, attendance as attendanceTable, jobCards as jobCardsTable,
+  jobCardAuditLogs as auditLogsTable, jobCardImages as imagesTable, partsCatalog as partsCatalogTable,
+  loyaltyCustomers as loyaltyCustomersTable, pointsTransactions as transactionsTable,
+  rewards as rewardsTable, redemptions as redemptionsTable, systemLogs as systemLogsTable,
+  sessions as sessionsTable
 } from "@shared/schema";
-import { SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, gte, lte, ilike, or, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface Session {
@@ -53,7 +60,6 @@ export interface IStorage {
   getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]>;
   getTechnicalStaff(): Promise<Staff[]>;
   
-  // Loyalty Program
   getLoyaltyCustomers(): Promise<LoyaltyCustomer[]>;
   getLoyaltyCustomer(id: string): Promise<LoyaltyCustomer | undefined>;
   getLoyaltyCustomerByPhone(phone: string): Promise<LoyaltyCustomer | undefined>;
@@ -75,17 +81,14 @@ export interface IStorage {
   getRedemptions(customerId?: string): Promise<Redemption[]>;
   updateRedemptionStatus(id: string, status: "Pending" | "Fulfilled" | "Cancelled"): Promise<Redemption | undefined>;
   
-  // Job Card Audit Log
   createJobCardAuditLog(jobCardId: string, actorId: string, actorName: string, action: JobCardAuditLog["action"], changes: JobCardAuditLog["changes"]): Promise<JobCardAuditLog>;
   getJobCardAuditLogs(jobCardId: string): Promise<JobCardAuditLog[]>;
   
-  // Job Card Images
   getJobCardImages(jobCardId: string): Promise<JobCardImage[]>;
   getJobCardImage(id: string): Promise<JobCardImage | undefined>;
   createJobCardImage(data: InsertJobCardImage): Promise<JobCardImage>;
   deleteJobCardImage(id: string): Promise<boolean>;
   
-  // Parts Catalog
   getPartsCatalog(): Promise<PartsCatalog[]>;
   getPartsCatalogItem(id: string): Promise<PartsCatalog | undefined>;
   getPartByNumber(partNumber: string): Promise<PartsCatalog | undefined>;
@@ -93,7 +96,6 @@ export interface IStorage {
   updatePartsCatalogItem(id: string, data: Partial<InsertPartsCatalog>): Promise<PartsCatalog | undefined>;
   deletePartsCatalogItem(id: string): Promise<boolean>;
   
-  // System Logs
   getSystemLogs(filters?: {
     level?: typeof LOG_LEVELS[number];
     source?: typeof LOG_SOURCES[number];
@@ -109,317 +111,234 @@ export interface IStorage {
   clearOldLogs(daysOld: number): Promise<number>;
 }
 
-export class MemStorage implements IStorage {
-  private jobCards: Map<string, JobCard>;
-  private staff: Map<string, Staff>;
-  private attendance: Map<string, Attendance>;
-  private users: Map<string, User>;
-  private sessions: Map<string, Session>;
-  private loyaltyCustomers: Map<string, LoyaltyCustomer>;
-  private pointsTransactions: Map<string, PointsTransaction>;
-  private rewards: Map<string, Reward>;
-  private redemptions: Map<string, Redemption>;
-  private jobCardAuditLogs: Map<string, JobCardAuditLog[]>;
-  private jobCardImages: Map<string, JobCardImage>;
-  private partsCatalog: Map<string, PartsCatalog>;
-  private systemLogs: Map<string, SystemLog>;
-  private jobIdCounter: number;
-  private staffIdCounter: number;
-  private attendanceIdCounter: number;
-  private userIdCounter: number;
-  private loyaltyCustomerIdCounter: number;
-  private transactionIdCounter: number;
-  private rewardIdCounter: number;
-  private redemptionIdCounter: number;
-  private auditLogIdCounter: number;
-  private partsIdCounter: number;
-  private imageIdCounter: number;
-  private logIdCounter: number;
+function toJobCard(row: any): JobCard {
+  return {
+    id: row.id,
+    tagNo: row.tagNo,
+    customerName: row.customerName,
+    phone: row.phone,
+    bikeModel: row.bikeModel,
+    registration: row.registration,
+    odometer: row.odometer,
+    serviceType: row.serviceType,
+    customerRequests: row.customerRequests || [],
+    status: row.status,
+    assignedTo: row.assignedTo,
+    bay: row.bay,
+    estimatedTime: row.estimatedTime,
+    cost: row.cost,
+    repairDetails: row.repairDetails,
+    parts: row.parts || [],
+    partsTotal: row.partsTotal || 0,
+    nextServiceDate: row.nextServiceDate,
+    nextServiceKm: row.nextServiceKm,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-  constructor() {
-    this.jobCards = new Map();
-    this.staff = new Map();
-    this.attendance = new Map();
-    this.users = new Map();
-    this.sessions = new Map();
-    this.loyaltyCustomers = new Map();
-    this.pointsTransactions = new Map();
-    this.rewards = new Map();
-    this.redemptions = new Map();
-    this.jobCardAuditLogs = new Map();
-    this.jobCardImages = new Map();
-    this.partsCatalog = new Map();
-    this.systemLogs = new Map();
-    this.jobIdCounter = 1;
-    this.staffIdCounter = 1;
-    this.attendanceIdCounter = 1;
-    this.userIdCounter = 1;
-    this.loyaltyCustomerIdCounter = 1;
-    this.transactionIdCounter = 1;
-    this.rewardIdCounter = 1;
-    this.redemptionIdCounter = 1;
-    this.auditLogIdCounter = 1;
-    this.imageIdCounter = 1;
-    this.partsIdCounter = 1;
-    this.logIdCounter = 1;
-    this.initializeSampleData();
-  }
+function toStaff(row: any): Staff {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    email: row.email || "",
+    role: row.role,
+    workSkills: row.workSkills || [],
+    isActive: row.isActive,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-  private initializeSampleData() {
-    const sampleStaff: Omit<Staff, "id" | "createdAt">[] = [
-      { name: "Arun Kumar", phone: "0771234567", email: "arun@hondajaffna.lk", role: "Admin", workSkills: [], isActive: true },
-      { name: "Priya Shankar", phone: "0779876543", email: "priya@hondajaffna.lk", role: "Manager", workSkills: [], isActive: true },
-      { name: "Ramesh Nair", phone: "0765432109", email: "ramesh@hondajaffna.lk", role: "Job Card", workSkills: [], isActive: true },
-      { name: "Suresh Pillai", phone: "0778765432", email: "suresh@hondajaffna.lk", role: "Cashier", workSkills: [], isActive: true },
-      { name: "Karthik Rajan", phone: "0761234567", email: "karthik@hondajaffna.lk", role: "Job Card", workSkills: [], isActive: true },
-      { name: "Kannan Selvam", phone: "0771111111", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
-      { name: "Vimal Kumar", phone: "0772222222", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
-      { name: "Ravi Chandran", phone: "0773333333", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
-      { name: "Ragavan", phone: "0776666666", email: "", role: "Technician", workSkills: ["Mechanic"], isActive: true },
-      { name: "Senthil Murugan", phone: "0774444444", email: "", role: "Service", workSkills: ["Service"], isActive: true },
-      { name: "Mani Kandan", phone: "0775555555", email: "", role: "Service", workSkills: ["Service"], isActive: true },
-    ];
+function toAttendance(row: any): Attendance {
+  return {
+    id: row.id,
+    staffId: row.staffId,
+    staffName: row.staffName,
+    date: row.date,
+    status: row.status,
+    checkInTime: row.checkInTime,
+    checkOutTime: row.checkOutTime,
+    notes: row.notes,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+    updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt,
+  };
+}
 
-    sampleStaff.forEach((s) => {
-      const id = `STF${String(this.staffIdCounter++).padStart(3, "0")}`;
-      this.staff.set(id, { ...s, id, createdAt: new Date().toISOString() });
-    });
+function toLoyaltyCustomer(row: any): LoyaltyCustomer {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    email: row.email || "",
+    vehicleNumbers: row.vehicleNumbers || [],
+    totalPoints: row.totalPoints,
+    availablePoints: row.availablePoints,
+    tier: row.tier,
+    totalSpent: row.totalSpent,
+    visitCount: row.visitCount,
+    lastVisit: row.lastVisit instanceof Date ? row.lastVisit.toISOString() : row.lastVisit,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-    
-    const sampleJobs: Omit<JobCard, "id">[] = [
-      {
-        tagNo: "1",
-        customerName: "Rajesh Kumar",
-        phone: "0771234567",
-        bikeModel: "Shine",
-        registration: "NP-2341",
-        odometer: 15420,
-        serviceType: "Service with Oil Spray (Oil Change)",
-        customerRequests: ["Engine Oil Change", "Washing"],
-        status: "In Progress",
-        assignedTo: "Kannan Selvam",
-        bay: "Sudershan",
-        estimatedTime: "45 mins",
-        cost: 1000,
-        repairDetails: "Oil change, filter replacement, chain adjustment",
-        parts: [
-          { name: "Engine Oil", date: new Date().toISOString().split('T')[0], amount: 250 },
-          { name: "Oil Filter", date: new Date().toISOString().split('T')[0], amount: 150 },
-        ],
-        partsTotal: 400,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        tagNo: "2",
-        customerName: "Priya Shankar",
-        phone: "0779876543",
-        bikeModel: "CB350",
-        registration: "NP-5678",
-        odometer: 8750,
-        serviceType: "Repair",
-        customerRequests: ["Brakes not effective", "Brakes making noise"],
-        status: "In Progress",
-        assignedTo: "Vimal Kumar",
-        bay: "Vijandran",
-        estimatedTime: "2 hours",
-        cost: 5000,
-        repairDetails: "Front brake pad replacement, disc inspection",
-        parts: [
-          { name: "Brake Pads", date: twoDaysAgo.split('T')[0], amount: 1500 },
-        ],
-        partsTotal: 1500,
-        createdAt: twoDaysAgo,
-      },
-      {
-        tagNo: "3",
-        customerName: "Anand Murthy",
-        phone: "0765432109",
-        bikeModel: "Unicorn",
-        registration: "NP-9012",
-        odometer: 22100,
-        serviceType: "1st Free Service",
-        customerRequests: ["Check everything & give estimate", "Tighten all bolts"],
-        status: "Completed",
-        assignedTo: "Ravi Chandran",
-        bay: "Jayakandan",
-        estimatedTime: "1 hour",
-        cost: 550,
-        repairDetails: "",
-        parts: [],
-        partsTotal: 0,
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-      },
-      {
-        tagNo: "4",
-        customerName: "Suresh Pillai",
-        phone: "0778765432",
-        bikeModel: "Activa 6G",
-        registration: "NP-3456",
-        odometer: 5200,
-        serviceType: "Water Wash",
-        customerRequests: ["General service & wash"],
-        status: "In Progress",
-        assignedTo: "Ragavan",
-        bay: "Wash Bay 1",
-        estimatedTime: "30 mins",
-        cost: 400,
-        repairDetails: "",
-        parts: [],
-        partsTotal: 0,
-        createdAt: threeDaysAgo,
-      },
-    ];
+function toPointsTransaction(row: any): PointsTransaction {
+  return {
+    id: row.id,
+    customerId: row.customerId,
+    type: row.type,
+    points: row.points,
+    description: row.description,
+    jobCardId: row.jobCardId,
+    rewardId: row.rewardId,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    sampleJobs.forEach((job) => {
-      const id = `JC${String(this.jobIdCounter++).padStart(3, "0")}`;
-      this.jobCards.set(id, { ...job, id });
-      // Add sample audit log for creation
-      const auditId = `AUD${String(this.auditLogIdCounter++).padStart(5, "0")}`;
-      const auditLog: JobCardAuditLog = {
-        id: auditId,
-        jobCardId: id,
-        action: "created",
-        changes: [],
-        actorId: "system",
-        actorName: "System",
-        changedAt: job.createdAt || new Date().toISOString(),
-      };
-      const logs = this.jobCardAuditLogs.get(id) || [];
-      logs.push(auditLog);
-      this.jobCardAuditLogs.set(id, logs);
-    });
+function toReward(row: any): Reward {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    pointsCost: row.pointsCost,
+    category: row.category,
+    isActive: row.isActive,
+    stock: row.stock,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    const today = new Date().toISOString().split("T")[0];
-    const staffIds = Array.from(this.staff.keys());
-    staffIds.forEach((staffId, index) => {
-      const staffMember = this.staff.get(staffId)!;
-      const id = `ATT${String(this.attendanceIdCounter++).padStart(5, "0")}`;
-      const statuses: ("Present" | "Late")[] = ["Present", "Present", "Present", "Late", "Present"];
-      this.attendance.set(id, {
-        id,
-        staffId,
-        staffName: staffMember.name,
-        date: today,
-        status: statuses[index] || "Present",
-        checkInTime: index === 3 ? "09:15" : "08:30",
-        checkOutTime: undefined,
-        notes: index === 3 ? "Traffic delay" : undefined,
-        createdAt: new Date().toISOString(),
-      });
-    });
+function toRedemption(row: any): Redemption {
+  return {
+    id: row.id,
+    customerId: row.customerId,
+    rewardId: row.rewardId,
+    rewardName: row.rewardName,
+    pointsUsed: row.pointsUsed,
+    status: row.status,
+    fulfilledAt: row.fulfilledAt instanceof Date ? row.fulfilledAt.toISOString() : row.fulfilledAt,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    const sampleUsers: { username: string; password: string; role: string; name: string; staffId?: string }[] = [
-      { username: "admin", password: "admin123", role: "Admin", name: "Arun Kumar", staffId: "STF001" },
-      { username: "manager", password: "manager123", role: "Manager", name: "Priya Shankar", staffId: "STF002" },
-      { username: "staff1", password: "staff123", role: "Job Card", name: "Ramesh Nair", staffId: "STF003" },
-      { username: "tech1", password: "tech123", role: "Technician", name: "Kannan Selvam", staffId: "STF006" },
-      { username: "service1", password: "service123", role: "Service", name: "Senthil Murugan", staffId: "STF009" },
-    ];
+function toAuditLog(row: any): JobCardAuditLog {
+  return {
+    id: row.id,
+    jobCardId: row.jobCardId,
+    actorId: row.actorId,
+    actorName: row.actorName,
+    action: row.action,
+    changes: row.changes || [],
+    changedAt: row.changedAt instanceof Date ? row.changedAt.toISOString() : row.changedAt,
+  };
+}
 
-    sampleUsers.forEach((u) => {
-      const id = `USR${String(this.userIdCounter++).padStart(3, "0")}`;
-      this.users.set(id, { ...u, id, staffId: u.staffId || null });
-    });
+function toJobCardImage(row: any): JobCardImage {
+  return {
+    id: row.id,
+    jobCardId: row.jobCardId,
+    objectPath: row.objectPath,
+    filename: row.filename,
+    mimeType: row.mimeType,
+    size: row.size,
+    uploadedBy: row.uploadedBy,
+    uploadedByName: row.uploadedByName,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    // Sample Loyalty Program Data
-    const sampleLoyaltyCustomers: Omit<LoyaltyCustomer, "id" | "createdAt">[] = [
-      { name: "Rajesh Kumar", phone: "0771234567", email: "rajesh@email.com", vehicleNumbers: ["NP-2341", "NP-6789"], totalPoints: 850, availablePoints: 650, tier: "Silver", totalSpent: 45000, visitCount: 8 },
-      { name: "Priya Shankar", phone: "0779876543", email: "priya@email.com", vehicleNumbers: ["NP-5678"], totalPoints: 320, availablePoints: 320, tier: "Bronze", totalSpent: 18000, visitCount: 4 },
-      { name: "Anand Murthy", phone: "0765432109", email: "", vehicleNumbers: ["NP-9012"], totalPoints: 1650, availablePoints: 1150, tier: "Gold", totalSpent: 92000, visitCount: 15 },
-    ];
+function toPartsCatalog(row: any): PartsCatalog {
+  return {
+    id: row.id,
+    partNumber: row.partNumber,
+    name: row.name,
+    price: row.price,
+    isActive: row.isActive,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    sampleLoyaltyCustomers.forEach((c) => {
-      const id = `LC${String(this.loyaltyCustomerIdCounter++).padStart(4, "0")}`;
-      this.loyaltyCustomers.set(id, { ...c, id, createdAt: new Date().toISOString() });
-    });
+function toSystemLog(row: any): SystemLog {
+  return {
+    id: row.id,
+    level: row.level,
+    source: row.source,
+    message: row.message,
+    endpoint: row.endpoint,
+    method: row.method,
+    userId: row.userId,
+    userName: row.userName,
+    statusCode: row.statusCode,
+    context: row.context,
+    stack: row.stack,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+  };
+}
 
-    // Sample Rewards
-    const sampleRewards: Omit<Reward, "id" | "createdAt">[] = [
-      { name: "10% Service Discount", description: "Get 10% off your next service", pointsCost: 200, category: "Discount", stock: undefined, isActive: true },
-      { name: "Free Engine Oil Change", description: "Complimentary engine oil change (1L)", pointsCost: 500, category: "Free Service", stock: 10, isActive: true },
-      { name: "Honda Branded Cap", description: "Official Honda merchandise cap", pointsCost: 150, category: "Merchandise", stock: 25, isActive: true },
-      { name: "Free Full Service", description: "Complete service package free of charge", pointsCost: 1000, category: "Free Service", stock: 5, isActive: true },
-      { name: "15% Repair Discount", description: "Get 15% off any repair work", pointsCost: 350, category: "Discount", stock: undefined, isActive: true },
-      { name: "Honda T-Shirt", description: "Official Honda branded t-shirt", pointsCost: 300, category: "Merchandise", stock: 15, isActive: true },
-    ];
-
-    sampleRewards.forEach((r) => {
-      const id = `RW${String(this.rewardIdCounter++).padStart(4, "0")}`;
-      this.rewards.set(id, { ...r, id, createdAt: new Date().toISOString() });
-    });
-
-    // Sample Points Transactions
-    const sampleTransactions: Omit<PointsTransaction, "id" | "createdAt">[] = [
-      { customerId: "LC0001", type: "Earned", points: 100, description: "Service payment - 10,000 LKR" },
-      { customerId: "LC0001", type: "Earned", points: 150, description: "Service payment - 15,000 LKR" },
-      { customerId: "LC0001", type: "Redeemed", points: -200, description: "Redeemed: 10% Service Discount" },
-      { customerId: "LC0001", type: "Earned", points: 200, description: "Service payment - 20,000 LKR" },
-      { customerId: "LC0001", type: "Earned", points: 400, description: "Silver tier bonus" },
-      { customerId: "LC0003", type: "Earned", points: 500, description: "Service payment - 50,000 LKR" },
-      { customerId: "LC0003", type: "Redeemed", points: -500, description: "Redeemed: Free Engine Oil Change" },
-      { customerId: "LC0003", type: "Earned", points: 1150, description: "Multiple service visits" },
-    ];
-
-    sampleTransactions.forEach((t) => {
-      const id = `TXN${String(this.transactionIdCounter++).padStart(5, "0")}`;
-      this.pointsTransactions.set(id, { ...t, id, createdAt: new Date().toISOString() });
-    });
-
-    // Sample Redemption (pending)
-    const pendingRedemption: Omit<Redemption, "id" | "createdAt"> = {
-      customerId: "LC0001",
-      rewardId: "RW0001",
-      rewardName: "10% Service Discount",
-      pointsUsed: 200,
-      status: "Pending",
-    };
-    const redemptionId = `RDM${String(this.redemptionIdCounter++).padStart(5, "0")}`;
-    this.redemptions.set(redemptionId, { ...pendingRedemption, id: redemptionId, createdAt: new Date().toISOString() });
-
-    // Sample Parts Catalog
-    const sampleParts: Omit<PartsCatalog, "id" | "createdAt">[] = [
-      { partNumber: "EO-001", name: "Engine Oil 10W-30 (1L)", price: 850, isActive: true },
-      { partNumber: "EO-002", name: "Engine Oil 10W-40 (1L)", price: 950, isActive: true },
-      { partNumber: "EO-003", name: "Engine Oil 20W-50 (1L)", price: 750, isActive: true },
-      { partNumber: "OF-001", name: "Oil Filter", price: 350, isActive: true },
-      { partNumber: "AF-001", name: "Air Filter", price: 450, isActive: true },
-      { partNumber: "SP-001", name: "Spark Plug NGK", price: 280, isActive: true },
-      { partNumber: "SP-002", name: "Spark Plug Iridium", price: 550, isActive: true },
-      { partNumber: "BP-001", name: "Brake Pad Front", price: 1200, isActive: true },
-      { partNumber: "BP-002", name: "Brake Pad Rear", price: 1100, isActive: true },
-      { partNumber: "CL-001", name: "Clutch Cable", price: 650, isActive: true },
-      { partNumber: "AC-001", name: "Accelerator Cable", price: 550, isActive: true },
-      { partNumber: "CH-001", name: "Chain Kit", price: 2500, isActive: true },
-      { partNumber: "BT-001", name: "Battery 12V 5Ah", price: 3500, isActive: true },
-      { partNumber: "BT-002", name: "Battery 12V 7Ah", price: 4200, isActive: true },
-      { partNumber: "DB-001", name: "Drive Belt", price: 1800, isActive: true },
-      { partNumber: "TB-001", name: "Tube Front", price: 450, isActive: true },
-      { partNumber: "TB-002", name: "Tube Rear", price: 500, isActive: true },
-      { partNumber: "TR-001", name: "Tyre Front", price: 3200, isActive: true },
-      { partNumber: "TR-002", name: "Tyre Rear", price: 3500, isActive: true },
-    ];
-
-    sampleParts.forEach((p) => {
-      const id = `PRT${String(this.partsIdCounter++).padStart(4, "0")}`;
-      this.partsCatalog.set(id, { ...p, id, createdAt: new Date().toISOString() });
-    });
-  }
-
-  private generateJobId(): string {
-    return `JC${String(this.jobIdCounter++).padStart(3, "0")}`;
-  }
-
-  private calculatePartsTotal(parts: Array<{ name: string; date: string; amount: number }> | undefined): number {
+export class DatabaseStorage implements IStorage {
+  private calculatePartsTotal(parts: Array<{ name: string; date: string; amount: number }> | undefined | null): number {
     if (!parts || parts.length === 0) return 0;
     return parts.reduce((sum, part) => sum + (part.amount || 0), 0);
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async createSession(userId: string): Promise<Session> {
+    const user = await this.getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const sessionId = randomUUID();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await db.insert(sessionsTable).values({
+      id: sessionId,
+      userId,
+      expiresAt,
+    });
+
+    const { password, ...userWithoutPassword } = user;
+    return {
+      id: sessionId,
+      userId,
+      user: userWithoutPassword,
+      expiresAt,
+    };
+  }
+
+  async getSession(sessionId: string): Promise<Session | undefined> {
+    const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, sessionId));
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      if (session) await this.deleteSession(sessionId);
+      return undefined;
+    }
+
+    const user = await this.getUserById(session.userId);
+    if (!user) return undefined;
+
+    const { password, ...userWithoutPassword } = user;
+    return {
+      id: session.id,
+      userId: session.userId,
+      user: userWithoutPassword,
+      expiresAt: new Date(session.expiresAt),
+    };
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    const result = await db.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
+    return true;
+  }
+
   async getJobCards(): Promise<JobCard[]> {
-    return Array.from(this.jobCards.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const rows = await db.select().from(jobCardsTable).orderBy(desc(jobCardsTable.createdAt));
+    return rows.map(toJobCard);
   }
 
   async getJobCardsByDateRange(fromDate: string, toDate: string): Promise<JobCard[]> {
@@ -427,78 +346,88 @@ export class MemStorage implements IStorage {
     from.setHours(0, 0, 0, 0);
     const to = new Date(toDate);
     to.setHours(23, 59, 59, 999);
-    
-    return Array.from(this.jobCards.values())
-      .filter((job) => {
-        const jobDate = new Date(job.createdAt);
-        return jobDate >= from && jobDate <= to;
-      })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const rows = await db.select().from(jobCardsTable)
+      .where(and(
+        gte(jobCardsTable.createdAt, from),
+        lte(jobCardsTable.createdAt, to)
+      ))
+      .orderBy(desc(jobCardsTable.createdAt));
+    return rows.map(toJobCard);
   }
 
   async getJobCard(id: string): Promise<JobCard | undefined> {
-    return this.jobCards.get(id);
+    const [row] = await db.select().from(jobCardsTable).where(eq(jobCardsTable.id, id));
+    return row ? toJobCard(row) : undefined;
   }
 
   async getRecentJobCards(limit: number): Promise<JobCard[]> {
-    const jobs = await this.getJobCards();
-    return jobs.slice(0, limit);
+    const rows = await db.select().from(jobCardsTable).orderBy(desc(jobCardsTable.createdAt)).limit(limit);
+    return rows.map(toJobCard);
   }
 
   async createJobCard(data: InsertJobCard): Promise<JobCard> {
-    const id = this.generateJobId();
     const parts = data.parts || [];
     const partsTotal = this.calculatePartsTotal(parts);
     
-    const jobCard: JobCard = {
-      ...data,
-      id,
+    const [row] = await db.insert(jobCardsTable).values({
+      tagNo: data.tagNo,
+      customerName: data.customerName,
+      phone: data.phone,
+      bikeModel: data.bikeModel,
+      registration: data.registration,
+      odometer: data.odometer,
+      serviceType: data.serviceType,
+      customerRequests: data.customerRequests || [],
+      status: data.status,
+      assignedTo: data.assignedTo,
+      bay: data.bay,
+      estimatedTime: data.estimatedTime,
+      cost: data.cost,
+      repairDetails: data.repairDetails,
       parts,
       partsTotal,
-      createdAt: new Date().toISOString(),
-    };
+      nextServiceDate: data.nextServiceDate,
+      nextServiceKm: data.nextServiceKm,
+    }).returning();
     
-    this.jobCards.set(id, jobCard);
-    return jobCard;
+    return toJobCard(row);
   }
 
   async updateJobCard(id: string, data: Partial<InsertJobCard>): Promise<JobCard | undefined> {
-    const existing = this.jobCards.get(id);
+    const existing = await this.getJobCard(id);
     if (!existing) return undefined;
 
     const parts = data.parts !== undefined ? data.parts : existing.parts;
     const partsTotal = this.calculatePartsTotal(parts);
 
-    const updated: JobCard = {
-      ...existing,
-      ...data,
-      parts,
-      partsTotal,
-    };
+    const [row] = await db.update(jobCardsTable)
+      .set({
+        ...data,
+        parts,
+        partsTotal,
+      })
+      .where(eq(jobCardsTable.id, id))
+      .returning();
 
-    this.jobCards.set(id, updated);
-    return updated;
+    return row ? toJobCard(row) : undefined;
   }
 
   async updateJobCardStatus(id: string, status: typeof JOB_STATUSES[number]): Promise<JobCard | undefined> {
-    const existing = this.jobCards.get(id);
-    if (!existing) return undefined;
-
-    const updated: JobCard = {
-      ...existing,
-      status,
-    };
-
-    this.jobCards.set(id, updated);
-    return updated;
+    const [row] = await db.update(jobCardsTable)
+      .set({ status })
+      .where(eq(jobCardsTable.id, id))
+      .returning();
+    return row ? toJobCard(row) : undefined;
   }
 
   async deleteJobCard(id: string): Promise<boolean> {
-    return this.jobCards.delete(id);
+    await db.delete(jobCardsTable).where(eq(jobCardsTable.id, id));
+    return true;
   }
 
   async getStatistics(date?: string): Promise<DailyStatistics> {
-    const jobs = Array.from(this.jobCards.values());
+    const jobs = await this.getJobCards();
     const targetDate = date ? new Date(date).toDateString() : new Date().toDateString();
     
     const dateJobs = jobs.filter(
@@ -506,9 +435,9 @@ export class MemStorage implements IStorage {
     );
 
     const getCategoryBreakdown = (filteredJobs: JobCard[]) => ({
-      paidService: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Paid Service").length,
-      freeService: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Company Free Service").length,
-      repair: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType]?.category === "Repair").length,
+      paidService: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.category === "Paid Service").length,
+      freeService: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.category === "Company Free Service").length,
+      repair: filteredJobs.filter(job => SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.category === "Repair").length,
     });
 
     const pendingJobs = dateJobs.filter((job) => job.status === "Pending");
@@ -517,28 +446,34 @@ export class MemStorage implements IStorage {
     const qualityCheckJobs = dateJobs.filter((job) => job.status === "Quality Check");
     const completedJobs = dateJobs.filter((job) => job.status === "Completed");
     const deliveredJobs = dateJobs.filter((job) => job.status === "Delivered");
+    
+    const revenue = dateJobs.reduce((sum, job) => {
+      const serviceCost = job.cost || 0;
+      const partsTotal = job.partsTotal || 0;
+      return sum + serviceCost + partsTotal;
+    }, 0);
 
     return {
       today: dateJobs.length,
       todayByCategory: getCategoryBreakdown(dateJobs),
-      pending: pendingJobs.length,
-      pendingByCategory: getCategoryBreakdown(pendingJobs),
+      completed: completedJobs.length,
+      completedByCategory: getCategoryBreakdown(completedJobs),
       inProgress: inProgressJobs.length,
       inProgressByCategory: getCategoryBreakdown(inProgressJobs),
+      pending: pendingJobs.length,
+      pendingByCategory: getCategoryBreakdown(pendingJobs),
       oilChange: oilChangeJobs.length,
       oilChangeByCategory: getCategoryBreakdown(oilChangeJobs),
       qualityCheck: qualityCheckJobs.length,
       qualityCheckByCategory: getCategoryBreakdown(qualityCheckJobs),
-      completed: completedJobs.length,
-      completedByCategory: getCategoryBreakdown(completedJobs),
       delivered: deliveredJobs.length,
       deliveredByCategory: getCategoryBreakdown(deliveredJobs),
-      revenue: dateJobs.filter(j => j.status === "Completed" || j.status === "Delivered").reduce((sum, job) => sum + job.cost, 0),
+      revenue,
     };
   }
 
   async getStatisticsByCategory(date?: string): Promise<ServiceCategoryStats[]> {
-    const jobs = Array.from(this.jobCards.values());
+    const jobs = await this.getJobCards();
     const targetDate = date ? new Date(date).toDateString() : new Date().toDateString();
     
     const dateJobs = jobs.filter(
@@ -547,9 +482,8 @@ export class MemStorage implements IStorage {
 
     return SERVICE_CATEGORIES.map((category) => {
       const categoryJobs = dateJobs.filter(
-        (job) => SERVICE_TYPE_DETAILS[job.serviceType]?.category === category
+        (job) => SERVICE_TYPE_DETAILS[job.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.category === category
       );
-      
       return {
         category,
         total: categoryJobs.length,
@@ -560,119 +494,113 @@ export class MemStorage implements IStorage {
   }
 
   async getBayStatus(): Promise<BayStatus[]> {
-    const bays: (typeof BAYS[number])[] = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"];
-    const washBays: (typeof BAYS[number])[] = ["Wash Bay 1", "Wash Bay 2"];
-    const jobs = Array.from(this.jobCards.values());
+    const jobs = await this.getJobCards();
+    const activeJobs = jobs.filter(
+      (job) => job.status !== "Completed" && job.status !== "Delivered"
+    );
 
-    return bays.map((bay) => {
-      const isWashBay = washBays.includes(bay);
-      
-      if (isWashBay) {
-        const activeJobs = jobs
-          .filter((job) => job.bay === bay && job.status !== "Completed" && job.status !== "Delivered")
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 5);
-        
-        return {
-          bay,
-          isOccupied: activeJobs.length > 0,
-          jobCard: activeJobs[0],
-          jobCards: activeJobs,
-        };
-      } else {
-        const activeJob = jobs.find(
-          (job) => job.bay === bay && job.status !== "Completed" && job.status !== "Delivered"
-        );
-        
-        return {
-          bay,
-          isOccupied: !!activeJob,
-          jobCard: activeJob,
-        };
-      }
+    return BAYS.map((bay) => {
+      const bayJobs = activeJobs.filter((job) => job.bay === bay);
+      return {
+        bay,
+        isOccupied: bayJobs.length > 0,
+        jobCard: bayJobs[0],
+        jobCards: bayJobs,
+      };
     });
   }
 
   async getStaff(): Promise<Staff[]> {
-    return Array.from(this.staff.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const rows = await db.select().from(staffTable).orderBy(staffTable.name);
+    return rows.map(toStaff);
   }
 
   async getStaffMember(id: string): Promise<Staff | undefined> {
-    return this.staff.get(id);
+    const [row] = await db.select().from(staffTable).where(eq(staffTable.id, id));
+    return row ? toStaff(row) : undefined;
   }
 
   async createStaff(data: InsertStaff): Promise<Staff> {
-    const id = `STF${String(this.staffIdCounter++).padStart(3, "0")}`;
-    const staff: Staff = {
-      ...data,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-    this.staff.set(id, staff);
-    return staff;
+    const [row] = await db.insert(staffTable).values({
+      name: data.name,
+      phone: data.phone,
+      email: data.email || null,
+      role: data.role,
+      workSkills: data.workSkills || [],
+      isActive: data.isActive,
+    }).returning();
+    return toStaff(row);
   }
 
   async updateStaff(id: string, data: Partial<InsertStaff>): Promise<Staff | undefined> {
-    const existing = this.staff.get(id);
-    if (!existing) return undefined;
-
-    const updated: Staff = {
-      ...existing,
-      ...data,
-    };
-    this.staff.set(id, updated);
-    return updated;
+    const [row] = await db.update(staffTable)
+      .set(data)
+      .where(eq(staffTable.id, id))
+      .returning();
+    return row ? toStaff(row) : undefined;
   }
 
   async deleteStaff(id: string): Promise<boolean> {
-    return this.staff.delete(id);
+    await db.delete(staffTable).where(eq(staffTable.id, id));
+    return true;
+  }
+
+  async getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]> {
+    const allStaff = await this.getStaff();
+    return allStaff.filter(s => s.isActive && s.workSkills.includes(skill));
+  }
+
+  async getTechnicalStaff(): Promise<Staff[]> {
+    const allStaff = await this.getStaff();
+    return allStaff.filter(s => s.isActive && s.workSkills.length > 0);
   }
 
   async getAttendance(date?: string): Promise<Attendance[]> {
-    const records = Array.from(this.attendance.values());
     if (date) {
-      return records.filter((a) => a.date === date);
+      const rows = await db.select().from(attendanceTable).where(eq(attendanceTable.date, date));
+      return rows.map(toAttendance);
     }
-    return records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const rows = await db.select().from(attendanceTable).orderBy(desc(attendanceTable.createdAt));
+    return rows.map(toAttendance);
   }
 
   async getAttendanceByStaff(staffId: string): Promise<Attendance[]> {
-    return Array.from(this.attendance.values())
-      .filter((a) => a.staffId === staffId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const rows = await db.select().from(attendanceTable)
+      .where(eq(attendanceTable.staffId, staffId))
+      .orderBy(desc(attendanceTable.date));
+    return rows.map(toAttendance);
   }
 
   async getAttendanceRecord(id: string): Promise<Attendance | undefined> {
-    return this.attendance.get(id);
+    const [row] = await db.select().from(attendanceTable).where(eq(attendanceTable.id, id));
+    return row ? toAttendance(row) : undefined;
   }
 
   async createAttendance(data: InsertAttendance): Promise<Attendance> {
-    const id = `ATT${String(this.attendanceIdCounter++).padStart(5, "0")}`;
     const staffMember = await this.getStaffMember(data.staffId);
-    
-    const attendance: Attendance = {
-      ...data,
-      id,
-      staffName: staffMember?.name || "Unknown",
-      createdAt: new Date().toISOString(),
-    };
-    this.attendance.set(id, attendance);
-    return attendance;
+    const staffName = staffMember?.name || "Unknown";
+
+    const [row] = await db.insert(attendanceTable).values({
+      staffId: data.staffId,
+      staffName,
+      date: data.date,
+      status: data.status,
+      checkInTime: data.checkInTime,
+      checkOutTime: data.checkOutTime,
+      notes: data.notes,
+    }).returning();
+    return toAttendance(row);
   }
 
   async updateAttendance(id: string, data: UpdateAttendance): Promise<Attendance | undefined> {
-    const existing = this.attendance.get(id);
-    if (!existing) return undefined;
-
-    const updated: Attendance = {
-      ...existing,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-    this.attendance.set(id, updated);
-    return updated;
+    const [row] = await db.update(attendanceTable)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(attendanceTable.id, id))
+      .returning();
+    return row ? toAttendance(row) : undefined;
   }
 
   async getTodayAttendance(): Promise<Attendance[]> {
@@ -680,137 +608,63 @@ export class MemStorage implements IStorage {
     return this.getAttendance(today);
   }
 
-  async getStaffByWorkSkill(skill: WorkSkill): Promise<Staff[]> {
-    return Array.from(this.staff.values())
-      .filter((s) => s.isActive && s.workSkills.includes(skill))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  async getTechnicalStaff(): Promise<Staff[]> {
-    return Array.from(this.staff.values())
-      .filter((s) => s.isActive && s.workSkills.length > 0)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find((u) => u.username === username);
-  }
-
-  async getUserById(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async createSession(userId: string): Promise<Session> {
-    const user = await this.getUserById(userId);
-    if (!user) throw new Error("User not found");
-
-    const sessionId = randomUUID();
-    const { password, ...userWithoutPassword } = user;
-    
-    const session: Session = {
-      id: sessionId,
-      userId,
-      user: userWithoutPassword,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    };
-    
-    this.sessions.set(sessionId, session);
-    return session;
-  }
-
-  async getSession(sessionId: string): Promise<Session | undefined> {
-    const session = this.sessions.get(sessionId);
-    if (!session) return undefined;
-    
-    if (new Date() > session.expiresAt) {
-      this.sessions.delete(sessionId);
-      return undefined;
-    }
-    
-    return session;
-  }
-
-  async deleteSession(sessionId: string): Promise<boolean> {
-    return this.sessions.delete(sessionId);
-  }
-
-  // Loyalty Program Methods
-  private calculateTier(totalPoints: number): typeof LOYALTY_TIERS[number] {
-    if (totalPoints >= LOYALTY_TIER_THRESHOLDS.Platinum) return "Platinum";
-    if (totalPoints >= LOYALTY_TIER_THRESHOLDS.Gold) return "Gold";
-    if (totalPoints >= LOYALTY_TIER_THRESHOLDS.Silver) return "Silver";
-    return "Bronze";
-  }
-
   async getLoyaltyCustomers(): Promise<LoyaltyCustomer[]> {
-    return Array.from(this.loyaltyCustomers.values())
-      .sort((a, b) => b.totalPoints - a.totalPoints);
+    const rows = await db.select().from(loyaltyCustomersTable).orderBy(loyaltyCustomersTable.name);
+    return rows.map(toLoyaltyCustomer);
   }
 
   async getLoyaltyCustomer(id: string): Promise<LoyaltyCustomer | undefined> {
-    return this.loyaltyCustomers.get(id);
+    const [row] = await db.select().from(loyaltyCustomersTable).where(eq(loyaltyCustomersTable.id, id));
+    return row ? toLoyaltyCustomer(row) : undefined;
   }
 
   async getLoyaltyCustomerByPhone(phone: string): Promise<LoyaltyCustomer | undefined> {
-    return Array.from(this.loyaltyCustomers.values()).find((c) => c.phone === phone);
+    const [row] = await db.select().from(loyaltyCustomersTable).where(eq(loyaltyCustomersTable.phone, phone));
+    return row ? toLoyaltyCustomer(row) : undefined;
   }
 
   async createLoyaltyCustomer(data: InsertLoyaltyCustomer): Promise<LoyaltyCustomer> {
-    const id = `LYL${String(this.loyaltyCustomerIdCounter++).padStart(4, "0")}`;
-    const customer: LoyaltyCustomer = {
-      ...data,
-      id,
-      totalPoints: 0,
-      availablePoints: 0,
-      tier: "Bronze",
-      totalSpent: 0,
-      visitCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-    this.loyaltyCustomers.set(id, customer);
-    return customer;
+    const [row] = await db.insert(loyaltyCustomersTable).values({
+      name: data.name,
+      phone: data.phone,
+      email: data.email || null,
+      vehicleNumbers: data.vehicleNumbers || [],
+    }).returning();
+    return toLoyaltyCustomer(row);
   }
 
   async updateLoyaltyCustomer(id: string, data: Partial<InsertLoyaltyCustomer>): Promise<LoyaltyCustomer | undefined> {
-    const existing = this.loyaltyCustomers.get(id);
-    if (!existing) return undefined;
-
-    const updated: LoyaltyCustomer = {
-      ...existing,
-      ...data,
-    };
-    this.loyaltyCustomers.set(id, updated);
-    return updated;
+    const [row] = await db.update(loyaltyCustomersTable)
+      .set(data)
+      .where(eq(loyaltyCustomersTable.id, id))
+      .returning();
+    return row ? toLoyaltyCustomer(row) : undefined;
   }
 
   async deleteLoyaltyCustomer(id: string): Promise<boolean> {
-    return this.loyaltyCustomers.delete(id);
+    await db.delete(loyaltyCustomersTable).where(eq(loyaltyCustomersTable.id, id));
+    return true;
   }
 
   async getPointsTransactions(customerId: string): Promise<PointsTransaction[]> {
-    return Array.from(this.pointsTransactions.values())
-      .filter((t) => t.customerId === customerId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const rows = await db.select().from(transactionsTable)
+      .where(eq(transactionsTable.customerId, customerId))
+      .orderBy(desc(transactionsTable.createdAt));
+    return rows.map(toPointsTransaction);
   }
 
   async createPointsTransaction(data: InsertPointsTransaction): Promise<PointsTransaction> {
-    const id = `TXN${String(this.transactionIdCounter++).padStart(5, "0")}`;
-    const transaction: PointsTransaction = {
-      ...data,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-    this.pointsTransactions.set(id, transaction);
-    return transaction;
+    const [row] = await db.insert(transactionsTable).values(data).returning();
+    return toPointsTransaction(row);
   }
 
   async earnPoints(customerId: string, amount: number, description: string, jobCardId?: string): Promise<PointsTransaction> {
     const customer = await this.getLoyaltyCustomer(customerId);
     if (!customer) throw new Error("Customer not found");
 
-    const tierMultiplier = LOYALTY_TIER_MULTIPLIERS[customer.tier];
-    const basePoints = Math.floor((amount / 100) * POINTS_PER_100_LKR);
-    const earnedPoints = Math.floor(basePoints * tierMultiplier);
+    const basePoints = Math.floor(amount / 100) * POINTS_PER_100_LKR;
+    const multiplier = LOYALTY_TIER_MULTIPLIERS[customer.tier as keyof typeof LOYALTY_TIER_MULTIPLIERS] || 1;
+    const earnedPoints = Math.floor(basePoints * multiplier);
 
     const transaction = await this.createPointsTransaction({
       customerId,
@@ -820,16 +674,29 @@ export class MemStorage implements IStorage {
       jobCardId,
     });
 
-    const updatedCustomer: LoyaltyCustomer = {
-      ...customer,
-      totalPoints: customer.totalPoints + earnedPoints,
-      availablePoints: customer.availablePoints + earnedPoints,
-      totalSpent: customer.totalSpent + amount,
-      visitCount: customer.visitCount + 1,
-      lastVisit: new Date().toISOString(),
-      tier: this.calculateTier(customer.totalPoints + earnedPoints),
-    };
-    this.loyaltyCustomers.set(customerId, updatedCustomer);
+    const newTotalPoints = customer.totalPoints + earnedPoints;
+    const newAvailablePoints = customer.availablePoints + earnedPoints;
+    const newTotalSpent = customer.totalSpent + amount;
+    const newVisitCount = customer.visitCount + 1;
+
+    let newTier = customer.tier;
+    for (const tier of [...LOYALTY_TIERS].reverse()) {
+      if (newTotalPoints >= LOYALTY_TIER_THRESHOLDS[tier]) {
+        newTier = tier;
+        break;
+      }
+    }
+
+    await db.update(loyaltyCustomersTable)
+      .set({
+        totalPoints: newTotalPoints,
+        availablePoints: newAvailablePoints,
+        totalSpent: newTotalSpent,
+        visitCount: newVisitCount,
+        tier: newTier,
+        lastVisit: new Date(),
+      })
+      .where(eq(loyaltyCustomersTable.id, customerId));
 
     return transaction;
   }
@@ -839,235 +706,166 @@ export class MemStorage implements IStorage {
     if (!customer) throw new Error("Customer not found");
     if (customer.availablePoints < points) throw new Error("Insufficient points");
 
-    const reward = await this.getReward(rewardId);
-    if (!reward) throw new Error("Reward not found");
-    if (reward.stock !== undefined && reward.stock <= 0) throw new Error("Reward out of stock");
-
     const transaction = await this.createPointsTransaction({
       customerId,
       type: "Redeemed",
       points: -points,
-      description: `Redeemed for: ${rewardName}`,
+      description: `Redeemed: ${rewardName}`,
       rewardId,
     });
 
-    const redemptionId = `RDM${String(this.redemptionIdCounter++).padStart(5, "0")}`;
-    const redemption: Redemption = {
-      id: redemptionId,
+    const [redemptionRow] = await db.insert(redemptionsTable).values({
       customerId,
       rewardId,
       rewardName,
       pointsUsed: points,
       status: "Pending",
-      createdAt: new Date().toISOString(),
+    }).returning();
+
+    await db.update(loyaltyCustomersTable)
+      .set({
+        availablePoints: customer.availablePoints - points,
+      })
+      .where(eq(loyaltyCustomersTable.id, customerId));
+
+    return {
+      transaction,
+      redemption: toRedemption(redemptionRow),
     };
-    this.redemptions.set(redemptionId, redemption);
-
-    const updatedCustomer: LoyaltyCustomer = {
-      ...customer,
-      availablePoints: customer.availablePoints - points,
-    };
-    this.loyaltyCustomers.set(customerId, updatedCustomer);
-
-    if (reward.stock !== undefined) {
-      const updatedReward: Reward = {
-        ...reward,
-        stock: reward.stock - 1,
-      };
-      this.rewards.set(rewardId, updatedReward);
-    }
-
-    return { transaction, redemption };
   }
 
   async getRewards(): Promise<Reward[]> {
-    return Array.from(this.rewards.values())
-      .sort((a, b) => a.pointsCost - b.pointsCost);
+    const rows = await db.select().from(rewardsTable).orderBy(rewardsTable.pointsCost);
+    return rows.map(toReward);
   }
 
   async getReward(id: string): Promise<Reward | undefined> {
-    return this.rewards.get(id);
+    const [row] = await db.select().from(rewardsTable).where(eq(rewardsTable.id, id));
+    return row ? toReward(row) : undefined;
   }
 
   async createReward(data: InsertReward): Promise<Reward> {
-    const id = `RWD${String(this.rewardIdCounter++).padStart(3, "0")}`;
-    const reward: Reward = {
-      ...data,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-    this.rewards.set(id, reward);
-    return reward;
+    const [row] = await db.insert(rewardsTable).values(data).returning();
+    return toReward(row);
   }
 
   async updateReward(id: string, data: Partial<InsertReward>): Promise<Reward | undefined> {
-    const existing = this.rewards.get(id);
-    if (!existing) return undefined;
-
-    const updated: Reward = {
-      ...existing,
-      ...data,
-    };
-    this.rewards.set(id, updated);
-    return updated;
+    const [row] = await db.update(rewardsTable)
+      .set(data)
+      .where(eq(rewardsTable.id, id))
+      .returning();
+    return row ? toReward(row) : undefined;
   }
 
   async deleteReward(id: string): Promise<boolean> {
-    return this.rewards.delete(id);
+    await db.delete(rewardsTable).where(eq(rewardsTable.id, id));
+    return true;
   }
 
   async getRedemptions(customerId?: string): Promise<Redemption[]> {
-    let redemptions = Array.from(this.redemptions.values());
     if (customerId) {
-      redemptions = redemptions.filter((r) => r.customerId === customerId);
+      const rows = await db.select().from(redemptionsTable)
+        .where(eq(redemptionsTable.customerId, customerId))
+        .orderBy(desc(redemptionsTable.createdAt));
+      return rows.map(toRedemption);
     }
-    return redemptions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const rows = await db.select().from(redemptionsTable).orderBy(desc(redemptionsTable.createdAt));
+    return rows.map(toRedemption);
   }
 
   async updateRedemptionStatus(id: string, status: "Pending" | "Fulfilled" | "Cancelled"): Promise<Redemption | undefined> {
-    const existing = this.redemptions.get(id);
-    if (!existing) return undefined;
-
-    const updated: Redemption = {
-      ...existing,
-      status,
-      fulfilledAt: status === "Fulfilled" ? new Date().toISOString() : existing.fulfilledAt,
-    };
-    this.redemptions.set(id, updated);
-
-    if (status === "Cancelled") {
-      const customer = await this.getLoyaltyCustomer(existing.customerId);
-      if (customer) {
-        const updatedCustomer: LoyaltyCustomer = {
-          ...customer,
-          availablePoints: customer.availablePoints + existing.pointsUsed,
-        };
-        this.loyaltyCustomers.set(existing.customerId, updatedCustomer);
-      }
-
-      const reward = await this.getReward(existing.rewardId);
-      if (reward && reward.stock !== undefined) {
-        const updatedReward: Reward = {
-          ...reward,
-          stock: reward.stock + 1,
-        };
-        this.rewards.set(existing.rewardId, updatedReward);
-      }
-    }
-
-    return updated;
+    const [row] = await db.update(redemptionsTable)
+      .set({
+        status,
+        fulfilledAt: status === "Fulfilled" ? new Date() : null,
+      })
+      .where(eq(redemptionsTable.id, id))
+      .returning();
+    return row ? toRedemption(row) : undefined;
   }
 
-  async createJobCardAuditLog(
-    jobCardId: string,
-    actorId: string,
-    actorName: string,
-    action: JobCardAuditLog["action"],
-    changes: JobCardAuditLog["changes"]
-  ): Promise<JobCardAuditLog> {
-    const id = `AUD${String(this.auditLogIdCounter++).padStart(6, "0")}`;
-    const auditLog: JobCardAuditLog = {
-      id,
+  async createJobCardAuditLog(jobCardId: string, actorId: string, actorName: string, action: JobCardAuditLog["action"], changes: JobCardAuditLog["changes"]): Promise<JobCardAuditLog> {
+    const [row] = await db.insert(auditLogsTable).values({
       jobCardId,
       actorId,
       actorName,
       action,
       changes,
-      changedAt: new Date().toISOString(),
-    };
-
-    const existingLogs = this.jobCardAuditLogs.get(jobCardId) || [];
-    existingLogs.push(auditLog);
-    this.jobCardAuditLogs.set(jobCardId, existingLogs);
-
-    return auditLog;
+    }).returning();
+    return toAuditLog(row);
   }
 
   async getJobCardAuditLogs(jobCardId: string): Promise<JobCardAuditLog[]> {
-    const logs = this.jobCardAuditLogs.get(jobCardId) || [];
-    return logs.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+    const rows = await db.select().from(auditLogsTable)
+      .where(eq(auditLogsTable.jobCardId, jobCardId))
+      .orderBy(desc(auditLogsTable.changedAt));
+    return rows.map(toAuditLog);
   }
 
   async getJobCardImages(jobCardId: string): Promise<JobCardImage[]> {
-    const images: JobCardImage[] = [];
-    this.jobCardImages.forEach((image) => {
-      if (image.jobCardId === jobCardId) {
-        images.push(image);
-      }
-    });
-    return images.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const rows = await db.select().from(imagesTable)
+      .where(eq(imagesTable.jobCardId, jobCardId))
+      .orderBy(desc(imagesTable.createdAt));
+    return rows.map(toJobCardImage);
   }
 
   async getJobCardImage(id: string): Promise<JobCardImage | undefined> {
-    return this.jobCardImages.get(id);
+    const [row] = await db.select().from(imagesTable).where(eq(imagesTable.id, id));
+    return row ? toJobCardImage(row) : undefined;
   }
 
   async createJobCardImage(data: InsertJobCardImage): Promise<JobCardImage> {
-    const id = `IMG${String(this.imageIdCounter++).padStart(6, "0")}`;
-    const image: JobCardImage = {
-      ...data,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-    this.jobCardImages.set(id, image);
-    return image;
+    const [row] = await db.insert(imagesTable).values(data).returning();
+    return toJobCardImage(row);
   }
 
   async deleteJobCardImage(id: string): Promise<boolean> {
-    return this.jobCardImages.delete(id);
-  }
-
-  // Parts Catalog Methods
-  async getPartsCatalog(): Promise<PartsCatalog[]> {
-    return Array.from(this.partsCatalog.values())
-      .filter(p => p.isActive)
-      .sort((a, b) => a.partNumber.localeCompare(b.partNumber));
-  }
-
-  async getPartsCatalogItem(id: string): Promise<PartsCatalog | undefined> {
-    return this.partsCatalog.get(id);
-  }
-
-  async getPartByNumber(partNumber: string): Promise<PartsCatalog | undefined> {
-    return Array.from(this.partsCatalog.values()).find(p => p.partNumber === partNumber);
-  }
-
-  async createPartsCatalogItem(data: InsertPartsCatalog): Promise<PartsCatalog> {
-    const id = `PRT${String(this.partsIdCounter++).padStart(4, "0")}`;
-    const part: PartsCatalog = {
-      ...data,
-      id,
-      isActive: data.isActive ?? true,
-      createdAt: new Date().toISOString(),
-    };
-    this.partsCatalog.set(id, part);
-    return part;
-  }
-
-  async updatePartsCatalogItem(id: string, data: Partial<InsertPartsCatalog>): Promise<PartsCatalog | undefined> {
-    const existing = this.partsCatalog.get(id);
-    if (!existing) return undefined;
-
-    const updated: PartsCatalog = {
-      ...existing,
-      ...data,
-    };
-
-    this.partsCatalog.set(id, updated);
-    return updated;
-  }
-
-  async deletePartsCatalogItem(id: string): Promise<boolean> {
-    // Soft delete by setting isActive to false
-    const existing = this.partsCatalog.get(id);
-    if (!existing) return false;
-    
-    existing.isActive = false;
-    this.partsCatalog.set(id, existing);
+    await db.delete(imagesTable).where(eq(imagesTable.id, id));
     return true;
   }
 
-  // System Logs Methods
+  async getPartsCatalog(): Promise<PartsCatalog[]> {
+    const rows = await db.select().from(partsCatalogTable)
+      .where(eq(partsCatalogTable.isActive, true))
+      .orderBy(partsCatalogTable.partNumber);
+    return rows.map(toPartsCatalog);
+  }
+
+  async getPartsCatalogItem(id: string): Promise<PartsCatalog | undefined> {
+    const [row] = await db.select().from(partsCatalogTable).where(eq(partsCatalogTable.id, id));
+    return row ? toPartsCatalog(row) : undefined;
+  }
+
+  async getPartByNumber(partNumber: string): Promise<PartsCatalog | undefined> {
+    const [row] = await db.select().from(partsCatalogTable).where(eq(partsCatalogTable.partNumber, partNumber));
+    return row ? toPartsCatalog(row) : undefined;
+  }
+
+  async createPartsCatalogItem(data: InsertPartsCatalog): Promise<PartsCatalog> {
+    const [row] = await db.insert(partsCatalogTable).values({
+      partNumber: data.partNumber,
+      name: data.name,
+      price: data.price,
+      isActive: data.isActive ?? true,
+    }).returning();
+    return toPartsCatalog(row);
+  }
+
+  async updatePartsCatalogItem(id: string, data: Partial<InsertPartsCatalog>): Promise<PartsCatalog | undefined> {
+    const [row] = await db.update(partsCatalogTable)
+      .set(data)
+      .where(eq(partsCatalogTable.id, id))
+      .returning();
+    return row ? toPartsCatalog(row) : undefined;
+  }
+
+  async deletePartsCatalogItem(id: string): Promise<boolean> {
+    await db.update(partsCatalogTable)
+      .set({ isActive: false })
+      .where(eq(partsCatalogTable.id, id));
+    return true;
+  }
+
   async getSystemLogs(filters?: {
     level?: typeof LOG_LEVELS[number];
     source?: typeof LOG_SOURCES[number];
@@ -1077,73 +875,76 @@ export class MemStorage implements IStorage {
     limit?: number;
     offset?: number;
   }): Promise<{ logs: SystemLog[]; total: number }> {
-    let logs = Array.from(this.systemLogs.values());
+    const conditions = [];
     
     if (filters?.level) {
-      logs = logs.filter(log => log.level === filters.level);
+      conditions.push(eq(systemLogsTable.level, filters.level));
     }
     if (filters?.source) {
-      logs = logs.filter(log => log.source === filters.source);
+      conditions.push(eq(systemLogsTable.source, filters.source));
     }
     if (filters?.fromDate) {
-      logs = logs.filter(log => log.createdAt >= filters.fromDate!);
+      conditions.push(gte(systemLogsTable.createdAt, new Date(filters.fromDate)));
     }
     if (filters?.toDate) {
-      logs = logs.filter(log => log.createdAt <= filters.toDate! + "T23:59:59.999Z");
+      const toDate = new Date(filters.toDate);
+      toDate.setHours(23, 59, 59, 999);
+      conditions.push(lte(systemLogsTable.createdAt, toDate));
     }
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      logs = logs.filter(log => 
-        log.message.toLowerCase().includes(searchLower) ||
-        (log.endpoint && log.endpoint.toLowerCase().includes(searchLower)) ||
-        (log.userName && log.userName.toLowerCase().includes(searchLower))
+      conditions.push(
+        or(
+          ilike(systemLogsTable.message, `%${filters.search}%`),
+          ilike(systemLogsTable.endpoint, `%${filters.search}%`),
+          ilike(systemLogsTable.userName, `%${filters.search}%`)
+        )
       );
     }
-    
-    logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
-    const total = logs.length;
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const allLogs = await db.select().from(systemLogsTable)
+      .where(whereClause)
+      .orderBy(desc(systemLogsTable.createdAt));
+
+    const total = allLogs.length;
     const limit = filters?.limit || 50;
     const offset = filters?.offset || 0;
-    
+
+    const paginatedLogs = allLogs.slice(offset, offset + limit);
+
     return {
-      logs: logs.slice(offset, offset + limit),
+      logs: paginatedLogs.map(toSystemLog),
       total,
     };
   }
 
   async getSystemLog(id: string): Promise<SystemLog | undefined> {
-    return this.systemLogs.get(id);
+    const [row] = await db.select().from(systemLogsTable).where(eq(systemLogsTable.id, id));
+    return row ? toSystemLog(row) : undefined;
   }
 
   async createSystemLog(data: InsertSystemLog): Promise<SystemLog> {
-    const id = `LOG${String(this.logIdCounter++).padStart(6, "0")}`;
-    const log: SystemLog = {
-      ...data,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-    this.systemLogs.set(id, log);
-    return log;
+    const [row] = await db.insert(systemLogsTable).values(data).returning();
+    return toSystemLog(row);
   }
 
   async deleteSystemLog(id: string): Promise<boolean> {
-    return this.systemLogs.delete(id);
+    await db.delete(systemLogsTable).where(eq(systemLogsTable.id, id));
+    return true;
   }
 
   async clearOldLogs(daysOld: number): Promise<number> {
-    const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString();
-    let deletedCount = 0;
+    const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000);
+    const oldLogs = await db.select({ id: systemLogsTable.id }).from(systemLogsTable)
+      .where(lte(systemLogsTable.createdAt, cutoffDate));
     
-    this.systemLogs.forEach((log, id) => {
-      if (log.createdAt < cutoffDate) {
-        this.systemLogs.delete(id);
-        deletedCount++;
-      }
-    });
+    if (oldLogs.length > 0) {
+      await db.delete(systemLogsTable).where(lte(systemLogsTable.createdAt, cutoffDate));
+    }
     
-    return deletedCount;
+    return oldLogs.length;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

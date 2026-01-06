@@ -1,14 +1,15 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, json, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   role: text("role").notNull().default("Job Card"),
-  staffId: text("staffId"),
+  staffId: text("staff_id"),
   name: text("name").notNull(),
 });
 
@@ -29,6 +30,196 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
+// Staff table
+export const staff = pgTable("staff", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email"),
+  role: text("role").notNull(),
+  workSkills: text("work_skills").array().default(sql`ARRAY[]::text[]`),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertStaffDbSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
+export type InsertStaffDb = z.infer<typeof insertStaffDbSchema>;
+
+// Attendance table
+export const attendance = pgTable("attendance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").notNull(),
+  staffName: text("staff_name").notNull(),
+  date: text("date").notNull(),
+  status: text("status").notNull(),
+  checkInTime: text("check_in_time"),
+  checkOutTime: text("check_out_time"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertAttendanceDbSchema = createInsertSchema(attendance).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Job Cards table
+export const jobCards = pgTable("job_cards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tagNo: text("tag_no"),
+  customerName: text("customer_name").notNull(),
+  phone: text("phone").notNull(),
+  bikeModel: text("bike_model").notNull(),
+  registration: text("registration").notNull(),
+  odometer: integer("odometer").notNull(),
+  serviceType: text("service_type").notNull(),
+  customerRequests: text("customer_requests").array().default(sql`ARRAY[]::text[]`),
+  status: text("status").notNull().default("Pending"),
+  assignedTo: text("assigned_to"),
+  bay: text("bay"),
+  estimatedTime: text("estimated_time").notNull(),
+  cost: integer("cost").notNull().default(0),
+  repairDetails: text("repair_details"),
+  parts: json("parts").$type<Array<{ partNumber?: string; name: string; date: string; amount: number }>>().default([]),
+  partsTotal: integer("parts_total").default(0),
+  nextServiceDate: text("next_service_date"),
+  nextServiceKm: integer("next_service_km"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertJobCardDbSchema = createInsertSchema(jobCards).omit({ id: true, createdAt: true });
+
+// Job Card Audit Logs table
+export const jobCardAuditLogs = pgTable("job_card_audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobCardId: varchar("job_card_id").notNull(),
+  actorId: text("actor_id").notNull(),
+  actorName: text("actor_name").notNull(),
+  action: text("action").notNull(),
+  changes: json("changes").$type<Array<{ field: string; oldValue: any; newValue: any }>>().default([]),
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
+});
+
+// Job Card Images table
+export const jobCardImages = pgTable("job_card_images", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobCardId: varchar("job_card_id").notNull(),
+  objectPath: text("object_path").notNull(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  uploadedBy: text("uploaded_by").notNull(),
+  uploadedByName: text("uploaded_by_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertJobCardImageDbSchema = createInsertSchema(jobCardImages).omit({ id: true, createdAt: true });
+
+// Parts Catalog table
+export const partsCatalog = pgTable("parts_catalog", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  partNumber: text("part_number").notNull().unique(),
+  name: text("name").notNull(),
+  price: integer("price").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPartsCatalogDbSchema = createInsertSchema(partsCatalog).omit({ id: true, createdAt: true });
+
+// Loyalty Customers table
+export const loyaltyCustomers = pgTable("loyalty_customers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().unique(),
+  email: text("email"),
+  vehicleNumbers: text("vehicle_numbers").array().default(sql`ARRAY[]::text[]`),
+  totalPoints: integer("total_points").notNull().default(0),
+  availablePoints: integer("available_points").notNull().default(0),
+  tier: text("tier").notNull().default("Bronze"),
+  totalSpent: integer("total_spent").notNull().default(0),
+  visitCount: integer("visit_count").notNull().default(0),
+  lastVisit: timestamp("last_visit"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertLoyaltyCustomerDbSchema = createInsertSchema(loyaltyCustomers).omit({
+  id: true,
+  totalPoints: true,
+  availablePoints: true,
+  tier: true,
+  totalSpent: true,
+  visitCount: true,
+  lastVisit: true,
+  createdAt: true,
+});
+
+// Points Transactions table
+export const pointsTransactions = pgTable("points_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull(),
+  type: text("type").notNull(),
+  points: integer("points").notNull(),
+  description: text("description").notNull(),
+  jobCardId: varchar("job_card_id"),
+  rewardId: varchar("reward_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPointsTransactionDbSchema = createInsertSchema(pointsTransactions).omit({ id: true, createdAt: true });
+
+// Rewards table
+export const rewards = pgTable("rewards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  pointsCost: integer("points_cost").notNull(),
+  category: text("category").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  stock: integer("stock"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRewardDbSchema = createInsertSchema(rewards).omit({ id: true, createdAt: true });
+
+// Redemptions table
+export const redemptions = pgTable("redemptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull(),
+  rewardId: varchar("reward_id").notNull(),
+  rewardName: text("reward_name").notNull(),
+  pointsUsed: integer("points_used").notNull(),
+  status: text("status").notNull().default("Pending"),
+  fulfilledAt: timestamp("fulfilled_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRedemptionDbSchema = createInsertSchema(redemptions).omit({ id: true, fulfilledAt: true, createdAt: true });
+
+// System Logs table
+export const systemLogs = pgTable("system_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  level: text("level").notNull(),
+  source: text("source").notNull(),
+  message: text("message").notNull(),
+  endpoint: text("endpoint"),
+  method: text("method"),
+  userId: text("user_id"),
+  userName: text("user_name"),
+  statusCode: integer("status_code"),
+  context: json("context").$type<Record<string, any>>(),
+  stack: text("stack"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSystemLogDbSchema = createInsertSchema(systemLogs).omit({ id: true, createdAt: true });
+
+// Sessions table
+export const sessions = pgTable("sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+// Constants
 export const SERVICE_CATEGORIES = ["Paid Service", "Repair", "Company Free Service"] as const;
 
 export const SERVICE_TYPES = [
@@ -60,8 +251,8 @@ export const SERVICE_TYPE_DETAILS: Record<typeof SERVICE_TYPES[number], { catego
   "2nd Free Service": { category: "Company Free Service", price: 550 },
   "1st Free Service": { category: "Company Free Service", price: 550 },
 };
-export const JOB_STATUSES = ["Pending", "In Progress", "Oil Change", "Quality Check", "Completed", "Delivered"] as const;
 
+export const JOB_STATUSES = ["Pending", "In Progress", "Oil Change", "Quality Check", "Completed", "Delivered"] as const;
 export const SERVICE_STATUSES = ["Pending", "In Progress", "Oil Change", "Quality Check", "Completed", "Delivered"] as const;
 export const REPAIR_STATUSES = ["Pending", "In Progress", "Quality Check", "Completed", "Delivered"] as const;
 
@@ -71,6 +262,7 @@ export function getStatusesForCategory(category: typeof SERVICE_CATEGORIES[numbe
   }
   return SERVICE_STATUSES;
 }
+
 export const BAYS = ["Wash Bay 1", "Wash Bay 2", "Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
 export const WASH_BAYS = ["Wash Bay 1", "Wash Bay 2"] as const;
 export const TECHNICIAN_BAYS = ["Sudershan", "Jayakandan", "Dharshan", "Vijandran", "Pradeepan", "Aya"] as const;
@@ -122,31 +314,32 @@ export const CUSTOMER_REQUESTS = [
   "Suspension Front/Rear"
 ] as const;
 
+// Zod schemas for validation (used by frontend and API)
 export const jobCardSchema = z.object({
   id: z.string(),
-  tagNo: z.string().optional(),
+  tagNo: z.string().optional().nullable(),
   customerName: z.string().min(1, "Customer name is required"),
   phone: z.string().min(10, "Valid phone number required"),
   bikeModel: z.enum(BIKE_MODELS),
   registration: z.string().min(1, "Registration number is required"),
   odometer: z.number().min(0, "Odometer reading must be positive"),
   serviceType: z.enum(SERVICE_TYPES),
-  customerRequests: z.array(z.string()).optional(),
+  customerRequests: z.array(z.string()).optional().nullable(),
   status: z.enum(JOB_STATUSES),
-  assignedTo: z.string().optional(),
-  bay: z.enum(BAYS).optional(),
+  assignedTo: z.string().optional().nullable(),
+  bay: z.enum(BAYS).optional().nullable(),
   estimatedTime: z.string(),
   cost: z.number().min(0, "Cost must be positive"),
-  repairDetails: z.string().optional(),
+  repairDetails: z.string().optional().nullable(),
   parts: z.array(z.object({
     partNumber: z.string().optional(),
     name: z.string(),
     date: z.string(),
     amount: z.number(),
-  })).optional(),
-  partsTotal: z.number().optional(),
-  nextServiceDate: z.string().optional(),
-  nextServiceKm: z.number().optional(),
+  })).optional().nullable(),
+  partsTotal: z.number().optional().nullable(),
+  nextServiceDate: z.string().optional().nullable(),
+  nextServiceKm: z.number().optional().nullable(),
   createdAt: z.string(),
 });
 
@@ -188,7 +381,6 @@ export const insertJobCardImageSchema = jobCardImageSchema.omit({ id: true, crea
 export type JobCardImage = z.infer<typeof jobCardImageSchema>;
 export type InsertJobCardImage = z.infer<typeof insertJobCardImageSchema>;
 
-// Parts Catalog Schema
 export const partsCatalogSchema = z.object({
   id: z.string(),
   partNumber: z.string().min(1, "Part number is required"),
@@ -245,7 +437,7 @@ export const staffSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(10, "Valid phone number required"),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().email().optional().or(z.literal("")).nullable(),
   role: z.enum(USER_ROLES),
   workSkills: z.array(z.enum(WORK_SKILLS)).default([]),
   isActive: z.boolean(),
@@ -263,11 +455,11 @@ export const attendanceSchema = z.object({
   staffName: z.string(),
   date: z.string(),
   status: z.enum(ATTENDANCE_STATUSES),
-  checkInTime: z.string().optional(),
-  checkOutTime: z.string().optional(),
-  notes: z.string().optional(),
+  checkInTime: z.string().optional().nullable(),
+  checkOutTime: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
   createdAt: z.string(),
-  updatedAt: z.string().optional(),
+  updatedAt: z.string().optional().nullable(),
 });
 
 export const insertAttendanceSchema = z.object({
@@ -328,14 +520,14 @@ export const loyaltyCustomerSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Customer name is required"),
   phone: z.string().min(10, "Valid phone number required"),
-  email: z.string().email().optional().or(z.literal("")),
-  vehicleNumbers: z.array(z.string()).optional(),
+  email: z.string().email().optional().or(z.literal("")).nullable(),
+  vehicleNumbers: z.array(z.string()).optional().nullable(),
   totalPoints: z.number().default(0),
   availablePoints: z.number().default(0),
   tier: z.enum(LOYALTY_TIERS).default("Bronze"),
   totalSpent: z.number().default(0),
   visitCount: z.number().default(0),
-  lastVisit: z.string().optional(),
+  lastVisit: z.string().optional().nullable(),
   createdAt: z.string(),
 });
 
@@ -359,8 +551,8 @@ export const pointsTransactionSchema = z.object({
   type: z.enum(POINTS_TRANSACTION_TYPES),
   points: z.number(),
   description: z.string(),
-  jobCardId: z.string().optional(),
-  rewardId: z.string().optional(),
+  jobCardId: z.string().optional().nullable(),
+  rewardId: z.string().optional().nullable(),
   createdAt: z.string(),
 });
 
@@ -376,7 +568,7 @@ export const rewardSchema = z.object({
   pointsCost: z.number().min(1, "Points cost must be at least 1"),
   category: z.enum(["Discount", "Free Service", "Merchandise", "Special"]),
   isActive: z.boolean().default(true),
-  stock: z.number().optional(),
+  stock: z.number().optional().nullable(),
   createdAt: z.string(),
 });
 
@@ -392,7 +584,7 @@ export const redemptionSchema = z.object({
   rewardName: z.string(),
   pointsUsed: z.number(),
   status: z.enum(["Pending", "Fulfilled", "Cancelled"]),
-  fulfilledAt: z.string().optional(),
+  fulfilledAt: z.string().optional().nullable(),
   createdAt: z.string(),
 });
 
@@ -410,13 +602,13 @@ export const systemLogSchema = z.object({
   level: z.enum(LOG_LEVELS),
   source: z.enum(LOG_SOURCES),
   message: z.string(),
-  endpoint: z.string().optional(),
-  method: z.string().optional(),
-  userId: z.string().optional(),
-  userName: z.string().optional(),
-  statusCode: z.number().optional(),
-  context: z.record(z.any()).optional(),
-  stack: z.string().optional(),
+  endpoint: z.string().optional().nullable(),
+  method: z.string().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  userName: z.string().optional().nullable(),
+  statusCode: z.number().optional().nullable(),
+  context: z.record(z.any()).optional().nullable(),
+  stack: z.string().optional().nullable(),
   createdAt: z.string(),
 });
 
