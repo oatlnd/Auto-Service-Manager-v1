@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { APP_VERSION } from "@/lib/version";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, User, Clock } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, User, Clock, MessageCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { formatSriLankaDate } from "@/lib/timezone";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Part {
   partNumber?: string;
@@ -1412,6 +1418,40 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
   if (!job) return null;
 
+  const getSmsMessage = (type: "ready" | "extended" | "part_unavailable") => {
+    const jobCode = job.jobCode;
+    const customerName = job.customerName;
+    const bikeModel = job.bikeModel;
+    const registration = job.registration;
+    
+    switch (type) {
+      case "ready":
+        return `Dear ${customerName}, your ${bikeModel} (${registration}) is ready for pickup. Job: ${jobCode}. Please collect from Ratnam Service Station. Thank you!`;
+      case "extended":
+        return `Dear ${customerName}, your ${bikeModel} (${registration}) repair is taking longer than expected. Job: ${jobCode}. We will update you soon. Thank you for your patience. - Ratnam Service Station`;
+      case "part_unavailable":
+        return `Dear ${customerName}, we need to order a part for your ${bikeModel} (${registration}). Job: ${jobCode}. We will contact you once it arrives. - Ratnam Service Station`;
+      default:
+        return "";
+    }
+  };
+
+  const openSmsApp = (type: "ready" | "extended" | "part_unavailable") => {
+    const phone = job.phone?.replace(/[^0-9+]/g, "") || "";
+    
+    if (!phone || phone.length < 9) {
+      toast({
+        title: t("common.error", "Error"),
+        description: t("jobCards.noPhoneNumber", "Customer phone number is missing or invalid"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const message = encodeURIComponent(getSmsMessage(type));
+    window.open(`sms:${phone}?body=${message}`, "_blank");
+  };
+
   const handlePrint = async () => {
     try {
       await printMutation.mutateAsync();
@@ -1978,6 +2018,26 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         </div>
 
         <DialogFooter className="flex-wrap gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-sms-notify">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                {t("jobCards.notifyCustomer", "Notify Customer")}
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => openSmsApp("ready")} data-testid="menu-item-sms-ready">
+                {t("jobCards.smsReadyForPickup", "Ready for Pickup")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openSmsApp("extended")} data-testid="menu-item-sms-extended">
+                {t("jobCards.smsExtendedRepair", "Extended Repair")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openSmsApp("part_unavailable")} data-testid="menu-item-sms-part">
+                {t("jobCards.smsPartUnavailable", "Part Not Available")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" onClick={handlePrint} disabled={printMutation.isPending} data-testid="button-print-jobcard">
             {printMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
             {t("jobCards.print", "Print")}
