@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { APP_VERSION } from "@/lib/version";
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, ChevronDown, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, User, Clock, MessageCircle } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, AlertCircle, History, Printer, Camera, Image as ImageIcon, X, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, User, Clock, MessageCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog, JobCardImage, PartsCatalog } from "@shared/schema";
+import type { JobCard, JOB_STATUSES, Staff, JobCardAuditLog, JobCardImage, PartsCatalog, SmsTemplate } from "@shared/schema";
 import { BIKE_MODELS, BAYS, SERVICE_TYPES, SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, CUSTOMER_REQUESTS, getStatusesForCategory } from "@shared/schema";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -65,12 +65,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { formatSriLankaDate } from "@/lib/timezone";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface Part {
   partNumber?: string;
@@ -1240,6 +1234,26 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
   const [newPartName, setNewPartName] = useState("");
   const [newPartAmount, setNewPartAmount] = useState<number>(0);
+  const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [customMessage, setCustomMessage] = useState("");
+  const [useCustomMessage, setUseCustomMessage] = useState(false);
+
+  const { data: smsTemplates = [] } = useQuery<SmsTemplate[]>({
+    queryKey: ["/api/sms-templates"],
+    enabled: open,
+  });
+
+  useEffect(() => {
+    if (isSmsDialogOpen && smsTemplates.length > 0 && !selectedTemplateId && !useCustomMessage) {
+      const defaultTemplate = smsTemplates.find(t => t.isDefault);
+      if (defaultTemplate) {
+        setSelectedTemplateId(defaultTemplate.id);
+      } else {
+        setSelectedTemplateId(smsTemplates[0].id);
+      }
+    }
+  }, [isSmsDialogOpen, smsTemplates, selectedTemplateId, useCustomMessage]);
 
   const { data: auditLogs = [], isLoading: isLoadingAudit, refetch: refetchAudit } = useQuery<JobCardAuditLog[]>({
     queryKey: ['/api/job-cards', job?.id, 'audit'],
@@ -1418,26 +1432,28 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
 
   if (!job) return null;
 
-  const getSmsMessage = (type: "ready" | "extended" | "part_unavailable") => {
-    const jobCode = job.jobCode;
-    const customerName = job.customerName;
-    const bikeModel = job.bikeModel;
-    const registration = job.registration;
-    
-    switch (type) {
-      case "ready":
-        return `Dear ${customerName}, your ${bikeModel} (${registration}) is ready for pickup. Job: ${jobCode}. Please collect from Ratnam Service Station. Thank you!`;
-      case "extended":
-        return `Dear ${customerName}, your ${bikeModel} (${registration}) repair is taking longer than expected. Job: ${jobCode}. We will update you soon. Thank you for your patience. - Ratnam Service Station`;
-      case "part_unavailable":
-        return `Dear ${customerName}, we need to order a part for your ${bikeModel} (${registration}). Job: ${jobCode}. We will contact you once it arrives. - Ratnam Service Station`;
-      default:
-        return "";
-    }
+  const replacePlaceholders = (template: string) => {
+    if (!job) return template;
+    return template
+      .replace(/\{\{customerName\}\}/g, job.customerName || "")
+      .replace(/\{\{bikeModel\}\}/g, job.bikeModel || "")
+      .replace(/\{\{registration\}\}/g, job.registration || "")
+      .replace(/\{\{jobCode\}\}/g, job.jobCode || "");
   };
 
-  const openSmsApp = (type: "ready" | "extended" | "part_unavailable") => {
-    const phone = job.phone?.replace(/[^0-9+]/g, "") || "";
+  const getPreviewMessage = () => {
+    if (useCustomMessage) {
+      return replacePlaceholders(customMessage);
+    }
+    const template = smsTemplates.find(t => t.id === selectedTemplateId);
+    if (template) {
+      return replacePlaceholders(template.message);
+    }
+    return "";
+  };
+
+  const handleOpenSmsDialog = () => {
+    const phone = job?.phone?.replace(/[^0-9+]/g, "") || "";
     
     if (!phone || phone.length < 9) {
       toast({
@@ -1448,8 +1464,17 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
       return;
     }
     
-    const message = encodeURIComponent(getSmsMessage(type));
+    setSelectedTemplateId(null);
+    setUseCustomMessage(false);
+    setCustomMessage("");
+    setIsSmsDialogOpen(true);
+  };
+
+  const handleSendSms = () => {
+    const phone = job?.phone?.replace(/[^0-9+]/g, "") || "";
+    const message = encodeURIComponent(getPreviewMessage());
     window.open(`sms:${phone}?body=${message}`, "_blank");
+    setIsSmsDialogOpen(false);
   };
 
   const handlePrint = async () => {
@@ -2018,26 +2043,10 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         </div>
 
         <DialogFooter className="flex-wrap gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" data-testid="button-sms-notify">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                {t("jobCards.notifyCustomer", "Notify Customer")}
-                <ChevronDown className="w-4 h-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => openSmsApp("ready")} data-testid="menu-item-sms-ready">
-                {t("jobCards.smsReadyForPickup", "Ready for Pickup")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openSmsApp("extended")} data-testid="menu-item-sms-extended">
-                {t("jobCards.smsExtendedRepair", "Extended Repair")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openSmsApp("part_unavailable")} data-testid="menu-item-sms-part">
-                {t("jobCards.smsPartUnavailable", "Part Not Available")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" onClick={handleOpenSmsDialog} data-testid="button-sms-notify">
+            <MessageCircle className="w-4 h-4 mr-2" />
+            {t("jobCards.notifyCustomer", "Notify Customer")}
+          </Button>
           <Button variant="outline" onClick={handlePrint} disabled={printMutation.isPending} data-testid="button-print-jobcard">
             {printMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
             {t("jobCards.print", "Print")}
@@ -2047,6 +2056,116 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={isSmsDialogOpen} onOpenChange={setIsSmsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("jobCards.smsNotification", "SMS Notification")}</DialogTitle>
+            <DialogDescription>
+              {t("jobCards.smsDescription", "Preview and send SMS notification to")} {job.customerName} ({job.phone})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>{t("smsTemplates.selectTemplate", "Select Template")}</Label>
+              <Select
+                value={useCustomMessage ? "custom" : (selectedTemplateId || "")}
+                onValueChange={(value) => {
+                  if (value === "custom") {
+                    setUseCustomMessage(true);
+                  } else {
+                    setUseCustomMessage(false);
+                    setSelectedTemplateId(value);
+                  }
+                }}
+              >
+                <SelectTrigger data-testid="select-sms-template">
+                  <SelectValue placeholder={t("smsTemplates.selectTemplate", "Select template")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {smsTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} {template.isDefault && `(${t("smsTemplates.default", "Default")})`}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="custom">{t("smsTemplates.customMessage", "Custom Message")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {useCustomMessage && (
+              <div className="space-y-2">
+                <Label>{t("smsTemplates.customMessage", "Custom Message")}</Label>
+                <Textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  placeholder={t("smsTemplates.enterCustomMessage", "Enter your custom message...")}
+                  rows={4}
+                  data-testid="textarea-custom-sms"
+                />
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setCustomMessage(prev => prev + "{{customerName}}")}
+                    data-testid="button-placeholder-customerName"
+                  >
+                    {t("smsTemplates.customerName", "Customer Name")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setCustomMessage(prev => prev + "{{bikeModel}}")}
+                    data-testid="button-placeholder-bikeModel"
+                  >
+                    {t("smsTemplates.bikeModel", "Bike Model")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setCustomMessage(prev => prev + "{{registration}}")}
+                    data-testid="button-placeholder-registration"
+                  >
+                    {t("smsTemplates.registration", "Registration")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setCustomMessage(prev => prev + "{{jobCode}}")}
+                    data-testid="button-placeholder-jobCode"
+                  >
+                    {t("smsTemplates.jobCode", "Job Code")}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>{t("smsTemplates.preview", "Preview")}</Label>
+              <div className="p-3 bg-muted rounded-md text-sm min-h-[80px]" data-testid="sms-preview">
+                {getPreviewMessage() || <span className="text-muted-foreground">{t("smsTemplates.noPreview", "Select a template to see preview")}</span>}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSmsDialogOpen(false)} data-testid="button-cancel-sms">
+              {t("common.cancel")}
+            </Button>
+            <Button 
+              onClick={handleSendSms} 
+              disabled={!getPreviewMessage()}
+              data-testid="button-send-sms"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {t("jobCards.openSmsApp", "Open SMS App")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

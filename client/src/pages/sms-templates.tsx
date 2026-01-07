@@ -405,6 +405,7 @@ export default function SmsTemplatesPage() {
                     size="sm"
                     type="button"
                     onClick={() => insertPlaceholder(p.key)}
+                    data-testid={`button-edit-placeholder-${p.key}`}
                   >
                     {p.label}
                   </Button>
