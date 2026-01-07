@@ -21,6 +21,7 @@ import Attendance from "@/pages/attendance";
 import LoyaltyProgram from "@/pages/loyalty-program";
 import PartsCatalog from "@/pages/parts-catalog";
 import SystemLogs from "@/pages/system-logs";
+import SmsTemplates from "@/pages/sms-templates";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -38,6 +39,7 @@ function Router() {
       {canAccessAdmin && <Route path="/attendance" component={Attendance} />}
       {canAccessAdmin && <Route path="/loyalty" component={LoyaltyProgram} />}
       {canAccessAdmin && <Route path="/parts-catalog" component={PartsCatalog} />}
+      {canAccessAdmin && <Route path="/sms-templates" component={SmsTemplates} />}
       {isAdmin && <Route path="/system-logs" component={SystemLogs} />}
       <Route component={NotFound} />
     </Switch>
