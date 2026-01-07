@@ -127,6 +127,17 @@ shared/
 
 ## Recent Changes
 
+### January 7, 2026
+- Implemented SMS Template System for customer notifications
+- Schema: smsTemplates table with name, message (with placeholders), isDefault, isActive fields
+- Placeholders supported: {{customerName}}, {{bikeModel}}, {{registration}}, {{jobCode}}
+- Default templates: Ready for Pickup, Extended Repair, Part Not Available
+- Storage: Full CRUD operations with soft delete (isActive flag)
+- API routes: GET/POST/PATCH/DELETE /api/sms-templates with role-based access (Admin/Manager for CRUD, all users can view)
+- UI: SMS Templates admin page with add/edit/delete functionality
+- Job Cards SMS integration: Preview dialog with template selection, custom message option, real-time placeholder replacement
+- Uses native sms: URI scheme for SMS sending (no API keys required)
+
 ### January 6, 2026
 - Migrated from in-memory storage (MemStorage) to PostgreSQL database (DatabaseStorage)
 - Created database connection module (server/db.ts) using Drizzle ORM
