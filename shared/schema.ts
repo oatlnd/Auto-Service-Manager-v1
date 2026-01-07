@@ -345,7 +345,7 @@ export const jobCardSchema = z.object({
   createdAt: z.string(),
 });
 
-export const insertJobCardSchema = jobCardSchema.omit({ id: true, createdAt: true });
+export const insertJobCardSchema = jobCardSchema.omit({ id: true, jobCode: true, createdAt: true });
 
 export type JobCard = z.infer<typeof jobCardSchema>;
 export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
