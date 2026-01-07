@@ -7,12 +7,13 @@ import {
   JobCardAuditLog, JobCardImage, InsertJobCardImage,
   PartsCatalog, InsertPartsCatalog,
   SystemLog, InsertSystemLog, LOG_LEVELS, LOG_SOURCES,
+  SmsTemplate, InsertSmsTemplate,
   SERVICE_TYPE_DETAILS, SERVICE_CATEGORIES, LOYALTY_TIER_THRESHOLDS, LOYALTY_TIERS, LOYALTY_TIER_MULTIPLIERS, POINTS_PER_100_LKR,
   users, staff as staffTable, attendance as attendanceTable, jobCards as jobCardsTable,
   jobCardAuditLogs as auditLogsTable, jobCardImages as imagesTable, partsCatalog as partsCatalogTable,
   loyaltyCustomers as loyaltyCustomersTable, pointsTransactions as transactionsTable,
   rewards as rewardsTable, redemptions as redemptionsTable, systemLogs as systemLogsTable,
-  sessions as sessionsTable
+  sessions as sessionsTable, smsTemplates as smsTemplatesTable
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, ilike, or, sql } from "drizzle-orm";
@@ -109,6 +110,12 @@ export interface IStorage {
   createSystemLog(data: InsertSystemLog): Promise<SystemLog>;
   deleteSystemLog(id: string): Promise<boolean>;
   clearOldLogs(daysOld: number): Promise<number>;
+  
+  getSmsTemplates(): Promise<SmsTemplate[]>;
+  getSmsTemplate(id: string): Promise<SmsTemplate | undefined>;
+  createSmsTemplate(data: InsertSmsTemplate): Promise<SmsTemplate>;
+  updateSmsTemplate(id: string, data: Partial<InsertSmsTemplate>): Promise<SmsTemplate | undefined>;
+  deleteSmsTemplate(id: string): Promise<boolean>;
 }
 
 function toJobCard(row: any): JobCard {
@@ -960,6 +967,38 @@ export class DatabaseStorage implements IStorage {
     }
     
     return oldLogs.length;
+  }
+
+  async getSmsTemplates(): Promise<SmsTemplate[]> {
+    const rows = await db.select().from(smsTemplatesTable)
+      .where(eq(smsTemplatesTable.isActive, true))
+      .orderBy(desc(smsTemplatesTable.isDefault), smsTemplatesTable.name);
+    return rows;
+  }
+
+  async getSmsTemplate(id: string): Promise<SmsTemplate | undefined> {
+    const [row] = await db.select().from(smsTemplatesTable).where(eq(smsTemplatesTable.id, id));
+    return row || undefined;
+  }
+
+  async createSmsTemplate(data: InsertSmsTemplate): Promise<SmsTemplate> {
+    const [row] = await db.insert(smsTemplatesTable).values(data).returning();
+    return row;
+  }
+
+  async updateSmsTemplate(id: string, data: Partial<InsertSmsTemplate>): Promise<SmsTemplate | undefined> {
+    const [row] = await db.update(smsTemplatesTable)
+      .set(data)
+      .where(eq(smsTemplatesTable.id, id))
+      .returning();
+    return row || undefined;
+  }
+
+  async deleteSmsTemplate(id: string): Promise<boolean> {
+    await db.update(smsTemplatesTable)
+      .set({ isActive: false })
+      .where(eq(smsTemplatesTable.id, id));
+    return true;
   }
 }
 

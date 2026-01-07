@@ -126,6 +126,20 @@ export const partsCatalog = pgTable("parts_catalog", {
 
 export const insertPartsCatalogDbSchema = createInsertSchema(partsCatalog).omit({ id: true, createdAt: true });
 
+// SMS Templates table
+export const smsTemplates = pgTable("sms_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  message: text("message").notNull(),
+  isDefault: boolean("is_default").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSmsTemplateDbSchema = createInsertSchema(smsTemplates).omit({ id: true, createdAt: true });
+export type SmsTemplate = typeof smsTemplates.$inferSelect;
+export type InsertSmsTemplate = z.infer<typeof insertSmsTemplateDbSchema>;
+
 // Loyalty Customers table
 export const loyaltyCustomers = pgTable("loyalty_customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

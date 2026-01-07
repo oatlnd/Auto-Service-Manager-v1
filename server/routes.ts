@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type Session } from "./storage";
-import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema, JobCard, LOG_LEVELS, LOG_SOURCES, insertSystemLogSchema } from "@shared/schema";
+import { insertJobCardSchema, JOB_STATUSES, insertStaffSchema, insertAttendanceSchema, updateAttendanceSchema, USER_ROLES, WORK_SKILLS, loginSchema, insertLoyaltyCustomerSchema, insertRewardSchema, insertJobCardImageSchema, insertPartsCatalogSchema, JobCard, LOG_LEVELS, LOG_SOURCES, insertSystemLogSchema, insertSmsTemplateDbSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import PDFDocument from "pdfkit";
@@ -1210,6 +1210,105 @@ export async function registerRoutes(
         stack: error instanceof Error ? error.stack : undefined,
       });
       res.status(500).json({ error: "Failed to clear old logs" });
+    }
+  });
+
+  // SMS Templates routes
+  app.get("/api/sms-templates", requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getSmsTemplates();
+      res.json(templates);
+    } catch (error) {
+      logger.apiError("Error fetching SMS templates", {
+        endpoint: "/api/sms-templates",
+        method: "GET",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to fetch SMS templates" });
+    }
+  });
+
+  app.get("/api/sms-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const template = await storage.getSmsTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      logger.apiError("Error fetching SMS template", {
+        endpoint: `/api/sms-templates/${req.params.id}`,
+        method: "GET",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to fetch SMS template" });
+    }
+  });
+
+  app.post("/api/sms-templates", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const parsed = insertSmsTemplateDbSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const template = await storage.createSmsTemplate(parsed.data);
+      logger.systemInfo("SMS template created", {
+        userId: req.session?.user.id,
+        userName: req.session?.user.name,
+        context: { templateId: template.id, templateName: template.name },
+      });
+      res.status(201).json(template);
+    } catch (error) {
+      logger.apiError("Error creating SMS template", {
+        endpoint: "/api/sms-templates",
+        method: "POST",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to create SMS template" });
+    }
+  });
+
+  app.patch("/api/sms-templates/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const template = await storage.updateSmsTemplate(req.params.id, req.body);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      logger.systemInfo("SMS template updated", {
+        userId: req.session?.user.id,
+        userName: req.session?.user.name,
+        context: { templateId: template.id, templateName: template.name },
+      });
+      res.json(template);
+    } catch (error) {
+      logger.apiError("Error updating SMS template", {
+        endpoint: `/api/sms-templates/${req.params.id}`,
+        method: "PATCH",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to update SMS template" });
+    }
+  });
+
+  app.delete("/api/sms-templates/:id", requireRole("Admin", "Manager"), async (req, res) => {
+    try {
+      const success = await storage.deleteSmsTemplate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      logger.systemInfo("SMS template deleted", {
+        userId: req.session?.user.id,
+        userName: req.session?.user.name,
+        context: { templateId: req.params.id },
+      });
+      res.json({ success: true });
+    } catch (error) {
+      logger.apiError("Error deleting SMS template", {
+        endpoint: `/api/sms-templates/${req.params.id}`,
+        method: "DELETE",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: "Failed to delete SMS template" });
     }
   });
 
