@@ -1484,13 +1484,16 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
       return;
     }
     
+    const translatedServiceType = t(`serviceTypes.${job.serviceType}`, job.serviceType);
+    const translatedStatus = t(`jobCards.${job.status.toLowerCase().replace(' ', '')}`, job.status);
+    
     const printContent = `
       <html>
       <head>
-        <title>Job Card - ${job.jobCode}</title>
+        <title>${t("print.jobCard")} - ${job.jobCode}</title>
         <style>
           @page { size: 80mm auto; margin: 2mm; }
-          body { font-family: 'Courier New', monospace; font-size: 10px; width: 76mm; margin: 0; padding: 2mm; }
+          body { font-family: 'Courier New', 'Noto Sans Tamil', monospace; font-size: 10px; width: 76mm; margin: 0; padding: 2mm; }
           .job-tag-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
           .job-tag-header .job-no, .job-tag-header .tag-no { font-size: 16px; font-weight: bold; }
           .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 4px; margin-bottom: 4px; }
@@ -1516,51 +1519,51 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         </div>
         
         <div class="header">
-          <h1>RATNAM SERVICE STATION</h1>
-          <p>Jaffna, Sri Lanka</p>
-          <p>Tel: 021-XXXXXXX</p>
+          <h1>${t("print.stationName")}</h1>
+          <p>${t("print.stationLocation")}</p>
+          <p>${t("print.stationPhone")}</p>
         </div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="row"><span class="label">Date:</span><span class="value">${formatSriLankaDate(new Date(job.createdAt), "dd/MM/yyyy HH:mm")}</span></div>
+          <div class="row"><span class="label">${t("print.date")}:</span><span class="value">${formatSriLankaDate(new Date(job.createdAt), "dd/MM/yyyy HH:mm")}</span></div>
         </div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="section-title">Customer Details</div>
-          <div class="row"><span class="label">Name:</span><span class="value">${job.customerName}</span></div>
-          <div class="row"><span class="label">Phone:</span><span class="value">${job.phone}</span></div>
+          <div class="section-title">${t("print.customerDetails")}</div>
+          <div class="row"><span class="label">${t("print.name")}:</span><span class="value">${job.customerName}</span></div>
+          <div class="row"><span class="label">${t("print.phone")}:</span><span class="value">${job.phone}</span></div>
         </div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="section-title">Vehicle Details</div>
-          <div class="row"><span class="label">Model:</span><span class="value">${job.bikeModel}</span></div>
-          <div class="row"><span class="label">Reg No:</span><span class="value-bold">${job.registration}</span></div>
-          <div class="row"><span class="label">Odometer:</span><span class="value">${job.odometer} km</span></div>
+          <div class="section-title">${t("print.vehicleDetails")}</div>
+          <div class="row"><span class="label">${t("print.model")}:</span><span class="value">${job.bikeModel}</span></div>
+          <div class="row"><span class="label">${t("print.regNo")}:</span><span class="value-bold">${job.registration}</span></div>
+          <div class="row"><span class="label">${t("print.odometer")}:</span><span class="value">${job.odometer} km</span></div>
         </div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="section-title">Service Details</div>
-          <div class="row"><span class="label">Type:</span><span class="value">${job.serviceType}</span></div>
-          <div class="row"><span class="label">Bay:</span><span class="value">${job.bay}</span></div>
-          <div class="row"><span class="label">Technician:</span><span class="value">${job.assignedTo || '-'}</span></div>
-          <div class="row"><span class="label">Est. Time:</span><span class="value">${job.estimatedTime}</span></div>
-          <div class="row"><span class="label">Status:</span><span class="value">${job.status}</span></div>
+          <div class="section-title">${t("print.serviceDetails")}</div>
+          <div class="row"><span class="label">${t("print.type")}:</span><span class="value">${translatedServiceType}</span></div>
+          <div class="row"><span class="label">${t("print.bay")}:</span><span class="value">${job.bay || '-'}</span></div>
+          <div class="row"><span class="label">${t("print.technician")}:</span><span class="value">${job.assignedTo || '-'}</span></div>
+          <div class="row"><span class="label">${t("print.estTime")}:</span><span class="value">${job.estimatedTime || '-'}</span></div>
+          <div class="row"><span class="label">${t("print.status")}:</span><span class="value">${translatedStatus}</span></div>
         </div>
         
         ${job.customerRequests && job.customerRequests.length > 0 ? `
         <div class="divider"></div>
         <div class="section">
-          <div class="section-title">Customer Requests</div>
+          <div class="section-title">${t("print.customerRequests")}</div>
           <div class="list">
-            ${job.customerRequests.map(r => `<div class="list-item">- ${r}</div>`).join('')}
+            ${job.customerRequests.map(r => `<div class="list-item">- ${t(`customerRequestItems.${r}`, r)}</div>`).join('')}
           </div>
         </div>
         ` : ''}
@@ -1568,7 +1571,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         ${job.parts && job.parts.length > 0 ? `
         <div class="divider"></div>
         <div class="section">
-          <div class="section-title">Parts Used</div>
+          <div class="section-title">${t("print.partsUsed")}</div>
           <div class="list">
             ${job.parts.map(p => `<div class="row"><span class="label">${p.name} (${p.date})</span><span class="value">Rs. ${p.amount.toLocaleString()}</span></div>`).join('')}
           </div>
@@ -1578,7 +1581,7 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         ${job.repairDetails ? `
         <div class="divider"></div>
         <div class="section">
-          <div class="section-title">Repair Details</div>
+          <div class="section-title">${t("print.repairDetails")}</div>
           <p style="margin: 2px 0; font-size: 9px;">${job.repairDetails}</p>
         </div>
         ` : ''}
@@ -1586,17 +1589,17 @@ function ViewJobCardDialog({ open, onOpenChange, job, onStatusChange, onAssignme
         <div class="divider"></div>
         
         <div class="section">
-          <div class="section-title">Payment Details</div>
-          <div class="row"><span class="label">Service Cost:</span><span class="value">Rs. ${job.cost.toLocaleString()}</span></div>
-          ${partsTotal > 0 ? `<div class="row"><span class="label">Parts Total:</span><span class="value">Rs. ${partsTotal.toLocaleString()}</span></div>` : ''}
-          <div class="row total-row"><span class="label">Total:</span><span class="value">Rs. ${grandTotal.toLocaleString()}</span></div>
+          <div class="section-title">${t("print.paymentDetails")}</div>
+          <div class="row"><span class="label">${t("print.serviceCost")}:</span><span class="value">Rs. ${job.cost.toLocaleString()}</span></div>
+          ${partsTotal > 0 ? `<div class="row"><span class="label">${t("print.partsTotal")}:</span><span class="value">Rs. ${partsTotal.toLocaleString()}</span></div>` : ''}
+          <div class="row total-row"><span class="label">${t("print.total")}:</span><span class="value">Rs. ${grandTotal.toLocaleString()}</span></div>
         </div>
         
         <div class="divider"></div>
         
         <div class="footer">
-          <p>Thank you for choosing Ratnam Service Station</p>
-          <p>Printed: ${formatSriLankaDate(new Date(), "dd/MM/yyyy HH:mm")}</p>
+          <p>${t("print.thankYou")}</p>
+          <p>${t("print.printed")}: ${formatSriLankaDate(new Date(), "dd/MM/yyyy HH:mm")}</p>
           <p style="margin-top: 2px;">${APP_VERSION}</p>
         </div>
       </body>
