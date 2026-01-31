@@ -2456,7 +2456,7 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
               <div className="space-y-2">
                 <Label htmlFor="edit-serviceType">{t("jobCards.serviceType")}</Label>
                 <Select
-                  value={getFilteredServiceTypes().includes(formData.serviceType as typeof SERVICE_TYPES[number]) ? formData.serviceType : ""}
+                  value={formData.serviceType || ""}
                   onValueChange={(value) => updateField("serviceType", value as typeof SERVICE_TYPES[number])}
                 >
                   <SelectTrigger data-testid="select-edit-service-type">
@@ -2468,6 +2468,11 @@ function EditJobCardDialog({ open, onOpenChange, job, onSubmit, isPending, mecha
                         {t(`serviceTypes.${type}`, type)} {SERVICE_TYPE_DETAILS[type].price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[type].price.toLocaleString()})`}
                       </SelectItem>
                     ))}
+                    {formData.serviceType && !getFilteredServiceTypes().includes(formData.serviceType as typeof SERVICE_TYPES[number]) && (
+                      <SelectItem key={formData.serviceType} value={formData.serviceType}>
+                        {t(`serviceTypes.${formData.serviceType}`, formData.serviceType)} {SERVICE_TYPE_DETAILS[formData.serviceType as keyof typeof SERVICE_TYPE_DETAILS]?.price > 0 && `(Rs. ${SERVICE_TYPE_DETAILS[formData.serviceType as keyof typeof SERVICE_TYPE_DETAILS].price.toLocaleString()})`}
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
