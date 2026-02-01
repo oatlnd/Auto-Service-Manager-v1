@@ -122,7 +122,8 @@ export default function JobCards() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("non-completed");
   const [serviceTypeFilter, setServiceTypeFilter] = useState<typeof SERVICE_CATEGORIES[number] | null>(null);
-  const [dateFilter, setDateFilter] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -241,9 +242,10 @@ export default function JobCards() {
         serviceTypeFilter === null ? true :
         SERVICE_TYPE_DETAILS[job.serviceType]?.category === serviceTypeFilter;
       
+      const jobDate = new Date(job.createdAt).toISOString().split('T')[0];
       const matchesDate = 
-        dateFilter === "" ? true :
-        new Date(job.createdAt).toISOString().split('T')[0] === dateFilter;
+        (dateFrom === "" || jobDate >= dateFrom) &&
+        (dateTo === "" || jobDate <= dateTo);
       
       const limitedRoleStatuses = ["Pending", "In Progress"];
       const matchesLimitedRole = !isLimitedRole || limitedRoleStatuses.includes(job.status);
@@ -341,25 +343,48 @@ export default function JobCards() {
                 data-testid="input-search"
               />
             </div>
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="pl-10 w-full sm:w-44"
-                data-testid="input-date-filter"
-              />
-              {dateFilter && (
-                <button
-                  type="button"
-                  onClick={() => setDateFilter("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  data-testid="button-clear-date"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full sm:w-36"
+                  data-testid="input-date-from"
+                  title="From date"
+                />
+                {dateFrom && (
+                  <button
+                    type="button"
+                    onClick={() => setDateFrom("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    data-testid="button-clear-date-from"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <span className="text-muted-foreground text-sm">to</span>
+              <div className="relative">
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full sm:w-36"
+                  data-testid="input-date-to"
+                  title="To date"
+                />
+                {dateTo && (
+                  <button
+                    type="button"
+                    onClick={() => setDateTo("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    data-testid="button-clear-date-to"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-status-filter">
@@ -524,7 +549,7 @@ export default function JobCards() {
                     <TableCell colSpan={10} className="text-center py-12">
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
                       <p className="text-muted-foreground">
-                        {searchQuery || statusFilter !== "all" || dateFilter
+                        {searchQuery || statusFilter !== "all" || dateFrom || dateTo
                           ? "No job cards match your search" 
                           : "No job cards yet. Create your first one!"}
                       </p>
